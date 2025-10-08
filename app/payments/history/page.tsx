@@ -1,11 +1,23 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Input } from "@/components/ui/input"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Home,
   Search,
@@ -18,17 +30,17 @@ import {
   ArrowLeft,
   Eye,
   Send,
-} from "lucide-react"
-import Link from "next/link"
-import { useRouter } from "next/navigation"
+} from "lucide-react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 export default function PaymentHistoryPage() {
-  const router = useRouter()
-  const [user, setUser] = useState<any>(null)
-  const [searchQuery, setSearchQuery] = useState("")
-  const [filterStatus, setFilterStatus] = useState("all")
-  const [filterYear, setFilterYear] = useState("2024")
-  const [filterMonth, setFilterMonth] = useState("all")
+  const router = useRouter();
+  const [user, setUser] = useState<any>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filterStatus, setFilterStatus] = useState("all");
+  const [filterYear, setFilterYear] = useState("2024");
+  const [filterMonth, setFilterMonth] = useState("all");
 
   const mockPaymentHistory = [
     {
@@ -115,86 +127,93 @@ export default function PaymentHistoryPage() {
       notes: "",
       tenantName: "John Doe",
     },
-  ]
+  ];
 
   useEffect(() => {
-    const userData = localStorage.getItem("user")
-    const isLoggedIn = localStorage.getItem("isLoggedIn")
+    const userData = localStorage.getItem("user");
+    const isLoggedIn = localStorage.getItem("isLoggedIn");
 
     if (!userData || !isLoggedIn) {
-      router.push("/auth/login")
-      return
+      router.push("/auth/login");
+      return;
     }
 
-    setUser(JSON.parse(userData))
-  }, [router])
+    setUser(JSON.parse(userData));
+  }, [router]);
 
   const filteredPayments = mockPaymentHistory.filter((payment) => {
-    if (filterStatus !== "all" && payment.status !== filterStatus) return false
+    if (filterStatus !== "all" && payment.status !== filterStatus) return false;
     if (
       searchQuery &&
-      !payment.propertyTitle.toLowerCase().includes(searchQuery.toLowerCase()) &&
+      !payment.propertyTitle
+        .toLowerCase()
+        .includes(searchQuery.toLowerCase()) &&
       !payment.transactionId?.toLowerCase().includes(searchQuery.toLowerCase())
     )
-      return false
-    if (filterYear !== "all" && !payment.paidDate?.includes(filterYear)) return false
+      return false;
+    if (filterYear !== "all" && !payment.paidDate?.includes(filterYear))
+      return false;
     if (filterMonth !== "all" && payment.paidDate) {
-      const paymentMonth = new Date(payment.paidDate).getMonth() + 1
-      if (paymentMonth.toString() !== filterMonth) return false
+      const paymentMonth = new Date(payment.paidDate).getMonth() + 1;
+      if (paymentMonth.toString() !== filterMonth) return false;
     }
-    return true
-  })
+    return true;
+  });
 
-  const totalPaid = filteredPayments.filter((p) => p.status === "approved").reduce((sum, p) => sum + p.totalAmount, 0)
+  const totalPaid = filteredPayments
+    .filter((p) => p.status === "approved")
+    .reduce((sum, p) => sum + p.totalAmount, 0);
 
   const getStatusIcon = (status: string) => {
     switch (status) {
       case "approved":
-        return <CheckCircle2 className="h-4 w-4 text-green-600" />
+        return <CheckCircle2 className="h-4 w-4 text-green-600" />;
       case "pending_approval":
-        return <Clock className="h-4 w-4 text-yellow-600" />
+        return <Clock className="h-4 w-4 text-yellow-600" />;
       case "pending":
-        return <Clock className="h-4 w-4 text-gray-600" />
+        return <Clock className="h-4 w-4 text-gray-600" />;
       case "rejected":
-        return <AlertCircle className="h-4 w-4 text-red-600" />
+        return <AlertCircle className="h-4 w-4 text-red-600" />;
       default:
-        return <Clock className="h-4 w-4 text-gray-600" />
+        return <Clock className="h-4 w-4 text-gray-600" />;
     }
-  }
+  };
 
   const getStatusText = (status: string) => {
     switch (status) {
       case "approved":
-        return "Approved"
+        return "Approved";
       case "pending_approval":
-        return "Pending Approval"
+        return "Pending Approval";
       case "pending":
-        return "Pending Payment"
+        return "Pending Payment";
       case "rejected":
-        return "Rejected"
+        return "Rejected";
       default:
-        return status
+        return status;
     }
-  }
+  };
 
   const getStatusVariant = (status: string) => {
     switch (status) {
       case "approved":
-        return "default"
+        return "default";
       case "pending_approval":
-        return "secondary"
+        return "secondary";
       case "pending":
-        return "outline"
+        return "outline";
       case "rejected":
-        return "destructive"
+        return "destructive";
       default:
-        return "outline"
+        return "outline";
     }
-  }
+  };
 
   const sendReminder = (payment: any) => {
-    alert(`Reminder sent to ${payment.landlordName} at ${payment.landlordPhone}`)
-  }
+    alert(
+      `Reminder sent to ${payment.landlordName} at ${payment.landlordPhone}`
+    );
+  };
 
   const downloadReceipt = (payment: any) => {
     // Simulate receipt download
@@ -204,25 +223,33 @@ GHAR KONNECT - PAYMENT RECEIPT
 Transaction ID: ${payment.transactionId}
 Property: ${payment.propertyTitle}
 Landlord: ${payment.landlordName}
-Amount: ₹${payment.totalAmount.toLocaleString()}
+Amount: ₦${payment.totalAmount.toLocaleString()}
 Payment Date: ${payment.paidDate}
 Payment Time: ${payment.paidTime}
 Method: ${payment.method}
 Status: ${getStatusText(payment.status)}
-${payment.approvedDate ? `Approved: ${payment.approvedDate} at ${payment.approvedTime}` : ""}
-    `
+${
+  payment.approvedDate
+    ? `Approved: ${payment.approvedDate} at ${payment.approvedTime}`
+    : ""
+}
+    `;
 
-    const blob = new Blob([receiptData], { type: "text/plain" })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement("a")
-    a.href = url
-    a.download = `receipt-${payment.transactionId}.txt`
-    a.click()
-    URL.revokeObjectURL(url)
-  }
+    const blob = new Blob([receiptData], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `receipt-${payment.transactionId}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
 
   if (!user) {
-    return <div className="min-h-screen flex items-center justify-center">Loading...</div>
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        Loading...
+      </div>
+    );
   }
 
   return (
@@ -233,7 +260,9 @@ ${payment.approvedDate ? `Approved: ${payment.approvedDate} at ${payment.approve
           <div className="flex justify-between items-center h-16">
             <Link href="/" className="flex items-center space-x-2">
               <Home className="h-8 w-8 text-blue-600" />
-              <span className="text-2xl font-bold text-gray-900">Ghar Konnect</span>
+              <span className="text-2xl font-bold text-gray-900">
+                Ghar Konnect
+              </span>
             </Link>
             <Link href="/dashboard">
               <Button variant="outline">
@@ -249,7 +278,9 @@ ${payment.approvedDate ? `Approved: ${payment.approvedDate} at ${payment.approve
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900">Payment History</h1>
-          <p className="text-gray-600 mt-2">Track all your rent payments with detailed date/time information</p>
+          <p className="text-gray-600 mt-2">
+            Track all your rent payments with detailed date/time information
+          </p>
         </div>
 
         {/* Summary Cards */}
@@ -258,8 +289,12 @@ ${payment.approvedDate ? `Approved: ${payment.approvedDate} at ${payment.approve
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Total Paid</p>
-                  <p className="text-2xl font-bold text-green-600">₹{totalPaid.toLocaleString()}</p>
+                  <p className="text-sm font-medium text-gray-600">
+                    Total Paid
+                  </p>
+                  <p className="text-2xl font-bold text-green-600">
+                    ₦{totalPaid.toLocaleString()}
+                  </p>
                 </div>
                 <CheckCircle2 className="h-8 w-8 text-green-500" />
               </div>
@@ -272,7 +307,10 @@ ${payment.approvedDate ? `Approved: ${payment.approvedDate} at ${payment.approve
                 <div>
                   <p className="text-sm font-medium text-gray-600">Approved</p>
                   <p className="text-2xl font-bold text-blue-600">
-                    {filteredPayments.filter((p) => p.status === "approved").length}
+                    {
+                      filteredPayments.filter((p) => p.status === "approved")
+                        .length
+                    }
                   </p>
                 </div>
                 <Receipt className="h-8 w-8 text-blue-500" />
@@ -284,9 +322,15 @@ ${payment.approvedDate ? `Approved: ${payment.approvedDate} at ${payment.approve
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Pending Approval</p>
+                  <p className="text-sm font-medium text-gray-600">
+                    Pending Approval
+                  </p>
                   <p className="text-2xl font-bold text-yellow-600">
-                    {filteredPayments.filter((p) => p.status === "pending_approval").length}
+                    {
+                      filteredPayments.filter(
+                        (p) => p.status === "pending_approval"
+                      ).length
+                    }
                   </p>
                 </div>
                 <Clock className="h-8 w-8 text-yellow-500" />
@@ -300,7 +344,11 @@ ${payment.approvedDate ? `Approved: ${payment.approvedDate} at ${payment.approve
                 <div>
                   <p className="text-sm font-medium text-gray-600">This Year</p>
                   <p className="text-2xl font-bold text-purple-600">
-                    {filteredPayments.filter((p) => p.paidDate?.includes("2024")).length}
+                    {
+                      filteredPayments.filter((p) =>
+                        p.paidDate?.includes("2024")
+                      ).length
+                    }
                   </p>
                 </div>
                 <Calendar className="h-8 w-8 text-purple-500" />
@@ -332,7 +380,9 @@ ${payment.approvedDate ? `Approved: ${payment.approvedDate} at ${payment.approve
                 <SelectContent>
                   <SelectItem value="all">All Status</SelectItem>
                   <SelectItem value="approved">Approved</SelectItem>
-                  <SelectItem value="pending_approval">Pending Approval</SelectItem>
+                  <SelectItem value="pending_approval">
+                    Pending Approval
+                  </SelectItem>
                   <SelectItem value="pending">Pending Payment</SelectItem>
                   <SelectItem value="rejected">Rejected</SelectItem>
                 </SelectContent>
@@ -383,18 +433,27 @@ ${payment.approvedDate ? `Approved: ${payment.approvedDate} at ${payment.approve
         <Card>
           <CardHeader>
             <CardTitle>Payment Transactions</CardTitle>
-            <CardDescription>{filteredPayments.length} transactions found</CardDescription>
+            <CardDescription>
+              {filteredPayments.length} transactions found
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
               {filteredPayments.map((payment) => (
-                <div key={payment.id} className="border rounded-lg p-4 hover:bg-gray-50 transition-colors">
+                <div
+                  key={payment.id}
+                  className="border rounded-lg p-4 hover:bg-gray-50 transition-colors"
+                >
                   <div className="flex items-center justify-between">
                     <div className="flex-1">
                       <div className="flex items-center space-x-3 mb-2">
                         {getStatusIcon(payment.status)}
-                        <h4 className="font-semibold">{payment.propertyTitle}</h4>
-                        <Badge variant={getStatusVariant(payment.status)}>{getStatusText(payment.status)}</Badge>
+                        <h4 className="font-semibold">
+                          {payment.propertyTitle}
+                        </h4>
+                        <Badge variant={getStatusVariant(payment.status)}>
+                          {getStatusText(payment.status)}
+                        </Badge>
                       </div>
 
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-gray-600 mb-2">
@@ -410,7 +469,9 @@ ${payment.approvedDate ? `Approved: ${payment.approvedDate} at ${payment.approve
                         <div>
                           <p className="font-medium">Paid Date & Time</p>
                           <p>{payment.paidDate || "Not paid"}</p>
-                          {payment.paidTime && <p className="text-xs">{payment.paidTime}</p>}
+                          {payment.paidTime && (
+                            <p className="text-xs">{payment.paidTime}</p>
+                          )}
                         </div>
                         <div>
                           <p className="font-medium">Method</p>
@@ -419,24 +480,33 @@ ${payment.approvedDate ? `Approved: ${payment.approvedDate} at ${payment.approve
                       </div>
 
                       {payment.transactionId && (
-                        <div className="mb-2 text-xs text-gray-500">Transaction ID: {payment.transactionId}</div>
+                        <div className="mb-2 text-xs text-gray-500">
+                          Transaction ID: {payment.transactionId}
+                        </div>
                       )}
 
                       {payment.approvedDate && (
                         <div className="mb-2 text-xs text-green-600">
-                          Approved on: {payment.approvedDate} at {payment.approvedTime}
+                          Approved on: {payment.approvedDate} at{" "}
+                          {payment.approvedTime}
                         </div>
                       )}
 
                       {payment.notes && (
-                        <div className="mb-2 text-xs text-gray-600 bg-gray-100 p-2 rounded">Notes: {payment.notes}</div>
+                        <div className="mb-2 text-xs text-gray-600 bg-gray-100 p-2 rounded">
+                          Notes: {payment.notes}
+                        </div>
                       )}
                     </div>
 
                     <div className="text-right">
-                      <div className="text-2xl font-bold">₹{payment.totalAmount.toLocaleString()}</div>
+                      <div className="text-2xl font-bold">
+                        ₦{payment.totalAmount.toLocaleString()}
+                      </div>
                       {payment.lateFee > 0 && (
-                        <div className="text-sm text-red-600">(incl. ₹{payment.lateFee} late fee)</div>
+                        <div className="text-sm text-red-600">
+                          (incl. ₦{payment.lateFee} late fee)
+                        </div>
                       )}
                       <div className="flex flex-col space-y-2 mt-2">
                         {payment.status === "pending" && (
@@ -448,14 +518,22 @@ ${payment.approvedDate ? `Approved: ${payment.approvedDate} at ${payment.approve
                         )}
 
                         {payment.status === "pending_approval" && (
-                          <Button size="sm" variant="outline" onClick={() => sendReminder(payment)}>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => sendReminder(payment)}
+                          >
                             <Send className="h-4 w-4 mr-1" />
                             Remind
                           </Button>
                         )}
 
                         {payment.status === "approved" && (
-                          <Button size="sm" variant="outline" onClick={() => downloadReceipt(payment)}>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => downloadReceipt(payment)}
+                          >
                             <Download className="h-4 w-4 mr-1" />
                             Receipt
                           </Button>
@@ -476,8 +554,12 @@ ${payment.approvedDate ? `Approved: ${payment.approvedDate} at ${payment.approve
               {filteredPayments.length === 0 && (
                 <div className="text-center py-12">
                   <Receipt className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold text-gray-600 mb-2">No payments found</h3>
-                  <p className="text-gray-500">Try adjusting your search or filter criteria</p>
+                  <h3 className="text-lg font-semibold text-gray-600 mb-2">
+                    No payments found
+                  </h3>
+                  <p className="text-gray-500">
+                    Try adjusting your search or filter criteria
+                  </p>
                 </div>
               )}
             </div>
@@ -485,5 +567,5 @@ ${payment.approvedDate ? `Approved: ${payment.approvedDate} at ${payment.approve
         </Card>
       </div>
     </div>
-  )
+  );
 }

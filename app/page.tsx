@@ -155,7 +155,7 @@ export default function HomePage() {
                   Bandra West, Mumbai
                 </p>
                 <p className="text-2xl font-bold text-blue-600 mb-3">
-                  ₹45,000/month
+                  ₦45,000/month
                 </p>
                 <div className="flex space-x-2">
                   <Button size="sm" className="flex-1">
@@ -195,7 +195,7 @@ export default function HomePage() {
                   <MapPin className="h-4 w-4 mr-1" />
                   Koregaon Park, Pune
                 </p>
-                <p className="text-2xl font-bold text-blue-600 mb-3">₹1.2 Cr</p>
+                <p className="text-2xl font-bold text-blue-600 mb-3">₦1.2 Cr</p>
                 <div className="flex space-x-2">
                   <Button size="sm" className="flex-1">
                     Contact Owner
@@ -231,7 +231,7 @@ export default function HomePage() {
                   Whitefield, Bangalore
                 </p>
                 <p className="text-2xl font-bold text-blue-600 mb-3">
-                  ₹25,000/month
+                  ₦25,000/month
                 </p>
                 <div className="flex space-x-2">
                   <Button size="sm" className="flex-1">
