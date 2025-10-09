@@ -1,3 +1,4 @@
+"use client";
 import Image from "next/image";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -16,15 +17,13 @@ import {
   Home,
   ChevronRight,
 } from "lucide-react";
+import { useParams } from "next/navigation";
 
-export default function PropertyDetailPage({
-  params,
-}: {
-  params: { id: string };
-}) {
+export default function PropertyDetailPage() {
+  const { id } = useParams();
   // This would normally fetch from a database based on the ID
   const property = {
-    id: params.id,
+    id: id,
     title: "Luxury Waterfront Condo",
     type: "Condo",
     address: "789 Beach Blvd, Miami, FL 33139",
@@ -134,7 +133,9 @@ export default function PropertyDetailPage({
             {formatPrice(property.price)}
           </div>
           <div className="mt-4 flex gap-2">
-            <Button size="lg">Book Now</Button>
+            <Link href="/payments/pay/houseId">
+              <Button size="lg">Book Now</Button>
+            </Link>
             <Button size="lg" variant="outline">
               <Heart className="mr-2 h-4 w-4" />
               Save

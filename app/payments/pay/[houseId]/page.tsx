@@ -36,9 +36,10 @@ import {
   Edit3,
 } from "lucide-react";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 
 export default function PayRentPage() {
+  const { houseId } = useParams();
   const router = useRouter();
   const searchParams = useSearchParams();
   const paymentId = searchParams.get("id");

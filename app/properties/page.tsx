@@ -32,7 +32,9 @@ import Header from "@/app/components/Header";
 import PropertyCard from "../components/PopertyCard";
 
 export default function PropertiesPage() {
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState({
+    keyword: "",
+  });
   const [favorites, setFavorites] = useState<number[]>([]);
 
   const mockProperties = [
@@ -151,7 +153,7 @@ export default function PropertiesPage() {
             <PropertyCard
               key={property.id}
               property={property}
-              favorites={[]}
+              favorites={favorites}
             />
           ))}
         </div>
