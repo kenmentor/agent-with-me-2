@@ -9,7 +9,40 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Home, Shield, Users, MapPin, Phone } from "lucide-react";
 import Link from "next/link";
-
+import PropertyCard from "./components/PopertyCard";
+import FeaturedPropertyCard from "./components/featuredPropertyCard";
+const mockProperties = [
+  {
+    id: 2,
+    title: "3BHK Villa in Koregaon Park",
+    location: "Koregaon Park, Pune",
+    price: "₦1.2 Cr",
+    type: "sale",
+    bedrooms: 3,
+    bathrooms: 3,
+    area: "1200 sq ft",
+    image: "/placeholder.svg?height=200&width=300",
+    landlord: "Priya Sharma",
+    rating: 4.8,
+    verified: true,
+    views: 89,
+  },
+  {
+    id: 3,
+    title: "1BHK Studio in Whitefield",
+    location: "Whitefield, Bangalore",
+    price: "₦25,000/month",
+    type: "rent",
+    bedrooms: 1,
+    bathrooms: 1,
+    area: "450 sq ft",
+    image: "/placeholder.svg?height=200&width=300",
+    landlord: "Amit Patel",
+    rating: 4.2,
+    verified: true,
+    views: 67,
+  },
+];
 export default function HomePage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
@@ -131,86 +164,11 @@ export default function HomePage() {
           </div>
 
           <div className="grid md:grid-cols-3 gap-6">
-            <Card className="overflow-hidden hover:shadow-lg transition-shadow">
-              <div className="relative">
-                <img
-                  src="/placeholder.svg?height=200&width=300"
-                  alt="2BHK Apartment in Bandra West"
-                  className="w-full h-48 object-cover"
-                />
-                <Badge className="absolute top-2 right-2 bg-green-500">
-                  For Rent
-                </Badge>
-                <Badge className="absolute top-2 left-2 bg-orange-500">
-                  <Shield className="h-3 w-3 mr-1" />
-                  Verified
-                </Badge>
-              </div>
-              <CardContent className="p-4">
-                <h3 className="font-semibold text-lg mb-2">
-                  2BHK Apartment in Bandra West
-                </h3>
-                <p className="text-gray-600 text-sm mb-2 flex items-center">
-                  <MapPin className="h-4 w-4 mr-1" />
-                  Bandra West, Mumbai
-                </p>
-                <p className="text-2xl font-bold text-blue-600 mb-3">
-                  ₦45,000/month
-                </p>
-                <div className="flex space-x-2">
-                  <Button size="sm" className="flex-1">
-                    Contact Owner
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="flex-1 bg-transparent"
-                  >
-                    View Details
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="overflow-hidden hover:shadow-lg transition-shadow">
-              <div className="relative">
-                <img
-                  src="/placeholder.svg?height=200&width=300"
-                  alt="3BHK Villa in Koregaon Park"
-                  className="w-full h-48 object-cover"
-                />
-                <Badge className="absolute top-2 right-2 bg-blue-500">
-                  For Sale
-                </Badge>
-                <Badge className="absolute top-2 left-2 bg-orange-500">
-                  <Shield className="h-3 w-3 mr-1" />
-                  Verified
-                </Badge>
-              </div>
-              <CardContent className="p-4">
-                <h3 className="font-semibold text-lg mb-2">
-                  3BHK Villa in Koregaon Park
-                </h3>
-                <p className="text-gray-600 text-sm mb-2 flex items-center">
-                  <MapPin className="h-4 w-4 mr-1" />
-                  Koregaon Park, Pune
-                </p>
-                <p className="text-2xl font-bold text-blue-600 mb-3">₦1.2 Cr</p>
-                <div className="flex space-x-2">
-                  <Button size="sm" className="flex-1">
-                    Contact Owner
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="flex-1 bg-transparent"
-                  >
-                    View Details
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-
+            {mockProperties.map((property) => {
+              return (
+                <FeaturedPropertyCard property={property} favorites={[]} />
+              );
+            })}
             <Card className="overflow-hidden hover:shadow-lg transition-shadow">
               <div className="relative">
                 <img
