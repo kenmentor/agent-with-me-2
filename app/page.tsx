@@ -9,7 +9,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Home, Shield, Users, MapPin, Phone } from "lucide-react";
 import Link from "next/link";
-import PropertyCard from "./components/PopertyCard";
+import PropertyCard from "./components/PropertyCard";
 import FeaturedPropertyCard from "./components/featuredPropertyCard";
 const mockProperties = [
   {

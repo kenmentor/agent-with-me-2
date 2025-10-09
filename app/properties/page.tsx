@@ -29,11 +29,14 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import Header from "@/app/components/Header";
-import PropertyCard from "../components/PopertyCard";
+import PropertyCard from "../components/PropertyCard";
 
 export default function PropertiesPage() {
   const [searchQuery, setSearchQuery] = useState({
     keyword: "",
+    type: "",
+    max: 100000,
+    min: 0,
   });
   const [favorites, setFavorites] = useState<number[]>([]);
 
@@ -107,13 +110,27 @@ export default function PropertiesPage() {
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                 <Input
                   placeholder="Search by location, property type, or area..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+                  value={searchQuery.keyword}
+                  name="keyword"
+                  onChange={(e) =>
+                    setSearchQuery((prev) => ({
+                      ...prev,
+                      [e.target.name]: e.target.value,
+                    }))
+                  }
                   className="pl-10"
                 />
               </div>
             </div>
-            <Select>
+            {searchQuery.keyword}
+            {searchQuery.type}
+            {searchQuery.keyword}
+            <Select
+              name="type"
+              onValueChange={(e) => {
+                setSearchQuery((prev) => ({ ...prev, type: e }));
+              }}
+            >
               <SelectTrigger className="w-40">
                 <SelectValue placeholder="Property Type" />
               </SelectTrigger>

@@ -3,10 +3,15 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Check, Clock, Send, User, Ship } from "lucide-react";
+import { Send, User, Ship } from "lucide-react";
+
+import Image from "next/image";
+import Link from "next/link";
+
+import { Calendar, Phone, Mail } from "lucide-react";
+import { useParams } from "next/navigation";
 
 interface RequiredField {
   id: string;
@@ -25,6 +30,16 @@ interface Message {
 
 export default function LogisticsQuoteInterface() {
   const [input, setInput] = useState("");
+
+  const { id } = useParams();
+  // This would normally fetch from a database based on the ID
+  const agent = {
+    name: "Jane Smith",
+    phone: "(305) 555-1234",
+    email: "jane.smith@example.com",
+    image: "/placeholder.svg?height=200&width=200",
+  };
+
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "1",
@@ -206,18 +221,31 @@ export default function LogisticsQuoteInterface() {
       {/* Chat Interface - Left Side */}
       <div className="flex-1 flex flex-col">
         {/* Chat Header */}
-        <div className="bg-zinc-900/50 border-b border-zinc-800 p-4 backdrop-blur-sm">
-          <div className="flex items-center space-x-3">
-            <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-cyan-500 rounded-full flex items-center justify-center">
-              {getTransportIcon()}
+        <div className="bg-zinc-900/50 border-b border-zinc-800  backdrop-blur-sm">
+          <div className="Z  text-white p-6 ">
+            <div className="mb-4 flex items-center gap-4">
+              <div className="relative h-16 w-16 overflow-hidden rounded-full">
+                <Image
+                  src={agent.image || "/placeholder.svg"}
+                  alt={agent.name}
+                  fill
+                  className="object-cover"
+                />
+              </div>
+              <div>
+                <h3 className="font-semibold">{agent.name}</h3>
+                <p className="text-sm text-muted-foreground">Listing Agent</p>
+              </div>
             </div>
-            <div>
-              <h1 className="text-lg font-semibold text-white">
-                GlobalShip Logistics
-              </h1>
-              <p className="text-sm text-zinc-400">
-                AI Quote Assistant • Get instant shipping quotes
-              </p>
+            <div className=" space-y-2">
+              <div className="flex items-center gap-2">
+                <Phone className="h-4 w-4 text-muted-foreground" />
+                <span>{agent.phone}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Mail className="h-4 w-4 text-muted-foreground" />
+                <span>{agent.email}</span>
+              </div>
             </div>
           </div>
         </div>

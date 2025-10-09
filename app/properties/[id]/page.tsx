@@ -209,8 +209,12 @@ export default function PropertyDetailPage() {
             </TabsContent>
           </Tabs>
         </div>
-        <div className="mb-5 block">
-          <Button className="w-full"> book now</Button>
+        <div className="mb-5 block ">
+          <Link className="!w-full" href="/payments/pay/houseId">
+            <Button size="lg" className="w-full">
+              Book Now
+            </Button>
+          </Link>
         </div>
 
         <div className="rounded-lg border bg-card p-6 shadow-sm">
@@ -237,14 +241,16 @@ export default function PropertyDetailPage() {
               <Mail className="h-4 w-4 text-muted-foreground" />
               <span>{property.agent.email}</span>
             </div>
-            <Button
-              size="sm"
-              variant="outline"
-              className="flex-1 bg-transparent   w-full"
-            >
-              <Calendar className="h-4 w-4 mr-1" />
-              Chat with agent
-            </Button>
+            <Link href={"/chat/userid/houseid"}>
+              <Button
+                size="sm"
+                variant="outline"
+                className="flex-1 bg-transparent   w-full"
+              >
+                <Calendar className="h-4 w-4 mr-1" />
+                Chat with agent
+              </Button>
+            </Link>
           </div>
         </div>
       </div>

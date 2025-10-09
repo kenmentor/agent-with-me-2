@@ -132,7 +132,7 @@ const PropertyCard = ({ property, favorites }) => {
               Book now
             </Button>
           </a>
-          <a href="properties/hello" className="w-full">
+          <a href="/chat/userId/houseId" className="w-full">
             <Button
               size="sm"
               variant="outline"
