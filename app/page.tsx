@@ -20,7 +20,7 @@ export default function HomePage() {
             <div className="flex items-center space-x-2">
               <Home className="h-8 w-8 text-blue-600" />
               <span className="text-2xl font-bold text-gray-900">
-                Ghar Konnect
+                Agent with me
               </span>
             </div>
             <div className="flex items-center space-x-4">
@@ -73,7 +73,7 @@ export default function HomePage() {
       <section className="py-16 px-4 bg-white">
         <div className="max-w-6xl mx-auto">
           <h2 className="text-3xl font-bold text-center mb-12">
-            Why Choose Ghar Konnect?
+            Why Choose Agent with me ?
           </h2>
           <div className="grid md:grid-cols-4 gap-8">
             <Card className="text-center">
@@ -292,7 +292,7 @@ export default function HomePage() {
             Ready to Find Your Perfect Home?
           </h2>
           <p className="text-xl text-blue-100 mb-8">
-            Join Ghar Konnect today and start your property journey with our
+            Join Agent with me today and start your property journey with our
             free trial!
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -324,7 +324,7 @@ export default function HomePage() {
             <div>
               <div className="flex items-center space-x-2 mb-4">
                 <Home className="h-6 w-6" />
-                <span className="text-xl font-bold">Ghar Konnect</span>
+                <span className="text-xl font-bold">Agent with me </span>
               </div>
               <p className="text-gray-400">
                 Making home finding simple and secure for everyone in India.
@@ -383,7 +383,7 @@ export default function HomePage() {
             </div>
           </div>
           <div className="border-t border-gray-700 mt-8 pt-8 text-center text-gray-400">
-            <p>&copy; 2024 Ghar Konnect. All rights reserved.</p>
+            <p>&copy; 2024 Agent with me . All rights reserved.</p>
           </div>
         </div>
       </footer>

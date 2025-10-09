@@ -1,78 +1,84 @@
-"use client"
+"use client";
 
-import Link from "next/link"
+import Link from "next/link";
 
-import type React from "react"
+import type React from "react";
 
-import { useState, useEffect } from "react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { CheckCircle, Phone, Mail, AlertCircle } from "lucide-react"
-import { useRouter } from "next/navigation"
+import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { CheckCircle, Phone, Mail, AlertCircle } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 export default function VerifyPage() {
-  const router = useRouter()
-  const [verificationCode, setVerificationCode] = useState("")
-  const [isLoading, setIsLoading] = useState(false)
-  const [isVerified, setIsVerified] = useState(false)
-  const [countdown, setCountdown] = useState(30)
-  const [user, setUser] = useState<any>(null)
-  const [verificationMethod, setVerificationMethod] = useState("phone") // phone or email
+  const router = useRouter();
+  const [verificationCode, setVerificationCode] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [isVerified, setIsVerified] = useState(false);
+  const [countdown, setCountdown] = useState(30);
+  const [user, setUser] = useState<any>(null);
+  const [verificationMethod, setVerificationMethod] = useState("phone"); // phone or email
 
   useEffect(() => {
-    const userData = localStorage.getItem("user")
-    const pendingVerification = localStorage.getItem("pendingVerification")
+    const userData = localStorage.getItem("user");
+    const pendingVerification = localStorage.getItem("pendingVerification");
 
     if (!userData || !pendingVerification) {
-      router.push("/auth/register")
-      return
+      router.push("/auth/register");
+      return;
     }
 
-    setUser(JSON.parse(userData))
-  }, [router])
+    setUser(JSON.parse(userData));
+  }, [router]);
 
   useEffect(() => {
     if (countdown > 0) {
-      const timer = setTimeout(() => setCountdown(countdown - 1), 1000)
-      return () => clearTimeout(timer)
+      const timer = setTimeout(() => setCountdown(countdown - 1), 1000);
+      return () => clearTimeout(timer);
     }
-  }, [countdown])
+  }, [countdown]);
 
   const handleVerify = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsLoading(true)
+    e.preventDefault();
+    setIsLoading(true);
 
     // Simulate verification API call
-    await new Promise((resolve) => setTimeout(resolve, 2000))
+    await new Promise((resolve) => setTimeout(resolve, 2000));
 
     // Demo: Accept any 6-digit code for now
     if (verificationCode.length === 6) {
-      setIsVerified(true)
+      setIsVerified(true);
 
       // Update user verification status
-      const updatedUser = { ...user, verified: true }
-      localStorage.setItem("user", JSON.stringify(updatedUser))
-      localStorage.setItem("isLoggedIn", "true")
-      localStorage.removeItem("pendingVerification")
+      const updatedUser = { ...user, verified: true };
+      localStorage.setItem("user", JSON.stringify(updatedUser));
+      localStorage.setItem("isLoggedIn", "true");
+      localStorage.removeItem("pendingVerification");
 
       setTimeout(() => {
-        router.push("/dashboard")
-      }, 2000)
+        router.push("/dashboard");
+      }, 2000);
     } else {
-      alert("Please enter a valid 6-digit code")
+      alert("Please enter a valid 6-digit code");
     }
 
-    setIsLoading(false)
-  }
+    setIsLoading(false);
+  };
 
   const resendCode = async () => {
-    setCountdown(30)
+    setCountdown(30);
     // Simulate resend API call
-    await new Promise((resolve) => setTimeout(resolve, 1000))
-    alert(`Verification code sent to your ${verificationMethod}!`)
-  }
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+    alert(`Verification code sent to your ${verificationMethod}!`);
+  };
 
   if (isVerified) {
     return (
@@ -80,17 +86,28 @@ export default function VerifyPage() {
         <Card className="w-full max-w-md text-center">
           <CardContent className="pt-6">
             <CheckCircle className="h-16 w-16 text-green-600 mx-auto mb-4" />
-            <h2 className="text-2xl font-bold text-green-600 mb-2">Account Verified!</h2>
-            <p className="text-gray-600 mb-4">Welcome to Ghar Konnect! Your account has been successfully verified.</p>
-            <p className="text-sm text-gray-500">Redirecting to your dashboard...</p>
+            <h2 className="text-2xl font-bold text-green-600 mb-2">
+              Account Verified!
+            </h2>
+            <p className="text-gray-600 mb-4">
+              Welcome to Agent with me ! Your account has been successfully
+              verified.
+            </p>
+            <p className="text-sm text-gray-500">
+              Redirecting to your dashboard...
+            </p>
           </CardContent>
         </Card>
       </div>
-    )
+    );
   }
 
   if (!user) {
-    return <div className="min-h-screen flex items-center justify-center">Loading...</div>
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        Loading...
+      </div>
+    );
   }
 
   return (
@@ -109,7 +126,9 @@ export default function VerifyPage() {
             We've sent a 6-digit verification code to your{" "}
             {verificationMethod === "phone" ? "phone number" : "email address"}
             <br />
-            <strong>{verificationMethod === "phone" ? user.phone : user.email}</strong>
+            <strong>
+              {verificationMethod === "phone" ? user.phone : user.email}
+            </strong>
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -145,7 +164,11 @@ export default function VerifyPage() {
                 type="text"
                 placeholder="Enter 6-digit code"
                 value={verificationCode}
-                onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                onChange={(e) =>
+                  setVerificationCode(
+                    e.target.value.replace(/\D/g, "").slice(0, 6)
+                  )
+                }
                 className="text-center text-2xl tracking-widest"
                 maxLength={6}
                 required
@@ -158,30 +181,47 @@ export default function VerifyPage() {
                 <AlertCircle className="h-4 w-4 text-yellow-600 mt-0.5" />
                 <div className="text-sm">
                   <p className="font-medium text-yellow-800">Demo Mode</p>
-                  <p className="text-yellow-700">Enter any 6-digit code to verify (e.g., 123456)</p>
+                  <p className="text-yellow-700">
+                    Enter any 6-digit code to verify (e.g., 123456)
+                  </p>
                 </div>
               </div>
             </div>
 
-            <Button type="submit" className="w-full" disabled={isLoading || verificationCode.length !== 6}>
+            <Button
+              type="submit"
+              className="w-full"
+              disabled={isLoading || verificationCode.length !== 6}
+            >
               {isLoading ? "Verifying..." : "Verify Account"}
             </Button>
           </form>
 
           <div className="mt-6 text-center">
-            <p className="text-sm text-gray-600 mb-2">Didn't receive the code?</p>
-            <Button type="button" variant="outline" onClick={resendCode} disabled={countdown > 0} className="w-full">
+            <p className="text-sm text-gray-600 mb-2">
+              Didn't receive the code?
+            </p>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={resendCode}
+              disabled={countdown > 0}
+              className="w-full"
+            >
               {countdown > 0 ? `Resend in ${countdown}s` : "Resend Code"}
             </Button>
           </div>
 
           <div className="mt-4 text-center">
-            <Link href="/auth/register" className="text-sm text-blue-600 hover:underline">
+            <Link
+              href="/auth/register"
+              className="text-sm text-blue-600 hover:underline"
+            >
               ← Back to Registration
             </Link>
           </div>
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }

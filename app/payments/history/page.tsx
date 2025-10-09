@@ -261,7 +261,7 @@ ${
             <Link href="/" className="flex items-center space-x-2">
               <Home className="h-8 w-8 text-blue-600" />
               <span className="text-2xl font-bold text-gray-900">
-                Ghar Konnect
+                Agent with me
               </span>
             </Link>
             <Link href="/dashboard">
