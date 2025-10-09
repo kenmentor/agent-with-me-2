@@ -16,17 +16,19 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { CheckCircle, Phone, Mail, AlertCircle } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
+import { useAuthStore } from "@/store/authStore";
 
 export default function VerifyPage() {
+  const { urlCode } = useParams();
   const router = useRouter();
   const [verificationCode, setVerificationCode] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isVerified, setIsVerified] = useState(false);
   const [countdown, setCountdown] = useState(30);
   const [user, setUser] = useState<any>(null);
-  const [verificationMethod, setVerificationMethod] = useState("phone"); // phone or email
-
+  const [verificationMethod, setVerificationMethod] = useState("email"); // phone or email
+  const verifyEmail = useAuthStore((state) => state.verifyEmail);
   useEffect(() => {
     const userData = localStorage.getItem("user");
     const pendingVerification = localStorage.getItem("pendingVerification");
@@ -50,11 +52,23 @@ export default function VerifyPage() {
     e.preventDefault();
     setIsLoading(true);
 
-    // Simulate verification API call
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-
-    // Demo: Accept any 6-digit code for now
     if (verificationCode.length === 6) {
+      try {
+        const response = await verifyEmail(verificationCode);
+        console.log("Verification Response:", response);
+
+        if (response.status === 200 || response?.data?.status === 200) {
+        } else {
+          toast.success("Verification failed.");
+        }
+      } catch (error) {
+        console.error(
+          "Verification error:",
+          error?.response?.data?.message || error?.message
+        );
+        toast.error("An error occurred while verifying. Please try again.");
+      }
+
       setIsVerified(true);
 
       // Update user verification status
@@ -64,7 +78,7 @@ export default function VerifyPage() {
       localStorage.removeItem("pendingVerification");
 
       setTimeout(() => {
-        router.push("/dashboard");
+        router.push("/properties");
       }, 2000);
     } else {
       alert("Please enter a valid 6-digit code");
@@ -133,7 +147,7 @@ export default function VerifyPage() {
         </CardHeader>
         <CardContent>
           {/* Verification Method Toggle */}
-          <div className="flex space-x-2 mb-6">
+          {/* <div className="flex space-x-2 mb-6">
             <Button
               type="button"
               variant={verificationMethod === "phone" ? "default" : "outline"}
@@ -154,7 +168,7 @@ export default function VerifyPage() {
               <Mail className="h-4 w-4 mr-2" />
               Email
             </Button>
-          </div>
+          </div> */}
 
           <form onSubmit={handleVerify} className="space-y-4">
             <div className="space-y-2">
@@ -224,4 +238,7 @@ export default function VerifyPage() {
       </Card>
     </div>
   );
+}
+function verifyEmail(verificationCode: string) {
+  throw new Error("Function not implemented.");
 }

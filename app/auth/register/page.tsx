@@ -18,30 +18,36 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Home, User, Building, Phone, Mail, Lock } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-
+import { useAuthStore } from "@/store/authStore";
 export default function RegisterPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const defaultRole = searchParams.get("role") || "tenant";
+  const signup = useAuthStore((state) => state.signup);
+  const isLoading = useAuthStore((state) => state.isLoading);
+  const error = useAuthStore((state) => state.error);
+  const user = useAuthStore((state) => state.user);
 
   const [formData, setFormData] = useState({
-    name: "",
+    userName: "",
     email: "",
-    phone: "",
     password: "",
+    dateOfBirth: "",
+    phoneNumber: "",
     confirmPassword: "",
     role: defaultRole,
     agreeToTerms: false,
   });
-  const [isLoading, setIsLoading] = useState(false);
-  const [errors, setErrors] = useState<any>({});
 
+  const [errors, setErrors] = useState<any>({});
+  const [sentCode, setsentCode] = useState(false);
   const validateForm = () => {
     const newErrors: any = {};
 
-    if (!formData.name.trim()) newErrors.name = "Name is required";
+    if (!formData.userName.trim()) newErrors.name = "Name is required";
     if (!formData.email.trim()) newErrors.email = "Email is required";
-    if (!formData.phone.trim()) newErrors.phone = "Phone number is required";
+    if (!formData.phoneNumber.trim())
+      newErrors.phone = "Phone number is required";
     if (formData.password.length < 6)
       newErrors.password = "Password must be at least 6 characters";
     if (formData.password !== formData.confirmPassword)
@@ -58,17 +64,16 @@ export default function RegisterPage() {
 
     if (!validateForm()) return;
 
-    setIsLoading(true);
-
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 2000));
+    isLoading(true);
 
     // Store user data
+
+    e.preventDefault();
     const userData = {
       id: Date.now(),
-      name: formData.name,
+      name: formData.userName,
       email: formData.email,
-      phone: formData.phone,
+      phone: formData.phoneNumber,
       role: formData.role,
       verified: false,
       createdAt: new Date().toISOString(),
@@ -76,8 +81,24 @@ export default function RegisterPage() {
 
     localStorage.setItem("user", JSON.stringify(userData));
     localStorage.setItem("pendingVerification", "true");
+    try {
+      const data = await signup(formData);
+      console.log("Signup response:", data);
 
-    setIsLoading(false);
+      if (data.status === 200) {
+        setsentCode(true);
+      } else {
+        console.log("Signup failed data:", data);
+      }
+    } catch (error) {
+      console.log("Signup error:", error);
+    }
+
+    console.log("Error:", error);
+    console.log("Loading:", isLoading);
+    console.log("User:", user);
+
+    isLoading(false);
     router.push("/auth/verify");
   };
 
@@ -121,7 +142,7 @@ export default function RegisterPage() {
                   </Label>
                 </div>
                 <div className="flex items-center space-x-2 border rounded-lg p-3 hover:bg-gray-50">
-                  <RadioGroupItem value="landlord" id="landlord" />
+                  <RadioGroupItem value="landlord" id="landlord" disabled />
                   <Label
                     htmlFor="landlord"
                     className="flex items-center space-x-2 cursor-pointer"
@@ -147,9 +168,9 @@ export default function RegisterPage() {
                   id="name"
                   type="text"
                   placeholder="Enter your full name"
-                  value={formData.name}
+                  value={formData.userName}
                   onChange={(e) =>
-                    setFormData({ ...formData, name: e.target.value })
+                    setFormData({ ...formData, userName: e.target.value })
                   }
                   className="pl-10"
                   required
@@ -189,9 +210,9 @@ export default function RegisterPage() {
                   id="phone"
                   type="tel"
                   placeholder="+91 9876543210"
-                  value={formData.phone}
+                  value={formData.phoneNumber}
                   onChange={(e) =>
-                    setFormData({ ...formData, phone: e.target.value })
+                    setFormData({ ...formData, phoneNumber: e.target.value })
                   }
                   className="pl-10"
                   required

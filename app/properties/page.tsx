@@ -1,6 +1,40 @@
 "use client";
+interface ResourceType {
+  header: string;
+  views: number;
+  description: string;
+  id: string;
+  thumbnail: string;
+  location: string;
+  gallery: { src: string; alt: string }[];
+  price: number;
+  electricity: number;
+  waterSuply: boolean;
+  _id: string;
+  host: string;
+}
 
-import { useState } from "react";
+interface keyword {
+  min: string;
+  max: string;
+  type: string;
+  searchWord: string;
+  limit: number;
+  lga?: string;
+  state?: string;
+  landmark?: string;
+  category?: string;
+  id?: string;
+}
+
+interface HouseMainComponent {
+  keyword?: keyword;
+  bardge?: number;
+  page: boolean;
+  userId?: string;
+}
+
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -30,16 +64,23 @@ import {
 import Link from "next/link";
 import Header from "@/app/components/Header";
 import PropertyCard from "../components/PropertyCard";
-
+import Req from "@/app/utility/axois";
 export default function PropertiesPage() {
+  const { base, app } = Req;
   const [searchQuery, setSearchQuery] = useState({
     keyword: "",
     type: "",
     max: 100000,
     min: 0,
+    category: "",
+    lga: "",
+    state: "",
+    landmark: "",
   });
   const [favorites, setFavorites] = useState<number[]>([]);
-
+  const [error, setError] = useState<boolean>(false);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [data, setData] = useState([]);
   const mockProperties = [
     {
       id: 1,
@@ -87,6 +128,39 @@ export default function PropertiesPage() {
       views: 67,
     },
   ];
+
+  useEffect(() => {
+    //https://agent-with-me-backend.onrender.com
+    const finalUrl = `${base}/v1/house?min=${searchQuery?.min || ""}&max=${
+      searchQuery?.max || ""
+    }&type=${searchQuery?.type || ""}&category=${
+      searchQuery?.category || ""
+    }&searchWord=${searchQuery?.keyword || ""}&limit=${
+      searchQuery?.limit || "50"
+    }&lga=${searchQuery?.lga || ""}&state=${
+      searchQuery?.state || ""
+    }&landmark=${searchQuery?.landmark || ""}&userId=${userId}`;
+
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        setError(false);
+        const res = (await app.get(finalUrl)).data;
+        const result = await res.data;
+        console.log(result);
+        console.log(searchQuery?.keyword);
+        setData(result);
+      } catch (err) {
+        console.error(err);
+        setError(true);
+      } finally {
+        setLoading(false);
+      }
+    };
+    console.log("gfgg");
+
+    fetchData();
+  }, [searchQuery]);
 
   const toggleFavorite = (propertyId: number) => {
     setFavorites((prev) =>

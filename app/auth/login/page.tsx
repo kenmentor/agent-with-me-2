@@ -16,8 +16,10 @@ import { Label } from "@/components/ui/label";
 import { Home, Mail, Lock, Eye, EyeOff } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useAuthStore } from "@/store/authStore";
 
 export default function LoginPage() {
+  const login = useAuthStore((state) => state.login);
   const router = useRouter();
   const [formData, setFormData] = useState({
     email: "",
@@ -26,7 +28,7 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState<any>({});
-
+  const error = useAuthStore((state) => state.error);
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -38,23 +40,11 @@ export default function LoginPage() {
       return;
     }
 
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-
-    const mockUser = {
-      id: 1,
-      name: "Demo User",
-      email: formData.email,
-      phone: "+91 9876543210",
-      role: formData.email.includes("landlord") ? "landlord" : "tenant",
-      verified: true,
-      createdAt: new Date().toISOString(),
-    };
-
-    localStorage.setItem("user", JSON.stringify(mockUser));
-    localStorage.setItem("isLoggedIn", "true");
-
-    setIsLoading(false);
-    router.push("/dashboard");
+    await login(formData);
+    if (!error) {
+      setIsLoading(false);
+      router.push("/properties");
+    }
   };
 
   return (
