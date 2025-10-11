@@ -26,7 +26,7 @@ export const useAuthStore = create(
         try {
           const response = await app.post(`${base}/v1/auth/signup`, object);
           const data = response.data;
-          if (!data?.ok) {
+          if (data?.ok) {
             toast.success("email have been sent");
           }
           if (data.status === 501) {
@@ -34,6 +34,7 @@ export const useAuthStore = create(
               error: "Something went wrong with signup",
               isLoading: false,
             });
+            throw new Error("Something went wrong with signup");
           } else {
             set({ user: data.data, isLoading: false, error: null });
           }

@@ -1,14 +1,14 @@
 "use client";
 interface Property {
-  id: 1;
+  _id: string;
   title: string;
   location: string;
-  price: string;
+  price: number;
   type: string;
   bedrooms: number;
   bathrooms: number;
   area: string;
-  image: string;
+  thumbnail: string;
   landlord: string;
   rating: number;
   verified: boolean;
@@ -45,15 +45,36 @@ import {
 import Link from "next/link";
 import Header from "@/app/components/Header";
 
-const PropertyCard = ({ property, favorites }) => {
+interface PropertyCardProps {
+  property: Property;
+  favorites: string[];
+}
+
+const PropertyCard: React.FC<PropertyCardProps> = ({ property, favorites }) => {
+  function toggleFavorite(id: string): void {
+    if (favorites.includes(id)) {
+      // Remove from favorites
+      const updated = favorites.filter((favId: string) => favId !== id);
+      // If favorites is managed by parent, you should call a prop function here
+      // For demo, just log
+      console.log("Removed from favorites:", updated);
+    } else {
+      // Add to favorites
+      const updated = [...favorites, id];
+      // If favorites is managed by parent, you should call a prop function here
+      // For demo, just log
+      console.log("Added to favorites:", updated);
+    }
+  }
+
   return (
     <Card
-      key={property.id}
+      key={property._id}
       className="overflow-hidden hover:shadow-lg transition-shadow"
     >
       <div className="relative">
         <img
-          src={property.image || "/placeholder.svg"}
+          src={property.thumbnail || "/placeholder.svg"}
           alt={property.title}
           className="w-full h-48 object-cover"
         />
@@ -67,11 +88,13 @@ const PropertyCard = ({ property, favorites }) => {
           size="sm"
           variant="secondary"
           className="absolute top-2 right-2 p-2"
-          onClick={() => toggleFavorite(property.id)}
+          onClick={() => toggleFavorite(property._id)}
         >
           <Heart
             className={`h-4 w-4 ${
-              favorites.includes(property.id) ? "fill-red-500 text-red-500" : ""
+              favorites.includes(property._id)
+                ? "fill-red-500 text-red-500"
+                : ""
             }`}
           />
         </Button>
@@ -86,13 +109,15 @@ const PropertyCard = ({ property, favorites }) => {
           {property.location}
         </p>
         <div className="flex items-center justify-between mb-3">
-          <p className="text-2xl font-bold text-blue-600">{property.price}</p>
+          <p className="text-2xl font-bold text-blue-600">
+            {"₦"} {property.price.toLocaleString()}
+          </p>
           <div className="flex items-center space-x-1">
             <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
             <span className="text-sm font-medium">{property.rating}</span>
           </div>
         </div>
-        {"₦"}
+        {"₦"} {Math.floor(property.price / 12).toLocaleString()} /month
         <div className="flex items-center space-x-4 text-sm text-gray-600 mb-3">
           <span className="flex items-center">
             <Bed className="h-4 w-4 mr-1" />
@@ -110,7 +135,7 @@ const PropertyCard = ({ property, favorites }) => {
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center space-x-2">
             <div className="w-6 h-6 bg-gray-300 rounded-full flex items-center justify-center text-xs font-medium">
-              {property.landlord.charAt(0)}
+              {property.landlord?.charAt(0)}
             </div>
             <span className="text-sm text-gray-600">{property.landlord}</span>
             {property.verified && (
@@ -126,7 +151,7 @@ const PropertyCard = ({ property, favorites }) => {
           </div>
         </div>
         <div className="flex space-x-2">
-          <a href="properties/hello" className="w-full">
+          <a href={`properties/${property._id}`} className="w-full">
             <Button size="sm" className="flex-1 w-full">
               <Book className="h-4 w-4 mr-1" />
               Book now

@@ -22,7 +22,7 @@ import { useAuthStore } from "@/store/authStore";
 export default function RegisterPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const defaultRole = searchParams.get("role") || "tenant";
+  const defaultRole = searchParams.get("role") || "guest";
   const signup = useAuthStore((state) => state.signup);
   const isLoading = useAuthStore((state) => state.isLoading);
   const error = useAuthStore((state) => state.error);
@@ -64,8 +64,6 @@ export default function RegisterPage() {
 
     if (!validateForm()) return;
 
-    isLoading(true);
-
     // Store user data
 
     e.preventDefault();
@@ -83,13 +81,8 @@ export default function RegisterPage() {
     localStorage.setItem("pendingVerification", "true");
     try {
       const data = await signup(formData);
-      console.log("Signup response:", data);
-
-      if (data.status === 200) {
-        setsentCode(true);
-      } else {
-        console.log("Signup failed data:", data);
-      }
+      setsentCode(true);
+      console.log("Signup successful:", data);
     } catch (error) {
       console.log("Signup error:", error);
     }
@@ -105,209 +98,270 @@ export default function RegisterPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
       <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <div className="flex justify-center mb-4">
-            <Home className="h-12 w-12 text-blue-600" />
-          </div>
-          <CardTitle className="text-2xl">Join Agent with me </CardTitle>
-          <CardDescription>
-            Create your free account - 3 day trial included!
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Role Selection */}
-            <div className="space-y-3">
-              <Label>I am a:</Label>
-              <RadioGroup
-                value={formData.role}
-                onValueChange={(value) =>
-                  setFormData({ ...formData, role: value })
-                }
-                className="grid grid-cols-2 gap-4"
-              >
-                <div className="flex items-center space-x-2 border rounded-lg p-3 hover:bg-gray-50">
-                  <RadioGroupItem value="tenant" id="tenant" />
-                  <Label
-                    htmlFor="tenant"
-                    className="flex items-center space-x-2 cursor-pointer"
+        {!sentCode ? (
+          <>
+            <CardHeader className="text-center">
+              <div className="flex justify-center mb-4">
+                <Home className="h-12 w-12 text-blue-600" />
+              </div>
+              <CardTitle className="text-2xl">Join Agent with me </CardTitle>
+              <CardDescription>Create your free account</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleSubmit} className="space-y-4">
+                {/* Role Selection */}
+                <div className="space-y-3">
+                  <Label>I am a:</Label>
+                  <RadioGroup
+                    value={formData.role}
+                    onValueChange={(value) =>
+                      setFormData({ ...formData, role: value })
+                    }
+                    className="grid grid-cols-2 gap-4"
                   >
-                    <User className="h-4 w-4 text-green-600" />
-                    <div>
-                      <div className="font-medium">Tenant</div>
-                      <div className="text-xs text-gray-500">
-                        Looking for property
-                      </div>
+                    <div className="flex items-center space-x-2 border rounded-lg p-3 hover:bg-gray-50">
+                      <RadioGroupItem value="guest" id="tenant" />
+                      <Label
+                        htmlFor="tenant"
+                        className="flex items-center space-x-2 cursor-pointer"
+                      >
+                        <User className="h-4 w-4 text-green-600" />
+                        <div>
+                          <div className="font-medium">Tenant</div>
+                          <div className="text-xs text-gray-500">
+                            Looking for property
+                          </div>
+                        </div>
+                      </Label>
                     </div>
+                    <div className="flex items-center space-x-2 border rounded-lg p-3 hover:bg-gray-50">
+                      <RadioGroupItem value="host" id="landlord" disabled />
+                      <Label
+                        htmlFor="landlord"
+                        className="flex items-center space-x-2 cursor-pointer"
+                      >
+                        <Building className="h-4 w-4 text-blue-600" />
+                        <div>
+                          <div className="font-medium">Landlord</div>
+                          <div className="text-xs text-gray-500">
+                            Have property to rent/sell
+                          </div>
+                        </div>
+                      </Label>
+                    </div>
+                  </RadioGroup>
+                </div>
+
+                {/* Personal Information */}
+                <div className="space-y-2">
+                  <Label htmlFor="name">Full Name</Label>
+                  <div className="relative">
+                    <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                    <Input
+                      id="name"
+                      type="text"
+                      placeholder="Enter your full name"
+                      value={formData.userName}
+                      onChange={(e) =>
+                        setFormData({ ...formData, userName: e.target.value })
+                      }
+                      className="pl-10"
+                      required
+                    />
+                  </div>
+                  {errors.name && (
+                    <p className="text-red-500 text-sm">{errors.name}</p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email Address</Label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                    <Input
+                      id="email"
+                      type="email"
+                      placeholder="Enter your email"
+                      value={formData.email}
+                      onChange={(e) =>
+                        setFormData({ ...formData, email: e.target.value })
+                      }
+                      className="pl-10"
+                      required
+                    />
+                  </div>
+                  {errors.email && (
+                    <p className="text-red-500 text-sm">{errors.email}</p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="phone">Phone Number</Label>
+                  <div className="relative">
+                    <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                    <Input
+                      id="phone"
+                      type="tel"
+                      placeholder="+91 9876543210"
+                      value={formData.phoneNumber}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          phoneNumber: e.target.value,
+                        })
+                      }
+                      className="pl-10"
+                      required
+                    />
+                  </div>
+                  {errors.phone && (
+                    <p className="text-red-500 text-sm">{errors.phone}</p>
+                  )}
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="dateOfBirth">Date of Birth </Label>
+                  <div className="relative">
+                    <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                    <Input
+                      id="dateOfBirth"
+                      type="date"
+                      placeholder="Enter your full name"
+                      value={formData.dateOfBirth}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          dateOfBirth: e.target.value,
+                        })
+                      }
+                      className="pl-10"
+                      required
+                    />
+                  </div>
+                  {errors.name && (
+                    <p className="text-red-500 text-sm">{errors.name}</p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="password">Password</Label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                    <Input
+                      id="password"
+                      type="password"
+                      placeholder="Create a strong password"
+                      value={formData.password}
+                      onChange={(e) =>
+                        setFormData({ ...formData, password: e.target.value })
+                      }
+                      className="pl-10"
+                      required
+                    />
+                  </div>
+                  {errors.password && (
+                    <p className="text-red-500 text-sm">{errors.password}</p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="confirmPassword">Confirm Password</Label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                    <Input
+                      id="confirmPassword"
+                      type="password"
+                      placeholder="Confirm your password"
+                      value={formData.confirmPassword}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          confirmPassword: e.target.value,
+                        })
+                      }
+                      className="pl-10"
+                      required
+                    />
+                  </div>
+                  {errors.confirmPassword && (
+                    <p className="text-red-500 text-sm">
+                      {errors.confirmPassword}
+                    </p>
+                  )}
+                </div>
+
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="terms"
+                    checked={formData.agreeToTerms}
+                    onCheckedChange={(checked) =>
+                      setFormData({
+                        ...formData,
+                        agreeToTerms: checked as boolean,
+                      })
+                    }
+                  />
+                  <Label htmlFor="terms" className="text-sm">
+                    I agree to the{" "}
+                    <Link
+                      href="/terms"
+                      className="text-blue-600 hover:underline"
+                    >
+                      Terms of Service
+                    </Link>{" "}
+                    and{" "}
+                    <Link
+                      href="/privacy"
+                      className="text-blue-600 hover:underline"
+                    >
+                      Privacy Policy
+                    </Link>
                   </Label>
                 </div>
-                <div className="flex items-center space-x-2 border rounded-lg p-3 hover:bg-gray-50">
-                  <RadioGroupItem value="landlord" id="landlord" disabled />
-                  <Label
-                    htmlFor="landlord"
-                    className="flex items-center space-x-2 cursor-pointer"
+                {errors.terms && (
+                  <p className="text-red-500 text-sm">{errors.terms}</p>
+                )}
+
+                <Button type="submit" className="w-full" disabled={isLoading}>
+                  {isLoading ? "Creating Account..." : "Create Free Account"}
+                </Button>
+              </form>
+
+              <div className="mt-6 text-center">
+                <p className="text-sm text-gray-600">
+                  Already have an account?{" "}
+                  <Link
+                    href="/auth/login"
+                    className="text-blue-600 hover:underline"
                   >
-                    <Building className="h-4 w-4 text-blue-600" />
-                    <div>
-                      <div className="font-medium">Landlord</div>
-                      <div className="text-xs text-gray-500">
-                        Have property to rent/sell
-                      </div>
-                    </div>
-                  </Label>
-                </div>
-              </RadioGroup>
-            </div>
-
-            {/* Personal Information */}
-            <div className="space-y-2">
-              <Label htmlFor="name">Full Name</Label>
-              <div className="relative">
-                <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                <Input
-                  id="name"
-                  type="text"
-                  placeholder="Enter your full name"
-                  value={formData.userName}
-                  onChange={(e) =>
-                    setFormData({ ...formData, userName: e.target.value })
-                  }
-                  className="pl-10"
-                  required
-                />
+                    Sign in here
+                  </Link>
+                </p>
               </div>
-              {errors.name && (
-                <p className="text-red-500 text-sm">{errors.name}</p>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="email">Email Address</Label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="Enter your email"
-                  value={formData.email}
-                  onChange={(e) =>
-                    setFormData({ ...formData, email: e.target.value })
-                  }
-                  className="pl-10"
-                  required
-                />
+            </CardContent>
+          </>
+        ) : (
+          <>
+            <CardHeader className="text-center">
+              <div className="flex justify-center mb-4">
+                <Home className="h-12 w-12 text-blue-600" />
               </div>
-              {errors.email && (
-                <p className="text-red-500 text-sm">{errors.email}</p>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="phone">Phone Number</Label>
-              <div className="relative">
-                <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                <Input
-                  id="phone"
-                  type="tel"
-                  placeholder="+91 9876543210"
-                  value={formData.phoneNumber}
-                  onChange={(e) =>
-                    setFormData({ ...formData, phoneNumber: e.target.value })
-                  }
-                  className="pl-10"
-                  required
-                />
-              </div>
-              {errors.phone && (
-                <p className="text-red-500 text-sm">{errors.phone}</p>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="Create a strong password"
-                  value={formData.password}
-                  onChange={(e) =>
-                    setFormData({ ...formData, password: e.target.value })
-                  }
-                  className="pl-10"
-                  required
-                />
-              </div>
-              {errors.password && (
-                <p className="text-red-500 text-sm">{errors.password}</p>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="confirmPassword">Confirm Password</Label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                <Input
-                  id="confirmPassword"
-                  type="password"
-                  placeholder="Confirm your password"
-                  value={formData.confirmPassword}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      confirmPassword: e.target.value,
-                    })
-                  }
-                  className="pl-10"
-                  required
-                />
-              </div>
-              {errors.confirmPassword && (
-                <p className="text-red-500 text-sm">{errors.confirmPassword}</p>
-              )}
-            </div>
-
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="terms"
-                checked={formData.agreeToTerms}
-                onCheckedChange={(checked) =>
-                  setFormData({ ...formData, agreeToTerms: checked as boolean })
-                }
-              />
-              <Label htmlFor="terms" className="text-sm">
-                I agree to the{" "}
-                <Link href="/terms" className="text-blue-600 hover:underline">
-                  Terms of Service
-                </Link>{" "}
-                and{" "}
-                <Link href="/privacy" className="text-blue-600 hover:underline">
-                  Privacy Policy
-                </Link>
-              </Label>
-            </div>
-            {errors.terms && (
-              <p className="text-red-500 text-sm">{errors.terms}</p>
-            )}
-
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? "Creating Account..." : "Create Free Account"}
-            </Button>
-          </form>
-
-          <div className="mt-6 text-center">
-            <p className="text-sm text-gray-600">
-              Already have an account?{" "}
-              <Link
-                href="/auth/login"
-                className="text-blue-600 hover:underline"
+              <CardTitle className="text-2xl">Check Email For Code </CardTitle>
+              <CardDescription>Create your free account</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <a
+                href="https://mail.google.com"
+                target="_blank"
+                rel="noreferrer"
               >
-                Sign in here
-              </Link>
-            </p>
-          </div>
-        </CardContent>
+                <Button className="w-full mb-4">
+                  <Mail className="h-4 w-4 mr-2" />
+                  Go to Mail
+                </Button>
+              </a>
+            </CardContent>
+          </>
+        )}
       </Card>
     </div>
   );

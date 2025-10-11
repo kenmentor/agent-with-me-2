@@ -3,7 +3,7 @@ interface ResourceType {
   header: string;
   views: number;
   description: string;
-  id: string;
+
   thumbnail: string;
   location: string;
   gallery: { src: string; alt: string }[];
@@ -12,6 +12,17 @@ interface ResourceType {
   waterSuply: boolean;
   _id: string;
   host: string;
+  title: string;
+  bedrooms: number;
+  bathrooms: number;
+  area: string;
+  type: string;
+  category: string;
+  furnished: boolean;
+  rating: number;
+  verified: boolean;
+
+  landlord: string;
 }
 
 interface keyword {
@@ -70,68 +81,23 @@ export default function PropertiesPage() {
   const [searchQuery, setSearchQuery] = useState({
     keyword: "",
     type: "",
-    max: 100000,
+    max: 100000000,
     min: 0,
     category: "",
     lga: "",
     state: "",
     landmark: "",
+    limit: "50",
   });
-  const [favorites, setFavorites] = useState<number[]>([]);
+  const [favorites, setFavorites] = useState<string[]>([]);
   const [error, setError] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(true);
-  const [data, setData] = useState([]);
-  const mockProperties = [
-    {
-      id: 1,
-      title: "2BHK Apartment in Bandra West",
-      location: "Bandra West, Mumbai",
-      price: "₦45,000/month",
-      type: "rent",
-      bedrooms: 2,
-      bathrooms: 2,
-      area: "850 sq ft",
-      image: "/placeholder.svg?height=200&width=300",
-      landlord: "Rajesh Kumar",
-      rating: 4.5,
-      verified: true,
-      views: 156,
-    },
-    {
-      id: 2,
-      title: "3BHK Villa in Koregaon Park",
-      location: "Koregaon Park, Pune",
-      price: "₦1.2 Cr",
-      type: "sale",
-      bedrooms: 3,
-      bathrooms: 3,
-      area: "1200 sq ft",
-      image: "/placeholder.svg?height=200&width=300",
-      landlord: "Priya Sharma",
-      rating: 4.8,
-      verified: true,
-      views: 89,
-    },
-    {
-      id: 3,
-      title: "1BHK Studio in Whitefield",
-      location: "Whitefield, Bangalore",
-      price: "₦25,000/month",
-      type: "rent",
-      bedrooms: 1,
-      bathrooms: 1,
-      area: "450 sq ft",
-      image: "/placeholder.svg?height=200&width=300",
-      landlord: "Amit Patel",
-      rating: 4.2,
-      verified: true,
-      views: 67,
-    },
-  ];
+  const [data, setData] = useState<ResourceType[]>([]);
 
   useEffect(() => {
     //https://agent-with-me-backend.onrender.com
-    const finalUrl = `${base}/v1/house?min=${searchQuery?.min || ""}&max=${
+
+    const finalUrl = `${base}/v1/house?min=${searchQuery?.min || ""}   &max=${
       searchQuery?.max || ""
     }&type=${searchQuery?.type || ""}&category=${
       searchQuery?.category || ""
@@ -139,12 +105,14 @@ export default function PropertiesPage() {
       searchQuery?.limit || "50"
     }&lga=${searchQuery?.lga || ""}&state=${
       searchQuery?.state || ""
-    }&landmark=${searchQuery?.landmark || ""}&userId=${userId}`;
+    }&landmark=${searchQuery?.landmark || ""}
+   `;
 
     const fetchData = async () => {
       try {
         setLoading(true);
         setError(false);
+        console.log(await app.get(finalUrl));
         const res = (await app.get(finalUrl)).data;
         const result = await res.data;
         console.log(result);
@@ -162,7 +130,7 @@ export default function PropertiesPage() {
     fetchData();
   }, [searchQuery]);
 
-  const toggleFavorite = (propertyId: number) => {
+  const toggleFavorite = (propertyId: string) => {
     setFavorites((prev) =>
       prev.includes(propertyId)
         ? prev.filter((id) => id !== propertyId)
@@ -232,17 +200,16 @@ export default function PropertiesPage() {
         <div className="flex justify-between items-center mb-6">
           <div>
             <h1 className="text-2xl font-bold">Properties for You</h1>
-            <p className="text-gray-600">
-              {mockProperties.length} properties found
-            </p>
+            <p className="text-gray-600">{data?.length} properties found</p>
           </div>
         </div>
 
         {/* Property Grid */}
+
         <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-          {mockProperties.map((property) => (
+          {data.map((property) => (
             <PropertyCard
-              key={property.id}
+              key={property._id}
               property={property}
               favorites={favorites}
             />

@@ -1,6 +1,6 @@
 "use client";
 interface Property {
-  id: 1;
+  id: number;
   title: string;
   location: string;
   price: string;
@@ -8,7 +8,7 @@ interface Property {
   bedrooms: number;
   bathrooms: number;
   area: string;
-  image: string;
+  thumbnail: string;
   landlord: string;
   rating: number;
   verified: boolean;
@@ -45,7 +45,27 @@ import {
 import Link from "next/link";
 import Header from "@/app/components/Header";
 
-const FeaturedPropertyCard = ({ property, favorites }) => {
+interface FeaturedPropertyCardProps {
+  property: Property;
+  favorites: number[];
+}
+
+const FeaturedPropertyCard: React.FC<FeaturedPropertyCardProps> = ({
+  property,
+  favorites,
+}) => {
+  function toggleFavorite(id: number): void {
+    // This function should add/remove the property id from favorites.
+    // Since favorites is passed as a prop, you would typically lift state up.
+    // For demo, we'll just log the action.
+    if (favorites.includes(id)) {
+      console.log(`Removing property ${id} from favorites`);
+    } else {
+      console.log(`Adding property ${id} to favorites`);
+    }
+    // In a real app, you'd call a handler passed via props to update favorites.
+  }
+
   return (
     <Card
       key={property.id}
@@ -53,7 +73,7 @@ const FeaturedPropertyCard = ({ property, favorites }) => {
     >
       <div className="relative">
         <img
-          src={property.image || "/placeholder.svg"}
+          src={property?.thumbnail || "/placeholder.svg"}
           alt={property.title}
           className="w-full h-48 object-cover"
         />

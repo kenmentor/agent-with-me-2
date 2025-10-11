@@ -1,4 +1,29 @@
 "use client";
+
+interface data {
+  _id: string;
+  title: string;
+  lga: string;
+  country: string;
+  description: string;
+  views: number;
+  rating: number;
+  category: string;
+  thumbnail: string;
+  gallery: [{ url: string; type: string }];
+  price: number;
+  address: string;
+  state: string;
+  type: string;
+  waterSuply: boolean;
+  electricity: number;
+  location: string;
+  host: {
+    _id: string;
+    phoneNumber: number;
+  };
+  amenities: string[];
+}
 import Image from "next/image";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -18,11 +43,19 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { useParams } from "next/navigation";
-
+import { useEffect, useState } from "react";
+import Req from "@/app/utility/axois";
+import { useAuthStore } from "@/store/authStore";
+import router from "next/router";
+import { toast } from "sonner";
 export default function PropertyDetailPage() {
   const { id } = useParams();
+  const { app, base } = Req;
+  const [loading, setLoading] = useState(false);
+  const user = useAuthStore((state) => state.user);
+  const [selectedImage, setSelectedImage] = useState<string>("hello");
   // This would normally fetch from a database based on the ID
-  const property = {
+  const [property, setProperty] = useState({
     id: id,
     title: "Luxury Waterfront Condo",
     type: "Condo",
@@ -35,7 +68,7 @@ export default function PropertyDetailPage() {
     status: "Available",
     description:
       "This stunning waterfront condo offers breathtaking views of the ocean and city skyline. Featuring floor-to-ceiling windows, a gourmet kitchen with top-of-the-line appliances, and a spacious open floor plan perfect for entertaining. The master suite includes a luxurious bathroom with a soaking tub and walk-in shower. Additional amenities include a private balcony, two assigned parking spaces, and access to the building's pool, fitness center, and 24-hour concierge service.",
-    features: [
+    amenities: [
       "Waterfront",
       "Floor-to-ceiling windows",
       "Gourmet kitchen",
@@ -49,12 +82,23 @@ export default function PropertyDetailPage() {
       "Fitness center",
       "Concierge service",
     ],
-    images: [
-      "/placeholder.svg?height=600&width=800",
-      "/placeholder.svg?height=600&width=800",
-      "/placeholder.svg?height=600&width=800",
-      "/placeholder.svg?height=600&width=800",
-      "/placeholder.svg?height=600&width=800",
+    gallery: [
+      {
+        url: "/placeholder.svg?height=600&width=800",
+        type: "image/jpeg",
+      },
+      {
+        url: "/placeholder.svg?height=600&width=800",
+        type: "image/jpeg",
+      },
+      {
+        url: "/placeholder.svg?height=600&width=800",
+        type: "image/jpeg",
+      },
+      {
+        url: "/placeholder.svg?height=600&width=800",
+        type: "image/jpeg",
+      },
     ],
     agent: {
       name: "Jane Smith",
@@ -62,8 +106,34 @@ export default function PropertyDetailPage() {
       email: "jane.smith@example.com",
       image: "/placeholder.svg?height=200&width=200",
     },
-  };
+  });
+  async function getData() {
+    try {
+      const res = await app.get(
+        `https://agent-with-me-backend.onrender.com/v1/house/detail/${id}`
+      );
+      console.log("helloe", res.data.data);
+      const result = res.data;
 
+      if (result && result.data) {
+        setProperty(result.data);
+        const thumbnail =
+          result.data.thumbnail ||
+          (result.data.gallery && result.data.gallery[0]) ||
+          "";
+        setSelectedImage(thumbnail);
+        setLoading(false);
+      } else {
+        console.error("Invalid data structure:", result);
+      }
+    } catch (err) {
+      console.log("Fetch error:", err);
+    }
+  }
+
+  useEffect(() => {
+    getData();
+  }, ["ffj"]);
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat("en-US", {
       style: "currency",
@@ -150,21 +220,22 @@ export default function PropertyDetailPage() {
       <div className="mb-3 grid grid-cols-4 gap-4">
         <div className="col-span-4 aspect-video overflow-hidden rounded-lg lg:col-span-2 lg:row-span-2">
           <Image
-            src={property.images[0] || "/placeholder.svg"}
+            src={selectedImage || "/placeholder.svg"}
             alt={property.title}
             width={800}
             height={600}
             className="h-full w-full object-cover"
           />
         </div>
-        {property.images.slice(1, 5).map((image, index) => (
+        {property.gallery?.map((image, index) => (
           <div
             key={index}
             className="col-span-2 aspect-video overflow-hidden rounded-lg sm:col-span-1"
           >
             <Image
-              src={image || "/placeholder.svg"}
+              src={image.url || "/placeholder.svg"}
               alt={`${property.title} ${index + 1}`}
+              onClick={() => setSelectedImage(image.url)}
               width={400}
               height={300}
               className="h-full w-full object-cover"
@@ -189,7 +260,7 @@ export default function PropertyDetailPage() {
             <TabsContent value="features">
               <h2 className="mb-4 text-2xl font-semibold">Property Features</h2>
               <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-                {property.features.map((feature, index) => (
+                {property.amenities?.map((feature, index) => (
                   <div key={index} className="flex items-center gap-2">
                     <div className="h-2 w-2 rounded-full bg-primary"></div>
                     <span>{feature}</span>
@@ -221,25 +292,25 @@ export default function PropertyDetailPage() {
           <div className="mb-4 flex items-center gap-4">
             <div className="relative h-16 w-16 overflow-hidden rounded-full">
               <Image
-                src={property.agent.image || "/placeholder.svg"}
-                alt={property.agent.name}
+                src={property?.agent?.image || "/placeholder.svg"}
+                alt={property?.agent?.name}
                 fill
                 className="object-cover"
               />
             </div>
             <div>
-              <h3 className="font-semibold">{property.agent.name}</h3>
+              <h3 className="font-semibold">{property?.agent?.name}</h3>
               <p className="text-sm text-muted-foreground">Listing Agent</p>
             </div>
           </div>
           <div className="mb-6 space-y-2">
             <div className="flex items-center gap-2">
               <Phone className="h-4 w-4 text-muted-foreground" />
-              <span>{property.agent.phone}</span>
+              <span>{property?.agent?.phone}</span>
             </div>
             <div className="flex items-center gap-2">
               <Mail className="h-4 w-4 text-muted-foreground" />
-              <span>{property.agent.email}</span>
+              <span>{property?.agent?.email}</span>
             </div>
             <Link href={"/chat/userid/houseid"}>
               <Button
@@ -256,4 +327,7 @@ export default function PropertyDetailPage() {
       </div>
     </div>
   );
+}
+function setLoading(arg0: boolean) {
+  throw new Error("Function not implemented.");
 }
