@@ -1,20 +1,5 @@
-"use client";
-interface Property {
-  id: number;
-  title: string;
-  location: string;
-  price: string;
-  type: string;
-  bedrooms: number;
-  bathrooms: number;
-  area: string;
-  thumbnail: string;
-  landlord: string;
-  rating: number;
-  verified: boolean;
-  views: number;
-}
 import { Button } from "@/components/ui/button";
+import { AnimatedCounter } from "@/components/animated-counter";
 import {
   Card,
   CardContent,
@@ -25,53 +10,40 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Home, Shield, Users, MapPin, Phone } from "lucide-react";
 import Link from "next/link";
-import PropertyCard from "./components/PropertyCard";
-import FeaturedPropertyCard from "./components/FeaturedPropertyCard";
-import Req from "@/app/utility/axois";
-import { useEffect, useState } from "react";
-
-const { base, app } = Req;
+import Image from 'next/image';
+import backgroundImage from "@/public/image1.png";
 
 export default function HomePage() {
-  const [data, setData] = useState<Property[]>([]);
-  useEffect(() => {
-    //https://agent-with-me-backend.onrender.com
-
-    const finalUrl = `${base}/v1/house?limit=3
-   `;
-
-    const fetchData = async () => {
-      try {
-        console.log(await app.get(finalUrl));
-        const res = (await app.get(finalUrl)).data;
-        const result = await res.data;
-        console.log(result);
-
-        setData(result);
-      } catch (err) {
-        console.error(err);
-      } finally {
-      }
-    };
-    console.log("gfgg");
-
-    fetchData();
-  }, []);
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+    <div className="min-h-screen min-w-screen"
+    style={{ 
+        backgroundImage: `url(${backgroundImage.src})`,
+        backgroundSize: 'contain',           
+        backgroundRepeat: 'no-repeat',  
+    }}>
       {/* Header */}
-      <header className="bg-white shadow-sm">
+      <header className="fixed w-screen bg-none pt-5 pb-5">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-2">
-              <Home className="h-8 w-8 text-blue-600" />
-              <span className="text-2xl font-bold text-gray-900">
+                <svg width="45.396" height="60" viewBox="0 0 45.396 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <g>
+                    <path d="M0 0L17.9781 5.93773L18.3963 60L0 53.9894L0 0Z" fill="#FFFFFF" fillRule="evenodd" transform="translate(27 0)" />
+                    <path d="M0 5.80534L12.975 0L12.975 53.9767L0 59L0 5.80534Z" fill="#C0C0C0" fillRule="evenodd" transform="translate(14.35 0)" />
+                    <path d="M0 0L14.7218 4.49413L15.0642 45.4126L0 40.8633L0 0Z" fill="#FFFFFF" fillRule="evenodd" transform="translate(9.181 7.587)" />
+                    <path d="M0 4.32941L9.23646 0L9.23645 40.6186L0 44L0 4.32941Z" fill="#C0C0C0" fillRule="evenodd" transform="translate(0 7.587)" />
+                  </g>
+                </svg>
+              <span className="text-2xl font-bold text-white">
                 Agent with me
               </span>
             </div>
             <div className="flex items-center space-x-4">
               <Link href="/properties">
-                <Button variant="ghost">Browse Properties</Button>
+                <Button variant="ghost" className="text-white">Properties</Button>
+              </Link>
+              <Link href="/auth/login">
+                <Button variant="ghost" className="text-white">About Us</Button>
               </Link>
               <Link href="/auth/login">
                 <Button variant="outline">Login</Button>
@@ -85,12 +57,12 @@ export default function HomePage() {
       </header>
 
       {/* Hero Section */}
-      <section className="py-20 px-4">
+      <section className="py-20 px-4 h-screen flex justify-center items-center z-[1000000000000] flex-col">
         <div className="max-w-6xl mx-auto text-center">
-          <h1 className="text-5xl font-bold text-gray-900 mb-6">
-            Find Your Perfect <span className="text-blue-600">Home</span>
+          <h1 className="text-5xl font-bold text-white mb-6">
+            The smart way to find you next home
           </h1>
-          <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
+          <p className="text-xl text-white mb-8 max-w-3xl mx-auto">
             Connect with verified landlords and tenants. Rent, buy, or sell
             properties with confidence.
             <strong> Free 3-day trial for all listings!</strong>
@@ -108,9 +80,23 @@ export default function HomePage() {
                 variant="outline"
                 className="w-full sm:w-auto bg-white"
               >
-                List Your Property - FREE Trial
+                List Your Property For FREE
               </Button>
             </Link>
+          </div>
+        </div>
+        <div className="relative flex flex-row w-[460px] justify-between top-32">
+          <div>
+            <AnimatedCounter target={800} className="text-white text-3xl font-semibold"/>
+            <p className="text-white">Listed Properties</p>
+          </div>
+          <div>
+            {<AnimatedCounter target={5300} className="text-white text-3xl font-semibold"/>}
+            <p className="text-white">Happy Customers</p>
+          </div>
+          <div>
+            <AnimatedCounter target={23} includePlusIcon={false} className="text-white text-3xl font-semibold"/>
+            <p className="text-white">Awards</p>
           </div>
         </div>
       </section>
@@ -177,11 +163,122 @@ export default function HomePage() {
           </div>
 
           <div className="grid md:grid-cols-3 gap-6">
-            {data?.map((property) => {
-              return (
-                <FeaturedPropertyCard property={property} favorites={[]} />
-              );
-            })}
+            <Card className="overflow-hidden hover:shadow-lg transition-shadow">
+              <div className="relative">
+                <img
+                  src="/placeholder.svg?height=200&width=300"
+                  alt="2BHK Apartment in Bandra West"
+                  className="w-full h-48 object-cover"
+                />
+                <Badge className="absolute top-2 right-2 bg-green-500">
+                  For Rent
+                </Badge>
+                <Badge className="absolute top-2 left-2 bg-orange-500">
+                  <Shield className="h-3 w-3 mr-1" />
+                  Verified
+                </Badge>
+              </div>
+              <CardContent className="p-4">
+                <h3 className="font-semibold text-lg mb-2">
+                  2BHK Apartment in Bandra West
+                </h3>
+                <p className="text-gray-600 text-sm mb-2 flex items-center">
+                  <MapPin className="h-4 w-4 mr-1" />
+                  Bandra West, Mumbai
+                </p>
+                <p className="text-2xl font-bold text-blue-600 mb-3">
+                  ₦45,000/month
+                </p>
+                <div className="flex space-x-2">
+                  <Button size="sm" className="flex-1">
+                    Contact Owner
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="flex-1 bg-transparent"
+                  >
+                    View Details
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="overflow-hidden hover:shadow-lg transition-shadow">
+              <div className="relative">
+                <img
+                  src="/placeholder.svg?height=200&width=300"
+                  alt="3BHK Villa in Koregaon Park"
+                  className="w-full h-48 object-cover"
+                />
+                <Badge className="absolute top-2 right-2 bg-blue-500">
+                  For Sale
+                </Badge>
+                <Badge className="absolute top-2 left-2 bg-orange-500">
+                  <Shield className="h-3 w-3 mr-1" />
+                  Verified
+                </Badge>
+              </div>
+              <CardContent className="p-4">
+                <h3 className="font-semibold text-lg mb-2">
+                  3BHK Villa in Koregaon Park
+                </h3>
+                <p className="text-gray-600 text-sm mb-2 flex items-center">
+                  <MapPin className="h-4 w-4 mr-1" />
+                  Koregaon Park, Pune
+                </p>
+                <p className="text-2xl font-bold text-blue-600 mb-3">₦1.2 Cr</p>
+                <div className="flex space-x-2">
+                  <Button size="sm" className="flex-1">
+                    Contact Owner
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="flex-1 bg-transparent"
+                  >
+                    View Details
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="overflow-hidden hover:shadow-lg transition-shadow">
+              <div className="relative">
+                <img
+                  src="/placeholder.svg?height=200&width=300"
+                  alt="1BHK Studio in Whitefield"
+                  className="w-full h-48 object-cover"
+                />
+                <Badge className="absolute top-2 right-2 bg-green-500">
+                  For Rent
+                </Badge>
+              </div>
+              <CardContent className="p-4">
+                <h3 className="font-semibold text-lg mb-2">
+                  1BHK Studio in Whitefield
+                </h3>
+                <p className="text-gray-600 text-sm mb-2 flex items-center">
+                  <MapPin className="h-4 w-4 mr-1" />
+                  Whitefield, Bangalore
+                </p>
+                <p className="text-2xl font-bold text-blue-600 mb-3">
+                  ₦25,000/month
+                </p>
+                <div className="flex space-x-2">
+                  <Button size="sm" className="flex-1">
+                    Contact Owner
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="flex-1 bg-transparent"
+                  >
+                    View Details
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </section>
