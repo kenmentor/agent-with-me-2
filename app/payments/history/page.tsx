@@ -33,16 +33,17 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-
-export default function PaymentHistoryPage() {
+import { useAuthStore } from "@/store/authStore";
+import Req from "@/app/utility/axois";
+export default function bookingHistoryPage() {
   const router = useRouter();
-  const [user, setUser] = useState<any>(null);
+  const { base, app } = Req;
   const [searchQuery, setSearchQuery] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
   const [filterYear, setFilterYear] = useState("2024");
   const [filterMonth, setFilterMonth] = useState("all");
-
-  const mockPaymentHistory = [
+  const { user, isAuthenticated, _hasHydrated } = useAuthStore();
+  const [bookings, setBookings] = useState([
     {
       id: 1,
       propertyTitle: "2BHK Apartment in Bandra West",
@@ -61,7 +62,30 @@ export default function PaymentHistoryPage() {
       landlordApproved: true,
       approvedDate: "2024-01-24",
       approvedTime: "09:15:00",
-      notes: "Monthly rent payment",
+      notes: "Monthly rent booking",
+      tenantName: "John Doe",
+    },
+  ]);
+  const mockData = [
+    {
+      id: 1,
+      propertyTitle: "2BHK Apartment in Bandra West",
+      landlordName: "Rajesh Kumar",
+      landlordPhone: "+91 9876543210",
+      amount: 45000,
+      lateFee: 0,
+      totalAmount: 45000,
+      dueDate: "2024-01-25",
+      paidDate: "2024-01-23",
+      paidTime: "14:30:00",
+      paidDateTime: "2024-01-23T14:30:00.000Z",
+      status: "approved",
+      method: "UPI",
+      transactionId: "TXN123456789",
+      landlordApproved: true,
+      approvedDate: "2024-01-24",
+      approvedTime: "09:15:00",
+      notes: "Monthly rent booking",
       tenantName: "John Doe",
     },
     {
@@ -82,7 +106,7 @@ export default function PaymentHistoryPage() {
       landlordApproved: true,
       approvedDate: "2023-12-28",
       approvedTime: "10:20:00",
-      notes: "Late payment with fee",
+      notes: "Late booking with fee",
       tenantName: "John Doe",
     },
     {
@@ -103,7 +127,7 @@ export default function PaymentHistoryPage() {
       landlordApproved: false,
       approvedDate: null,
       approvedTime: null,
-      notes: "February rent payment",
+      notes: "February rent booking",
       tenantName: "John Doe",
     },
     {
@@ -128,39 +152,48 @@ export default function PaymentHistoryPage() {
       tenantName: "John Doe",
     },
   ];
+  async function getData() {
+    try {
+      const res = await app.get(`${base}/v1/booking/${user._id}`);
+      console.log("helloe", res.data);
+      const result = res.data;
 
-  useEffect(() => {
-    const userData = localStorage.getItem("user");
-    const isLoggedIn = localStorage.getItem("isLoggedIn");
-
-    if (!userData || !isLoggedIn) {
-      router.push("/auth/login");
-      return;
+      setBookings(result);
+      console.log();
+    } catch (err) {
+      console.log("Fetch error:", err);
     }
+  }
+  useEffect(() => {
+    if (!_hasHydrated) return;
+    alert("hii");
+    // wait for Zustand to load from localStorage
+    getData();
+    if (!isAuthenticated) {
+      router.push("/auth/login");
+    }
+  }, [_hasHydrated, isAuthenticated, user]);
 
-    setUser(JSON.parse(userData));
-  }, [router]);
-
-  const filteredPayments = mockPaymentHistory.filter((payment) => {
-    if (filterStatus !== "all" && payment.status !== filterStatus) return false;
+  const filteredbookings = bookings.filter((booking) => {
+    if (filterStatus !== "all" && booking.status !== filterStatus) return false;
     if (
       searchQuery &&
-      !payment.propertyTitle
+      !booking.propertyTitle
         .toLowerCase()
         .includes(searchQuery.toLowerCase()) &&
-      !payment.transactionId?.toLowerCase().includes(searchQuery.toLowerCase())
+      !booking.transactionId?.toLowerCase().includes(searchQuery.toLowerCase())
     )
       return false;
-    if (filterYear !== "all" && !payment.paidDate?.includes(filterYear))
+    if (filterYear !== "all" && !booking.paidDate?.includes(filterYear))
       return false;
-    if (filterMonth !== "all" && payment.paidDate) {
-      const paymentMonth = new Date(payment.paidDate).getMonth() + 1;
-      if (paymentMonth.toString() !== filterMonth) return false;
+    if (filterMonth !== "all" && booking.paidDate) {
+      const bookingMonth = new Date(booking.paidDate).getMonth() + 1;
+      if (bookingMonth.toString() !== filterMonth) return false;
     }
     return true;
   });
 
-  const totalPaid = filteredPayments
+  const totalPaid = filteredbookings
     .filter((p) => p.status === "approved")
     .reduce((sum, p) => sum + p.totalAmount, 0);
 
@@ -186,7 +219,7 @@ export default function PaymentHistoryPage() {
       case "pending_approval":
         return "Pending Approval";
       case "pending":
-        return "Pending Payment";
+        return "Pending booking";
       case "rejected":
         return "Rejected";
       default:
@@ -209,28 +242,28 @@ export default function PaymentHistoryPage() {
     }
   };
 
-  const sendReminder = (payment: any) => {
+  const sendReminder = (booking: any) => {
     alert(
-      `Reminder sent to ${payment.landlordName} at ${payment.landlordPhone}`
+      `Reminder sent to ${booking.landlordName} at ${booking.landlordPhone}`
     );
   };
 
-  const downloadReceipt = (payment: any) => {
+  const downloadReceipt = (booking: any) => {
     // Simulate receipt download
     const receiptData = `
-GHAR KONNECT - PAYMENT RECEIPT
+GHAR KONNECT - booking RECEIPT
 ==============================
-Transaction ID: ${payment.transactionId}
-Property: ${payment.propertyTitle}
-Landlord: ${payment.landlordName}
-Amount: ₦${payment.totalAmount.toLocaleString()}
-Payment Date: ${payment.paidDate}
-Payment Time: ${payment.paidTime}
-Method: ${payment.method}
-Status: ${getStatusText(payment.status)}
+Transaction ID: ${booking.transactionId}
+Property: ${booking.propertyTitle}
+Landlord: ${booking.landlordName}
+Amount: ₦${booking.totalAmount.toLocaleString()}
+booking Date: ${booking.paidDate}
+booking Time: ${booking.paidTime}
+Method: ${booking.method}
+Status: ${getStatusText(booking.status)}
 ${
-  payment.approvedDate
-    ? `Approved: ${payment.approvedDate} at ${payment.approvedTime}`
+  booking.approvedDate
+    ? `Approved: ${booking.approvedDate} at ${booking.approvedTime}`
     : ""
 }
     `;
@@ -239,7 +272,7 @@ ${
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `receipt-${payment.transactionId}.txt`;
+    a.download = `receipt-${booking.transactionId}.txt`;
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -277,9 +310,9 @@ ${
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Payment History</h1>
+          <h1 className="text-3xl font-bold text-gray-900">booking History</h1>
           <p className="text-gray-600 mt-2">
-            Track all your rent payments with detailed date/time information
+            Track all your rent bookings with detailed date/time information
           </p>
         </div>
 
@@ -308,7 +341,7 @@ ${
                   <p className="text-sm font-medium text-gray-600">Approved</p>
                   <p className="text-2xl font-bold text-blue-600">
                     {
-                      filteredPayments.filter((p) => p.status === "approved")
+                      filteredbookings.filter((p) => p.status === "approved")
                         .length
                     }
                   </p>
@@ -327,7 +360,7 @@ ${
                   </p>
                   <p className="text-2xl font-bold text-yellow-600">
                     {
-                      filteredPayments.filter(
+                      filteredbookings.filter(
                         (p) => p.status === "pending_approval"
                       ).length
                     }
@@ -345,7 +378,7 @@ ${
                   <p className="text-sm font-medium text-gray-600">This Year</p>
                   <p className="text-2xl font-bold text-purple-600">
                     {
-                      filteredPayments.filter((p) =>
+                      filteredbookings.filter((p) =>
                         p.paidDate?.includes("2024")
                       ).length
                     }
@@ -383,7 +416,7 @@ ${
                   <SelectItem value="pending_approval">
                     Pending Approval
                   </SelectItem>
-                  <SelectItem value="pending">Pending Payment</SelectItem>
+                  <SelectItem value="pending">Pending booking</SelectItem>
                   <SelectItem value="rejected">Rejected</SelectItem>
                 </SelectContent>
               </Select>
@@ -429,117 +462,117 @@ ${
           </CardContent>
         </Card>
 
-        {/* Payment History */}
+        {/* booking History */}
         <Card>
           <CardHeader>
-            <CardTitle>Payment Transactions</CardTitle>
+            <CardTitle>booking Transactions</CardTitle>
             <CardDescription>
-              {filteredPayments.length} transactions found
+              {filteredbookings.length} transactions found
             </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {filteredPayments.map((payment) => (
+              {filteredbookings.map((booking) => (
                 <div
-                  key={payment.id}
+                  key={booking.id}
                   className="border rounded-lg p-4 hover:bg-gray-50 transition-colors"
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex-1">
                       <div className="flex items-center space-x-3 mb-2">
-                        {getStatusIcon(payment.status)}
+                        {getStatusIcon(booking.status)}
                         <h4 className="font-semibold">
-                          {payment.propertyTitle}
+                          {booking.propertyTitle}
                         </h4>
-                        <Badge variant={getStatusVariant(payment.status)}>
-                          {getStatusText(payment.status)}
+                        <Badge variant={getStatusVariant(booking.status)}>
+                          {getStatusText(booking.status)}
                         </Badge>
                       </div>
 
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-gray-600 mb-2">
                         <div>
                           <p className="font-medium">Landlord</p>
-                          <p>{payment.landlordName}</p>
-                          <p className="text-xs">{payment.landlordPhone}</p>
+                          <p>{booking.landlordName}</p>
+                          <p className="text-xs">{booking.landlordPhone}</p>
                         </div>
                         <div>
                           <p className="font-medium">Due Date</p>
-                          <p>{payment.dueDate}</p>
+                          <p>{booking.dueDate}</p>
                         </div>
                         <div>
                           <p className="font-medium">Paid Date & Time</p>
-                          <p>{payment.paidDate || "Not paid"}</p>
-                          {payment.paidTime && (
-                            <p className="text-xs">{payment.paidTime}</p>
+                          <p>{booking.paidDate || "Not paid"}</p>
+                          {booking.paidTime && (
+                            <p className="text-xs">{booking.paidTime}</p>
                           )}
                         </div>
                         <div>
                           <p className="font-medium">Method</p>
-                          <p>{payment.method || "N/A"}</p>
+                          <p>{booking.method || "N/A"}</p>
                         </div>
                       </div>
 
-                      {payment.transactionId && (
+                      {booking.transactionId && (
                         <div className="mb-2 text-xs text-gray-500">
-                          Transaction ID: {payment.transactionId}
+                          Transaction ID: {booking.transactionId}
                         </div>
                       )}
 
-                      {payment.approvedDate && (
+                      {booking.approvedDate && (
                         <div className="mb-2 text-xs text-green-600">
-                          Approved on: {payment.approvedDate} at{" "}
-                          {payment.approvedTime}
+                          Approved on: {booking.approvedDate} at{" "}
+                          {booking.approvedTime}
                         </div>
                       )}
 
-                      {payment.notes && (
+                      {booking.notes && (
                         <div className="mb-2 text-xs text-gray-600 bg-gray-100 p-2 rounded">
-                          Notes: {payment.notes}
+                          Notes: {booking.notes}
                         </div>
                       )}
                     </div>
 
                     <div className="text-right">
                       <div className="text-2xl font-bold">
-                        ₦{payment.totalAmount.toLocaleString()}
+                        ₦{booking.totalAmount.toLocaleString()}
                       </div>
-                      {payment.lateFee > 0 && (
+                      {booking.lateFee > 0 && (
                         <div className="text-sm text-red-600">
-                          (incl. ₦{payment.lateFee} late fee)
+                          (incl. ₦{booking.lateFee} late fee)
                         </div>
                       )}
                       <div className="flex flex-col space-y-2 mt-2">
-                        {payment.status === "pending" && (
-                          <Link href={`/payments/pay?id=${payment.id}`}>
+                        {booking.status === "pending" && (
+                          <Link href={`/bookings/pay?id=${booking.id}`}>
                             <Button size="sm" className="w-full">
                               Pay Now
                             </Button>
                           </Link>
                         )}
 
-                        {payment.status === "pending_approval" && (
+                        {booking.status === "pending_approval" && (
                           <Button
                             size="sm"
                             variant="outline"
-                            onClick={() => sendReminder(payment)}
+                            onClick={() => sendReminder(booking)}
                           >
                             <Send className="h-4 w-4 mr-1" />
                             Remind
                           </Button>
                         )}
 
-                        {payment.status === "approved" && (
+                        {booking.status === "approved" && (
                           <Button
                             size="sm"
                             variant="outline"
-                            onClick={() => downloadReceipt(payment)}
+                            onClick={() => downloadReceipt(booking)}
                           >
                             <Download className="h-4 w-4 mr-1" />
                             Receipt
                           </Button>
                         )}
 
-                        {payment.transactionId && (
+                        {booking.transactionId && (
                           <Button size="sm" variant="outline">
                             <Eye className="h-4 w-4 mr-1" />
                             Details
@@ -551,11 +584,11 @@ ${
                 </div>
               ))}
 
-              {filteredPayments.length === 0 && (
+              {filteredbookings.length === 0 && (
                 <div className="text-center py-12">
                   <Receipt className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                   <h3 className="text-lg font-semibold text-gray-600 mb-2">
-                    No payments found
+                    No bookings found
                   </h3>
                   <p className="text-gray-500">
                     Try adjusting your search or filter criteria

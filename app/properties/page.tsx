@@ -57,25 +57,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Home,
-  Search,
-  MapPin,
-  Bed,
-  Bath,
-  Square,
-  Heart,
-  Phone,
-  Calendar,
-  Star,
-  Shield,
-  Eye,
-  Book,
-} from "lucide-react";
-import Link from "next/link";
+import { Search } from "lucide-react";
+
 import Header from "@/app/components/Header";
 import PropertyCard from "../components/PropertyCard";
 import Req from "@/app/utility/axois";
+import { priceRanges, propertyType, statesAndLGAs } from "../data";
+import { Slider } from "@/components/ui/slider";
+import NoResults from "../components/NoResults";
 export default function PropertiesPage() {
   const { base, app } = Req;
   const [searchQuery, setSearchQuery] = useState({
@@ -88,25 +77,54 @@ export default function PropertiesPage() {
     state: "",
     landmark: "",
     limit: "50",
+    priceRange: [0, 0],
   });
+
   const [favorites, setFavorites] = useState<string[]>([]);
   const [error, setError] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(true);
   const [data, setData] = useState<ResourceType[]>([]);
 
+  function buildHouseUrl(base: string, searchQuery: any) {
+    const params: Record<string, string> = {};
+
+    // Helper to add only valid filters
+    const addParam = (key: string, value: any) => {
+      if (
+        value !== undefined &&
+        value !== null &&
+        value !== "" &&
+        value !== "all"
+      ) {
+        params[key] = String(value);
+      }
+    };
+
+    // Price range
+    if (Array.isArray(searchQuery?.priceRange)) {
+      if (searchQuery.priceRange[0]) addParam("min", searchQuery.priceRange[0]);
+      if (searchQuery.priceRange[1]) addParam("max", searchQuery.priceRange[1]);
+    }
+
+    // Filters
+    addParam("type", searchQuery?.type);
+    addParam("category", searchQuery?.category);
+    addParam("searchWord", searchQuery?.keyword);
+    addParam("limit", searchQuery?.limit || "50");
+    addParam("lga", searchQuery?.lga);
+    addParam("state", searchQuery?.state);
+    addParam("landmark", searchQuery?.landmark);
+
+    // Build query string safely
+    const queryString = new URLSearchParams(params).toString();
+    return `${base}/v1/house${queryString ? `?${queryString}` : ""}`;
+  }
+
   useEffect(() => {
     //https://agent-with-me-backend.onrender.com
 
-    const finalUrl = `${base}/v1/house?min=${searchQuery?.min || ""}   &max=${
-      searchQuery?.max || ""
-    }&type=${searchQuery?.type || ""}&category=${
-      searchQuery?.category || ""
-    }&searchWord=${searchQuery?.keyword || ""}&limit=${
-      searchQuery?.limit || "50"
-    }&lga=${searchQuery?.lga || ""}&state=${
-      searchQuery?.state || ""
-    }&landmark=${searchQuery?.landmark || ""}
-   `;
+    const finalUrl = buildHouseUrl(base, searchQuery);
+    console.log(finalUrl);
 
     const fetchData = async () => {
       try {
@@ -137,7 +155,12 @@ export default function PropertiesPage() {
         : [...prev, propertyId]
     );
   };
+  const formatPrice = (value: number) =>
+    value >= 1000000
+      ? `₦${(value / 1000000).toFixed(1)}M`
+      : `₦${value.toLocaleString()}`;
 
+  const [selectedState, setSelectedState] = useState<string>("all");
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -164,35 +187,96 @@ export default function PropertiesPage() {
                 />
               </div>
             </div>
-            {searchQuery.keyword}
-            {searchQuery.type}
-            {searchQuery.keyword}
-            <Select
-              name="type"
-              onValueChange={(e) => {
-                setSearchQuery((prev) => ({ ...prev, type: e }));
-              }}
-            >
-              <SelectTrigger className="w-40">
-                <SelectValue placeholder="Property Type" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Types</SelectItem>
-                <SelectItem value="rent">For Rent</SelectItem>
-                <SelectItem value="sale">For Sale</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select>
-              <SelectTrigger className="w-40">
-                <SelectValue placeholder="Budget" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Any Budget</SelectItem>
-                <SelectItem value="0-25000">₦0 - ₦25,000</SelectItem>
-                <SelectItem value="25000-50000">₦25,000 - ₦50,000</SelectItem>
-                <SelectItem value="50000+">₦50,000+</SelectItem>
-              </SelectContent>
-            </Select>
+
+            <div className="flex flex-wrap gap-3">
+              <Select
+                name="type"
+                onValueChange={(value) =>
+                  setSearchQuery((prev) => ({ ...prev, type: value }))
+                }
+              >
+                <SelectTrigger className="w-40">
+                  <SelectValue placeholder="Property Type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Types</SelectItem>
+                  {propertyType.map((type) => (
+                    <SelectItem key={type} value={type}>
+                      {type}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              {/* ✅ Budget */}
+
+              {/* ✅ State */}
+              <Select
+                name="state"
+                onValueChange={(value) => {
+                  setSelectedState(value);
+                  setSearchQuery((prev) => ({
+                    ...prev,
+                    state: value,
+                    lga: "all",
+                  }));
+                }}
+              >
+                <SelectTrigger className="w-40">
+                  <SelectValue placeholder="State" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Any State</SelectItem>
+                  {Object.keys(statesAndLGAs).map((state) => (
+                    <SelectItem key={state} value={state}>
+                      {state}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              {/* ✅ LGA (depends on selected state) */}
+              <Select
+                name="lga"
+                onValueChange={(value) =>
+                  setSearchQuery((prev) => ({ ...prev, lga: value }))
+                }
+                disabled={selectedState === "all"}
+              >
+                <SelectTrigger className="w-40">
+                  <SelectValue placeholder="LGA" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Any LGA</SelectItem>
+                  {selectedState !== "all" &&
+                    statesAndLGAs[selectedState]?.map((lga) => (
+                      <SelectItem key={lga} value={lga}>
+                        {lga}
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+              <div className="flex flex-col w-64">
+                <label className="text-sm mb-1 text-gray-300">
+                  Price Range:{" "}
+                  <span className="font-medium text-black">
+                    {formatPrice(searchQuery.priceRange[0])} –{" "}
+                    {formatPrice(searchQuery.priceRange[1])}
+                  </span>
+                </label>
+                <Slider
+                  defaultValue={[0, 5000000]}
+                  min={0}
+                  max={10000000}
+                  step={100000}
+                  value={searchQuery.priceRange}
+                  onValueChange={(value) =>
+                    setSearchQuery((prev) => ({ ...prev, priceRange: value }))
+                  }
+                  className="w-full"
+                />
+              </div>
+            </div>
           </div>
         </div>
 
@@ -207,13 +291,32 @@ export default function PropertiesPage() {
         {/* Property Grid */}
 
         <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-          {data.map((property) => (
-            <PropertyCard
-              key={property._id}
-              property={property}
-              favorites={favorites}
+          {data.length > 0 ? (
+            data.map((property) => (
+              <PropertyCard
+                key={property._id}
+                property={property}
+                favorites={favorites}
+              />
+            ))
+          ) : (
+            <NoResults
+              onClearFilters={() => {
+                setSearchQuery({
+                  keyword: "",
+                  type: "",
+                  max: 100000000,
+                  min: 0,
+                  category: "",
+                  lga: "",
+                  state: "",
+                  landmark: "",
+                  limit: "50",
+                  priceRange: [0, 0],
+                });
+              }}
             />
-          ))}
+          )}
         </div>
       </div>
     </div>

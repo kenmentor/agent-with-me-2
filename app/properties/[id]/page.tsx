@@ -1,9 +1,10 @@
 "use client";
 
 interface data {
-  _id: string;
+  _id?: string;
   title: string;
   lga: string;
+  video: string;
   country: string;
   description: string;
   views: number;
@@ -41,6 +42,9 @@ import {
   Share2,
   Home,
   ChevronRight,
+  MessageCircleWarning,
+  MessageCircleWarningIcon,
+  BanIcon,
 } from "lucide-react";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -48,6 +52,7 @@ import Req from "@/app/utility/axois";
 import { useAuthStore } from "@/store/authStore";
 import router from "next/router";
 import { toast } from "sonner";
+import AutoPlayVideo from "@/app/components/AutoplayVideo";
 export default function PropertyDetailPage() {
   const { id } = useParams();
   const { app, base } = Req;
@@ -56,7 +61,7 @@ export default function PropertyDetailPage() {
   const [selectedImage, setSelectedImage] = useState<string>("hello");
   // This would normally fetch from a database based on the ID
   const [property, setProperty] = useState({
-    id: id,
+    _id: id,
     title: "Luxury Waterfront Condo",
     type: "Condo",
     address: "789 Beach Blvd, Miami, FL 33139",
@@ -66,6 +71,7 @@ export default function PropertyDetailPage() {
     squareFeet: 2200,
     yearBuilt: 2018,
     status: "Available",
+    video: "",
     description:
       "This stunning waterfront condo offers breathtaking views of the ocean and city skyline. Featuring floor-to-ceiling windows, a gourmet kitchen with top-of-the-line appliances, and a spacious open floor plan perfect for entertaining. The master suite includes a luxurious bathroom with a soaking tub and walk-in shower. Additional amenities include a private balcony, two assigned parking spaces, and access to the building's pool, fitness center, and 24-hour concierge service.",
     amenities: [
@@ -100,11 +106,13 @@ export default function PropertyDetailPage() {
         type: "image/jpeg",
       },
     ],
-    agent: {
-      name: "Jane Smith",
+    host: {
+      _id: "agent123",
+      userName: "Jane Smith",
       phone: "(305) 555-1234",
       email: "jane.smith@example.com",
       image: "/placeholder.svg?height=200&width=200",
+      adminVerified: false,
     },
   });
   async function getData() {
@@ -203,8 +211,10 @@ export default function PropertyDetailPage() {
             {formatPrice(property.price)}
           </div>
           <div className="mt-4 flex gap-2">
-            <Link href="/payments/pay/houseId">
-              <Button size="lg">Book Now</Button>
+            <Link href={`/payments/pay/${property._id}`}>
+              {property.host.adminVerified && (
+                <Button size="lg">Book Now</Button>
+              )}
             </Link>
             <Button size="lg" variant="outline">
               <Heart className="mr-2 h-4 w-4" />
@@ -280,39 +290,59 @@ export default function PropertyDetailPage() {
             </TabsContent>
           </Tabs>
         </div>
+        <div>
+          <h2 className="mb-4 text-2xl font-semibold">Video Tour</h2>
+          <div className="aspect-video overflow-hidden rounded-lg bg-muted">
+            <AutoPlayVideo src={`${property.video}`} />
+          </div>
+        </div>
         <div className="mb-5 block ">
-          <Link className="!w-full" href="/payments/pay/houseId">
-            <Button size="lg" className="w-full">
-              Book Now
-            </Button>
-          </Link>
+          {property.host.adminVerified ? (
+            <Link className="!w-full" href={`/payments/pay/${property._id}`}>
+              <Button size="lg">Book Now</Button>
+            </Link>
+          ) : (
+            <div className="flex items-start space-x-3 p-4 bg-red-50 border border-red-200 rounded-lg">
+              <BanIcon className="h-5 w-5 text-red-600 mt-0.5" />
+              <div className="text-sm">
+                <p className="font-medium text-red-800">Secure Payment</p>
+                <p className="text-red-700">
+                  this agent is not verified by admin, you can still chat with
+                  them but booking is disabled make sure you verify them before
+                  making any payment
+                </p>
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="rounded-lg border bg-card p-6 shadow-sm">
           <div className="mb-4 flex items-center gap-4">
             <div className="relative h-16 w-16 overflow-hidden rounded-full">
               <Image
-                src={property?.agent?.image || "/placeholder.svg"}
-                alt={property?.agent?.name}
+                src={property?.host?.image || "/placeholder.svg"}
+                alt={property?.host?.userName}
                 fill
                 className="object-cover"
               />
             </div>
             <div>
-              <h3 className="font-semibold">{property?.agent?.name}</h3>
-              <p className="text-sm text-muted-foreground">Listing Agent</p>
+              <h3 className="font-semibold">{property?.host?.userName}</h3>
+              <p className="text-sm text-muted-foreground">
+                {property.host.userName}
+              </p>
             </div>
           </div>
           <div className="mb-6 space-y-2">
             <div className="flex items-center gap-2">
               <Phone className="h-4 w-4 text-muted-foreground" />
-              <span>{property?.agent?.phone}</span>
+              <span>{property?.host?.phone}</span>
             </div>
             <div className="flex items-center gap-2">
               <Mail className="h-4 w-4 text-muted-foreground" />
-              <span>{property?.agent?.email}</span>
+              <span>{property?.host?.email}</span>
             </div>
-            <Link href={"/chat/userid/houseid"}>
+            <Link href={`/chat/${property?.host?._id}/${property._id}`}>
               <Button
                 size="sm"
                 variant="outline"

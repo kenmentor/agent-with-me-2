@@ -1,16 +1,10 @@
 import { create } from "zustand";
-
 import { persist } from "zustand/middleware";
 import Req from "@/app/utility/axois";
 import { toast } from "sonner";
 
 const { app, base } = Req;
-// Axios instance
 
-// URL constants
-//const base = "http://localhost:5036/v1";
-
-// Zustand Auth Store
 export const useAuthStore = create(
   persist(
     (set) => ({
@@ -19,6 +13,10 @@ export const useAuthStore = create(
       error: null,
       isLoading: false,
       isCheckingAuth: true,
+      _hasHydrated: false, // 👈 new
+
+      // 👇 helper to mark hydration complete
+      setHasHydrated: (state) => set({ _hasHydrated: state }),
 
       // SIGNUP
       signup: async (object) => {
@@ -27,7 +25,7 @@ export const useAuthStore = create(
           const response = await app.post(`${base}/v1/auth/signup`, object);
           const data = response.data;
           if (data?.ok) {
-            toast.success("email have been sent");
+            toast.success("Email has been sent");
           }
           if (data.status === 501) {
             set({
@@ -38,16 +36,14 @@ export const useAuthStore = create(
           } else {
             set({ user: data.data, isLoading: false, error: null });
           }
-
           return response;
         } catch (error) {
           const errMsg =
             error?.response?.message ||
             error.message ||
             "Error Signing Up user ";
-          console.error("Signup error:", errMsg);
           toast.error(
-            error?.response?.data.message ||
+            error?.response?.data?.message ||
               error.message ||
               "Error Signing Up user "
           );
@@ -62,49 +58,44 @@ export const useAuthStore = create(
         try {
           const response = await app.post(`${base}/v1/auth/login`, object);
           const data = response.data;
-          console.log(data);
-
-          set({ user: data.data, isAuthenticated: true, isLoading: false });
+          set({
+            user: data.data,
+            isAuthenticated: true,
+            isLoading: false,
+            isCheckingAuth: false,
+          });
           return response;
         } catch (error) {
-          console.error(
-            "Login error:",
-            error?.response?.data?.message || "Error logging in"
-          );
           toast.error(error?.response?.data?.message || "Error logging in");
           set({ isLoading: false });
           throw error;
         }
       },
 
-      setUser: async (user) => {
-        set({ user: user, isAuthenticated: true, isLoading: false });
-        toast.success("profile uploaded");
+      setUser: (user) => {
+        set({ user, isAuthenticated: true, isLoading: false });
+        toast.success("Profile uploaded");
       },
+
       // VERIFY EMAIL
       verifyEmail: async (code) => {
         set({ isLoading: true, error: null });
         try {
           const response = await app.post(
             `${base}/v1/verification/verify_email`,
-            {
-              code,
-            }
+            { code }
           );
-
           set({
             isAuthenticated: true,
             error: null,
             isLoading: false,
             isCheckingAuth: false,
           });
-
           return response.data;
         } catch (error) {
           const errMsg =
             error?.response?.data?.message ||
             "An error occurred during verification";
-          console.error("Verify email error:", errMsg);
           set({ error: errMsg, isLoading: false });
           throw error;
         }
@@ -122,7 +113,6 @@ export const useAuthStore = create(
           });
           await app.post(`${base}/v1/auth/logout`);
         } catch (error) {
-          console.warn(error);
           set({ error: null, isCheckingAuth: false });
         }
       },
@@ -133,6 +123,9 @@ export const useAuthStore = create(
         user: state.user,
         isAuthenticated: state.isAuthenticated,
       }),
+      onRehydrateStorage: () => (state) => {
+        state.setHasHydrated(true); // 👈 mark hydration done
+      },
     }
   )
 );

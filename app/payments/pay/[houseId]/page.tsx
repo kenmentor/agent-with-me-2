@@ -1,5 +1,28 @@
 "use client";
-
+interface property {
+  _id?: string;
+  title: string;
+  lga: string;
+  country: string;
+  description: string;
+  views: number;
+  rating: number;
+  category: string;
+  thumbnail: string;
+  gallery: [{ url: string; type: string }];
+  price: number;
+  address: string;
+  state: string;
+  type: string;
+  waterSuply: boolean;
+  electricity: number;
+  location: string;
+  host: {
+    _id: string;
+    phoneNumber: number;
+  };
+  amenities: string[];
+}
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -37,21 +60,27 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
-
+import { useAuthStore } from "@/store/authStore";
+import Req from "@/app/utility/axois";
+import { toast } from "sonner";
 export default function PayRentPage() {
   const { houseId } = useParams();
   const router = useRouter();
   const searchParams = useSearchParams();
   const paymentId = searchParams.get("id");
-
-  const [user, setUser] = useState<any>(null);
+  const { base, app } = Req;
+  const { user, isAuthenticated, _hasHydrated } = useAuthStore();
   const [isLoading, setIsLoading] = useState(false);
   const [paymentStep, setPaymentStep] = useState(1); // 1: Details, 2: Payment, 3: Confirmation, 4: Success
   const [isEditing, setIsEditing] = useState(false);
   const [paymentData, setPaymentData] = useState({
     propertyTitle: "2BHK Apartment in Bandra West",
-    landlordName: "Rajesh Kumar",
-    landlordPhone: "+91 9876543210",
+    host: {
+      adminVerified: true,
+      _id: "64a7f4c3e4b0f5b6c8d9e8f1",
+      userName: "Rajesh Kumar",
+      phoneNumber: 9876543210,
+    },
     amount: 45000,
     dueDate: "2024-02-25",
     lateFee: 0,
@@ -67,57 +96,61 @@ export default function PayRentPage() {
     scheduledDate: "",
     scheduledTime: "",
   });
-
+  const [property, setProperty] = useState<property | null>(null);
+  const [loading, setLoading] = useState(true);
   const [paymentResult, setPaymentResult] = useState({
     transactionId: "",
     paidDateTime: "",
     status: "pending_approval",
   });
+  async function getData() {
+    try {
+      const res = await app.get(`${base}/v1/house/detail/${houseId}`);
+      console.log("helloe", res.data.data);
+      const result = res.data;
 
-  useEffect(() => {
-    const userData = localStorage.getItem("user");
-    const isLoggedIn = localStorage.getItem("isLoggedIn");
-
-    if (!userData || !isLoggedIn) {
-      router.push("/auth/login");
-      return;
-    }
-
-    setUser(JSON.parse(userData));
-
-    // Calculate late fee if overdue
-    const today = new Date();
-    const dueDate = new Date(paymentData.dueDate);
-    if (today > dueDate) {
-      const daysLate = Math.ceil(
-        (today.getTime() - dueDate.getTime()) / (1000 * 3600 * 24)
-      );
-      const lateFee = Math.min(daysLate * 100, 2000); // ₦100 per day, max ₦2000
       setPaymentData((prev) => ({
-        ...prev,
-        lateFee,
-        totalAmount: prev.amount + lateFee,
+        ...result,
+        propertyTitle: result.data.title,
+
+        amount: result.data.price,
+        totalAmount: result.data.price + prev.lateFee,
       }));
+    } catch (err) {
+      console.log("Fetch error:", err);
     }
-  }, [router]);
+  }
+  useEffect(() => {
+    if (!_hasHydrated) return;
+
+    // wait for Zustand to load from localStorage
+    getData();
+    console.log(paymentData);
+    if (!isAuthenticated) {
+      router.push("/auth/gg");
+    }
+  }, [_hasHydrated, isAuthenticated, router]);
+
+  // Calculate late fee if overdue
 
   const validatePaymentDetails = () => {
-    if (!paymentData.paymentMethod) return false;
+    if (!paymentData?.paymentMethod) return false;
 
-    if (paymentData.paymentMethod === "upi" && !paymentData.upiId) return false;
+    if (paymentData?.paymentMethod === "upi" && !paymentData?.upiId)
+      return false;
 
-    if (paymentData.paymentMethod === "card") {
+    if (paymentData?.paymentMethod === "card") {
       if (
-        !paymentData.cardNumber ||
-        !paymentData.cardExpiry ||
-        !paymentData.cardCvv ||
-        !paymentData.cardName
+        !paymentData?.cardNumber ||
+        !paymentData?.cardExpiry ||
+        !paymentData?.cardCvv ||
+        !paymentData?.cardName
       ) {
         return false;
       }
     }
 
-    if (paymentData.paymentMethod === "netbanking" && !paymentData.bankName)
+    if (paymentData?.paymentMethod === "netbanking" && !paymentData?.bankName)
       return false;
 
     return true;
@@ -142,23 +175,23 @@ export default function PayRentPage() {
     // Store payment record with detailed information
     const paymentRecord = {
       id: Date.now(),
-      propertyTitle: paymentData.propertyTitle,
-      landlordName: paymentData.landlordName,
-      landlordPhone: paymentData.landlordPhone,
-      amount: paymentData.amount,
-      lateFee: paymentData.lateFee,
-      totalAmount: paymentData.totalAmount,
-      dueDate: paymentData.dueDate,
+      propertyTitle: paymentData?.propertyTitle,
+      landlordName: paymentData?.host?.userName,
+      landlordPhone: paymentData?.host?.phoneNumber,
+      amount: paymentData?.amount,
+      lateFee: paymentData?.lateFee,
+      totalAmount: paymentData?.totalAmount,
+      dueDate: paymentData?.dueDate,
       paidDate: now.toISOString().split("T")[0],
       paidTime: now.toTimeString().split(" ")[0],
       paidDateTime: paidDateTime,
-      method: paymentData.paymentMethod,
+      method: paymentData?.paymentMethod,
       transactionId,
       status: "pending_approval",
       landlordApproved: false,
       approvedDate: null,
       approvedTime: null,
-      notes: paymentData.notes,
+      notes: paymentData?.notes,
       tenantId: user.id,
       tenantName: user.name,
       tenantPhone: user.phone,
@@ -185,8 +218,8 @@ export default function PayRentPage() {
 
   const sendPaymentNotification = () => {
     // Simulate sending notification to landlord
-    alert(
-      `Payment notification sent to ${paymentData.landlordName} at ${paymentData.landlordPhone}`
+    toast.success(
+      `Payment notification sent to ${paymentData?.host?.userName} at ${paymentData?.host?.phoneNumber}`
     );
   };
 
@@ -288,7 +321,7 @@ export default function PayRentPage() {
                     {isEditing ? (
                       <div className="space-y-3">
                         <Input
-                          value={paymentData.propertyTitle}
+                          value={paymentData?.propertyTitle}
                           onChange={(e) =>
                             setPaymentData({
                               ...paymentData,
@@ -298,22 +331,25 @@ export default function PayRentPage() {
                           placeholder="Property Title"
                         />
                         <Input
-                          value={paymentData.landlordName}
+                          value={paymentData?.host?.userName}
                           onChange={(e) =>
-                            setPaymentData({
-                              ...paymentData,
-                              landlordName: e.target.value,
-                            })
+                            setPaymentData((prev) => ({
+                              ...prev,
+                              host: { ...prev.host, userName: e.target.value },
+                            }))
                           }
                           placeholder="Landlord Name"
                         />
                         <Input
-                          value={paymentData.landlordPhone}
+                          value={paymentData?.host?.phoneNumber}
                           onChange={(e) =>
-                            setPaymentData({
-                              ...paymentData,
-                              landlordPhone: e.target.value,
-                            })
+                            setPaymentData((prev) => ({
+                              ...prev,
+                              host: {
+                                ...prev.host,
+                                phoneNumber: Number(e.target.value),
+                              },
+                            }))
                           }
                           placeholder="Landlord Phone"
                         />
@@ -321,22 +357,23 @@ export default function PayRentPage() {
                     ) : (
                       <>
                         <h3 className="font-semibold text-lg">
-                          {paymentData.propertyTitle}
+                          {paymentData?.propertyTitle}
                         </h3>
                         <p className="text-gray-600">
-                          Landlord: {paymentData.landlordName}
+                          {paymentData?.host?.userName}
+                          jdjdjdj host: {paymentData?.host?.userName}
                         </p>
                         <p className="text-gray-600">
-                          Phone: {paymentData.landlordPhone}
+                          Phone: {paymentData?.host?.phoneNumber}
                         </p>
                       </>
                     )}
                     <div className="flex items-center space-x-4 mt-2 text-sm text-gray-500">
                       <span className="flex items-center">
                         <Calendar className="h-4 w-4 mr-1" />
-                        Due: {paymentData.dueDate}
+                        Due: {paymentData?.dueDate}
                       </span>
-                      {paymentData.lateFee > 0 && (
+                      {paymentData?.lateFee > 0 && (
                         <Badge variant="destructive" className="text-xs">
                           <AlertCircle className="h-3 w-3 mr-1" />
                           Overdue
@@ -355,31 +392,31 @@ export default function PayRentPage() {
                       {isEditing ? (
                         <Input
                           type="number"
-                          value={paymentData.amount}
+                          value={paymentData?.amount}
                           onChange={(e) => {
                             const amount = Number.parseInt(e.target.value) || 0;
                             setPaymentData({
                               ...paymentData,
                               amount,
-                              totalAmount: amount + paymentData.lateFee,
+                              totalAmount: amount + paymentData?.lateFee,
                             });
                           }}
                           className="w-32 text-right"
                         />
                       ) : (
-                        <span>₦{paymentData.amount.toLocaleString()}</span>
+                        <span>₦{paymentData?.amount.toLocaleString()}</span>
                       )}
                     </div>
-                    {paymentData.lateFee > 0 && (
+                    {paymentData?.lateFee > 0 && (
                       <div className="flex justify-between text-red-600">
                         <span>Late Fee</span>
-                        <span>₦{paymentData.lateFee.toLocaleString()}</span>
+                        <span>₦{paymentData?.lateFee.toLocaleString()}</span>
                       </div>
                     )}
                     <hr />
                     <div className="flex justify-between font-semibold text-lg">
                       <span>Total Amount</span>
-                      <span>₦{paymentData.totalAmount.toLocaleString()}</span>
+                      <span>₦{paymentData?.totalAmount.toLocaleString()}</span>
                     </div>
                   </div>
                 </div>
@@ -390,7 +427,7 @@ export default function PayRentPage() {
                   <Textarea
                     id="notes"
                     placeholder="Add any notes for the landlord..."
-                    value={paymentData.notes}
+                    value={paymentData?.notes}
                     onChange={(e) =>
                       setPaymentData({ ...paymentData, notes: e.target.value })
                     }
@@ -407,7 +444,7 @@ export default function PayRentPage() {
                       <Input
                         id="scheduledDate"
                         type="date"
-                        value={paymentData.scheduledDate}
+                        value={paymentData?.scheduledDate}
                         onChange={(e) =>
                           setPaymentData({
                             ...paymentData,
@@ -421,7 +458,7 @@ export default function PayRentPage() {
                       <Input
                         id="scheduledTime"
                         type="time"
-                        value={paymentData.scheduledTime}
+                        value={paymentData?.scheduledTime}
                         onChange={(e) =>
                           setPaymentData({
                             ...paymentData,
@@ -471,7 +508,7 @@ export default function PayRentPage() {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div
                     className={`p-4 border-2 rounded-lg cursor-pointer transition-colors ${
-                      paymentData.paymentMethod === "upi"
+                      paymentData?.paymentMethod === "upi"
                         ? "border-blue-500 bg-blue-50"
                         : "border-gray-200 hover:border-gray-300"
                     }`}
@@ -488,7 +525,7 @@ export default function PayRentPage() {
 
                   <div
                     className={`p-4 border-2 rounded-lg cursor-pointer transition-colors ${
-                      paymentData.paymentMethod === "card"
+                      paymentData?.paymentMethod === "card"
                         ? "border-blue-500 bg-blue-50"
                         : "border-gray-200 hover:border-gray-300"
                     }`}
@@ -507,7 +544,7 @@ export default function PayRentPage() {
 
                   <div
                     className={`p-4 border-2 rounded-lg cursor-pointer transition-colors ${
-                      paymentData.paymentMethod === "netbanking"
+                      paymentData?.paymentMethod === "netbanking"
                         ? "border-blue-500 bg-blue-50"
                         : "border-gray-200 hover:border-gray-300"
                     }`}
@@ -527,14 +564,14 @@ export default function PayRentPage() {
                 </div>
 
                 {/* UPI Form */}
-                {paymentData.paymentMethod === "upi" && (
+                {paymentData?.paymentMethod === "upi" && (
                   <div className="space-y-4">
                     <div className="space-y-2">
                       <Label htmlFor="upiId">UPI ID *</Label>
                       <Input
                         id="upiId"
                         placeholder="yourname@paytm / yourname@gpay"
-                        value={paymentData.upiId}
+                        value={paymentData?.upiId}
                         onChange={(e) =>
                           setPaymentData({
                             ...paymentData,
@@ -548,14 +585,14 @@ export default function PayRentPage() {
                 )}
 
                 {/* Card Form */}
-                {paymentData.paymentMethod === "card" && (
+                {paymentData?.paymentMethod === "card" && (
                   <div className="space-y-4">
                     <div className="space-y-2">
                       <Label htmlFor="cardName">Cardholder Name *</Label>
                       <Input
                         id="cardName"
                         placeholder="Name as on card"
-                        value={paymentData.cardName}
+                        value={paymentData?.cardName}
                         onChange={(e) =>
                           setPaymentData({
                             ...paymentData,
@@ -570,7 +607,7 @@ export default function PayRentPage() {
                       <Input
                         id="cardNumber"
                         placeholder="1234 5678 9012 3456"
-                        value={paymentData.cardNumber}
+                        value={paymentData?.cardNumber}
                         onChange={(e) =>
                           setPaymentData({
                             ...paymentData,
@@ -586,7 +623,7 @@ export default function PayRentPage() {
                         <Input
                           id="cardExpiry"
                           placeholder="MM/YY"
-                          value={paymentData.cardExpiry}
+                          value={paymentData?.cardExpiry}
                           onChange={(e) =>
                             setPaymentData({
                               ...paymentData,
@@ -601,7 +638,7 @@ export default function PayRentPage() {
                         <Input
                           id="cardCvv"
                           placeholder="123"
-                          value={paymentData.cardCvv}
+                          value={paymentData?.cardCvv}
                           onChange={(e) =>
                             setPaymentData({
                               ...paymentData,
@@ -616,12 +653,12 @@ export default function PayRentPage() {
                 )}
 
                 {/* Net Banking */}
-                {paymentData.paymentMethod === "netbanking" && (
+                {paymentData?.paymentMethod === "netbanking" && (
                   <div className="space-y-4">
                     <div className="space-y-2">
                       <Label>Select Your Bank *</Label>
                       <Select
-                        value={paymentData.bankName}
+                        value={paymentData?.bankName}
                         onValueChange={(value) =>
                           setPaymentData({ ...paymentData, bankName: value })
                         }
@@ -650,7 +687,7 @@ export default function PayRentPage() {
                   <div className="flex justify-between items-center">
                     <span className="font-semibold">Amount to Pay:</span>
                     <span className="text-2xl font-bold text-blue-600">
-                      ₦{paymentData.totalAmount.toLocaleString()}
+                      ₦{paymentData?.totalAmount.toLocaleString()}
                     </span>
                   </div>
                 </div>
@@ -691,19 +728,19 @@ export default function PayRentPage() {
                       <div className="flex justify-between">
                         <span>Property:</span>
                         <span className="font-medium">
-                          {paymentData.propertyTitle}
+                          {paymentData?.propertyTitle}
                         </span>
                       </div>
                       <div className="flex justify-between">
                         <span>Landlord:</span>
                         <span className="font-medium">
-                          {paymentData.landlordName}
+                          {paymentData?.host?.userName}
                         </span>
                       </div>
                       <div className="flex justify-between">
                         <span>Due Date:</span>
                         <span className="font-medium">
-                          {paymentData.dueDate}
+                          {paymentData?.dueDate}
                         </span>
                       </div>
                     </div>
@@ -715,37 +752,39 @@ export default function PayRentPage() {
                       <div className="flex justify-between">
                         <span>Method:</span>
                         <span className="font-medium capitalize">
-                          {paymentData.paymentMethod}
+                          {paymentData?.paymentMethod}
                         </span>
                       </div>
                       <div className="flex justify-between">
                         <span>Amount:</span>
                         <span className="font-medium">
-                          ₦{paymentData.amount.toLocaleString()}
+                          ₦{paymentData?.amount.toLocaleString()}
                         </span>
                       </div>
-                      {paymentData.lateFee > 0 && (
+                      {paymentData?.lateFee > 0 && (
                         <div className="flex justify-between text-red-600">
                           <span>Late Fee:</span>
                           <span className="font-medium">
-                            ₦{paymentData.lateFee.toLocaleString()}
+                            ₦{paymentData?.lateFee.toLocaleString()}
                           </span>
                         </div>
                       )}
                       <hr />
                       <div className="flex justify-between font-semibold">
                         <span>Total:</span>
-                        <span>₦{paymentData.totalAmount.toLocaleString()}</span>
+                        <span>
+                          ₦{paymentData?.totalAmount.toLocaleString()}
+                        </span>
                       </div>
                     </div>
                   </div>
                 </div>
 
-                {paymentData.notes && (
+                {paymentData?.notes && (
                   <div className="space-y-2">
                     <h4 className="font-semibold">Notes</h4>
                     <p className="text-sm text-gray-600 bg-gray-50 p-3 rounded">
-                      {paymentData.notes}
+                      {paymentData?.notes}
                     </p>
                   </div>
                 )}
@@ -777,7 +816,7 @@ export default function PayRentPage() {
                     Processing Payment...
                   </>
                 ) : (
-                  `Pay ₦${paymentData.totalAmount.toLocaleString()}`
+                  `Pay ₦${paymentData?.totalAmount.toLocaleString()}`
                 )}
               </Button>
             </div>
@@ -795,7 +834,7 @@ export default function PayRentPage() {
                 </h2>
                 <p className="text-gray-600 mb-6">
                   Your rent payment of ₦
-                  {paymentData.totalAmount.toLocaleString()} has been processed
+                  {paymentData?.totalAmount.toLocaleString()} has been processed
                   successfully.
                 </p>
 
@@ -825,7 +864,7 @@ export default function PayRentPage() {
                   <div className="flex justify-between">
                     <span>Payment Method:</span>
                     <span className="capitalize">
-                      {paymentData.paymentMethod}
+                      {paymentData?.paymentMethod}
                     </span>
                   </div>
                   <div className="flex justify-between">
@@ -840,7 +879,7 @@ export default function PayRentPage() {
                     <div className="text-sm text-left">
                       <p className="font-medium text-blue-800">Next Steps:</p>
                       <p className="text-blue-700">
-                        Your landlord ({paymentData.landlordName}) has been
+                        Your landlord ({paymentData?.host?.userName}) has been
                         notified about this payment. They will review and
                         approve it within 24-48 hours. You'll receive a
                         confirmation once approved.

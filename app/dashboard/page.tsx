@@ -35,7 +35,9 @@ export default function DashboardPage() {
 
   const [activeTab, setActiveTab] = useState("overview");
   const [notifications, setNotifications] = useState(3);
-  const userData = useAuthStore((state) => state.user);
+  const { user, isAuthenticated, _hasHydrated } = useAuthStore();
+
+  console.log(user);
   const [pendingApprovals, setPendingApprovals] = useState([
     {
       id: 1,
@@ -90,14 +92,12 @@ export default function DashboardPage() {
   ]);
 
   useEffect(() => {
-    const userData = localStorage.getItem("user");
-    const isLoggedIn = localStorage.getItem("isLoggedIn");
+    if (!_hasHydrated) return; // wait for Zustand to load from localStorage
 
-    if (!userData || !isLoggedIn) {
-      router.push("/auth/login");
-      return;
+    if (!isAuthenticated) {
+      router.push("/auth/gg");
     }
-  }, [router]);
+  }, [_hasHydrated, isAuthenticated, router]);
 
   const approvePayment = (paymentId: number) => {
     const payment = pendingApprovals.find((p) => p.id === paymentId);
@@ -137,7 +137,7 @@ export default function DashboardPage() {
     alert(`Calling ${phone}...`);
   };
 
-  if (!userData) {
+  if (!user) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -174,7 +174,7 @@ export default function DashboardPage() {
               <Avatar>
                 <AvatarImage src="/placeholder.svg?height=32&width=32" />
                 <AvatarFallback>
-                  {userData.userName.charAt(0).toUpperCase()}
+                  {user.userName.charAt(0).toUpperCase()}
                 </AvatarFallback>
               </Avatar>
             </div>
@@ -192,13 +192,13 @@ export default function DashboardPage() {
                     <Avatar className="h-12 w-12">
                       <AvatarImage src="/placeholder.svg?height=48&width=48" />
                       <AvatarFallback>
-                        {userData.userName.charAt(0).toUpperCase()}
+                        {user.userName.charAt(0).toUpperCase()}
                       </AvatarFallback>
                     </Avatar>
                     <div>
-                      <h3 className="font-semibold">{userData.userName}</h3>
+                      <h3 className="font-semibold">{user.userName}</h3>
                       <Badge variant="outline" className="text-xs capitalize">
-                        {userData.role}
+                        {user.role}
                       </Badge>
                     </div>
                   </div>
@@ -220,10 +220,10 @@ export default function DashboardPage() {
                       onClick={() => setActiveTab("payments")}
                     >
                       <CreditCard className="h-4 w-4 mr-2" />
-                      {userData.role === "tenant"
+                      {user.role === "tenant"
                         ? "My Payments"
                         : "Payment Approvals"}
-                      {userData.role === "landlord" &&
+                      {user.role === "landlord" &&
                         pendingApprovals.length > 0 && (
                           <Badge className="ml-auto h-5 w-5 rounded-full p-0 text-xs">
                             {pendingApprovals.length}
@@ -261,13 +261,13 @@ export default function DashboardPage() {
                   <div className="flex justify-between items-center">
                     <div>
                       <h1 className="text-3xl font-bold">
-                        Welcome back, {userData.userName.split(" ")[0]}!
+                        Welcome back, {user.userName.split(" ")[0]}!
                       </h1>
                       <p className="text-gray-600">
                         Here's what's happening with your account
                       </p>
                     </div>
-                    {userData.role === "tenant" && (
+                    {user.role === "tenant" && (
                       <Link href="/payments/pay">
                         <Button>
                           <CreditCard className="h-4 w-4 mr-2" />
@@ -283,20 +283,20 @@ export default function DashboardPage() {
                       <CardHeader className="pb-2">
                         <CardTitle className="text-sm font-medium text-gray-600 flex items-center">
                           <CreditCard className="h-4 w-4 mr-2" />
-                          {userData.role === "landlord"
+                          {user.role === "landlord"
                             ? "Pending Approvals"
                             : "Payment Status"}
                         </CardTitle>
                       </CardHeader>
                       <CardContent>
                         <div className="text-2xl font-bold">
-                          {userData.role === "landlord"
+                          {user.role === "landlord"
                             ? pendingApprovals.length
                             : "2"}
                         </div>
                         <p className="text-xs text-blue-600 flex items-center mt-1">
                           <CheckCircle2 className="h-3 w-3 mr-1" />
-                          {userData.role === "landlord"
+                          {user.role === "landlord"
                             ? "Payments to review"
                             : "Payments completed"}
                         </p>
@@ -330,7 +330,7 @@ export default function DashboardPage() {
                         <div className="text-2xl font-bold">₦45,000</div>
                         <p className="text-xs text-purple-600 flex items-center mt-1">
                           <CheckCircle2 className="h-3 w-3 mr-1" />
-                          {userData.role === "landlord"
+                          {user.role === "landlord"
                             ? "Rent received"
                             : "Rent paid"}
                         </p>
@@ -345,7 +345,7 @@ export default function DashboardPage() {
                     </CardHeader>
                     <CardContent>
                       <div className="space-y-4">
-                        {userData.role === "landlord" &&
+                        {user.role === "landlord" &&
                           pendingApprovals.length > 0 && (
                             <div className="flex items-center space-x-3 p-3 bg-yellow-50 rounded-lg">
                               <div className="w-2 h-2 bg-yellow-600 rounded-full"></div>
@@ -404,11 +404,11 @@ export default function DashboardPage() {
                 <div className="space-y-6">
                   <div className="flex justify-between items-center">
                     <h1 className="text-3xl font-bold">
-                      {userData.role === "tenant"
+                      {user.role === "tenant"
                         ? "My Payments"
                         : "Payment Management"}
                     </h1>
-                    {userData.role === "tenant" && (
+                    {user.role === "tenant" && (
                       <Link href="/payments/pay">
                         <Button>
                           <CreditCard className="h-4 w-4 mr-2" />
@@ -418,7 +418,7 @@ export default function DashboardPage() {
                     )}
                   </div>
 
-                  {userData.role === "landlord" && (
+                  {user.role === "landlord" && (
                     <>
                       {/* Pending Approvals */}
                       <Card>
@@ -623,7 +623,7 @@ export default function DashboardPage() {
                     </>
                   )}
 
-                  {userData.role === "tenant" && (
+                  {user.role === "tenant" && (
                     <Card>
                       <CardHeader>
                         <CardTitle>Quick Actions</CardTitle>

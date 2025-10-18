@@ -13,6 +13,7 @@ interface Property {
   rating: number;
   verified: boolean;
   views: number;
+  host: string;
 }
 import React from "react";
 import { useState } from "react";
@@ -20,13 +21,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+
 import {
   Home,
   Search,
@@ -157,7 +152,7 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property, favorites }) => {
               Book now
             </Button>
           </a>
-          <a href="/chat/userId/houseId" className="w-full">
+          <a href={`/chat/${property.host}/`} className="w-full">
             <Button
               size="sm"
               variant="outline"

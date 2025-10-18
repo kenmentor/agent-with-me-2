@@ -38,18 +38,23 @@ import {
   Trees,
   Camera,
   CheckCircle,
+  Video,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { amenitiesList } from "@/app/data";
 import { useAuthStore } from "@/store/authStore";
 import Req from "@/app/utility/axois";
+import { set } from "date-fns";
+import { toast } from "sonner";
+import { Range, Slider } from "@radix-ui/react-slider";
 export default function AddPropertyPage() {
   const { base } = Req;
   const user = useAuthStore((state) => state.user);
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
+  const [selected, setSelected] = useState<number | null>(null);
   const [formData, setFormData] = useState({
     // Basic Info
     title: "",
@@ -73,15 +78,15 @@ export default function AddPropertyPage() {
     totalFloors: "",
     age: "",
     waterSuply: true,
-    electricity: true,
+    electricity: 0,
 
     // Amenities
     amenities: [] as string[],
 
     // Images
     images: [] as File[],
-    thumbnail: null,
-
+    video: null as File | null,
+    thumbnail: null as File | null,
     // Contact
     contactPreference: "both", // phone, email, both
     availableFrom: "",
@@ -100,20 +105,29 @@ export default function AddPropertyPage() {
       });
     }
   };
-  const handleSubmit = async () => {
+  const handleSubmit = async (e: { preventDefault: () => void }) => {
+    e.preventDefault();
     try {
       const data = new FormData();
       if (formData.thumbnail) {
+        alert("ok");
         data.append("thumbnail", formData.thumbnail);
       }
       data.append("title", formData.title);
+      data.append("state", formData.state);
       data.append("description", formData.description);
       data.append("category", formData.category);
       data.append("price", formData.price.toString()); // 👈 string but numeric value
       data.append("location", formData.location);
       data.append("type", formData.type);
       data.append("address", formData.address);
-      data.append("state", formData.state);
+      data.append("bedroom", formData.bedrooms);
+      data.append("bathroom", formData.bathrooms);
+      data.append("floor", formData.floor);
+      data.append("age", formData.age);
+      data.append("area", formData.area);
+      data.append("totalFloors", formData.totalFloors);
+      data.append("age", formData.age);
       data.append("waterSuply", String(formData.waterSuply)); // 👈 "true"/"false"
       data.append("electricity", formData.electricity.toString());
       data.append("host", user?._id || "");
@@ -122,12 +136,13 @@ export default function AddPropertyPage() {
       });
 
       data.append("maxgeust", "1"); // 👈 default since schema requires it
-
+      toast.message(String(data.get("thumbnail")));
       // Use gallery instead of files
       formData.images.forEach((file) => {
         data.append("files", file);
       });
-
+      data.append("video", formData.video as Blob);
+      console.log(data.getAll("files"));
       const res = await fetch(`${base}/v1/house`, {
         method: "POST",
         body: data,
@@ -135,12 +150,31 @@ export default function AddPropertyPage() {
 
       const result = await res.json();
       if (!res.ok) throw new Error(result.message || "Upload failed");
-      router.push("/dashboard?success=property-added");
+      toast.success("Property listed successfully!");
     } catch (err) {
       console.error(err);
+      toast.error((err as Error).message);
     } finally {
       setIsLoading(false);
     }
+  };
+  const handleVideoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith("video/")) {
+      alert("Please upload a valid video file (mp4, mov, etc.)");
+      return;
+    }
+    if (file.size > 50 * 1024 * 1024) {
+      alert("Video size must be less than 50MB");
+      return;
+    }
+    setFormData((prev) => ({ ...prev, video: file }));
+  };
+
+  const handleThumbnailSelect = (index: number) => {
+    setSelected(index);
+    setFormData((prev) => ({ ...prev, thumbnail: prev.images[index] }));
   };
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -159,9 +193,15 @@ export default function AddPropertyPage() {
       images: formData.images.filter((_, i) => i !== index),
     });
   };
+  const removeVideo = () => {
+    setFormData({
+      ...formData,
+      video: null,
+    });
+  };
 
   const nextStep = () => {
-    if (currentStep < 4) setCurrentStep(currentStep + 1);
+    if (currentStep < 5) setCurrentStep(currentStep + 1);
   };
 
   const prevStep = () => {
@@ -319,7 +359,6 @@ export default function AddPropertyPage() {
                 <div className="space-y-2">
                   <Label htmlFor="price">Price *</Label>
                   <div className="relative">
-                    <IndianRupee className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                     <Input
                       id="price"
                       type="text"
@@ -342,6 +381,14 @@ export default function AddPropertyPage() {
                       : "Enter total sale price"}
                   </p>
                 </div>
+                <Slider>
+                  <Range
+                    min={0}
+                    max={10000000}
+                    step={100000}
+                    className="w-full"
+                  />
+                </Slider>
               </CardContent>
             </Card>
           )}
@@ -460,7 +507,7 @@ export default function AddPropertyPage() {
                           <SelectItem value="2">2 BHK</SelectItem>
                           <SelectItem value="3">3 BHK</SelectItem>
                           <SelectItem value="4">4 BHK</SelectItem>
-                          <SelectItem value="5+">5+ BHK</SelectItem>
+                          <SelectItem value="5">5+ BHK</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -538,18 +585,18 @@ export default function AddPropertyPage() {
                     <Select
                       value={formData.age}
                       onValueChange={(value) =>
-                        setFormData({ ...formData, age: value })
+                        setFormData({ ...formData, age: "1" })
                       }
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Select age" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="0-1">0-1 years (New)</SelectItem>
-                        <SelectItem value="1-5">1-5 years</SelectItem>
-                        <SelectItem value="5-10">5-10 years</SelectItem>
-                        <SelectItem value="10-15">10-15 years</SelectItem>
-                        <SelectItem value="15+">15+ years</SelectItem>
+                        <SelectItem value="1">0-1 :: years (New)</SelectItem>
+                        <SelectItem value="1">1-5 years</SelectItem>
+                        <SelectItem value="5">5-10 years</SelectItem>
+                        <SelectItem value="10">10-15 years</SelectItem>
+                        <SelectItem value="15">15+ years</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -644,63 +691,139 @@ export default function AddPropertyPage() {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+                    {/* Upload Area */}
+                    <Label
+                      htmlFor="image-upload"
+                      className="block cursor-pointer border-2 border-dashed border-gray-300 rounded-lg p-6 text-center transition-all hover:border-gray-400 hover:bg-gray-50"
+                    >
                       <Camera className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                      <p className="text-gray-600 mb-2">
-                        Upload property photos (Max 10 photos)
+                      <p className="text-gray-700 mb-2 font-medium">
+                        Upload property photos (Max 10)
                       </p>
                       <p className="text-sm text-gray-500 mb-4">
                         JPG, PNG files up to 5MB each
                       </p>
+
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="bg-transparent border-gray-300 hover:border-gray-400"
+                      >
+                        <Upload className="h-4 w-4 mr-2 text-gray-600" />
+                        Choose Photos
+                      </Button>
+
+                      {/* Hidden File Input */}
                       <Input
                         type="file"
                         multiple
                         accept="image/*"
                         onChange={handleImageUpload}
-                        className="hidden"
                         id="image-upload"
+                        className="hidden"
                       />
-                      <Label htmlFor="image-upload">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          className="cursor-pointer bg-transparent"
-                        >
-                          <Upload className="h-4 w-4 mr-2" />
-                          Choose Photos
-                        </Button>
-                      </Label>
-                    </div>
-
-                    {formData.images.length > 0 && (
-                      <div>
-                        <p className="text-sm font-medium mb-2">
-                          Uploaded Photos ({formData.images.length}/10):
-                        </p>
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                          {formData.images.map((image, index) => (
-                            <div key={index} className="relative">
-                              <div className="aspect-square bg-gray-100 rounded-lg flex items-center justify-center">
-                                <Camera className="h-8 w-8 text-gray-400" />
-                              </div>
-                              <Badge
-                                variant="outline"
-                                className="absolute top-1 left-1 text-xs cursor-pointer hover:bg-red-50"
-                                onClick={() => removeImage(index)}
-                              >
-                                Remove
-                              </Badge>
-                              <p className="text-xs text-gray-500 mt-1 truncate">
-                                {image.name}
-                              </p>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
+                    </Label>
                   </div>
                 </CardContent>
               </Card>
+              <CardContent>
+                <div className="space-y-8">
+                  {/* IMAGE GALLERY UPLOAD */}
+
+                  {/* IMAGE PREVIEW GRID */}
+                  {formData.images.length > 0 && (
+                    <div>
+                      <p className="text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
+                        Uploaded Photos ({formData.images.length}/10):
+                      </p>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        {formData.images.map((image, index) => (
+                          <div
+                            key={index}
+                            className={`relative group ${
+                              selected === index
+                                ? "border-4 border-blue-500"
+                                : ""
+                            }`}
+                            onClick={() => handleThumbnailSelect(index)}
+                          >
+                            <img
+                              src={URL.createObjectURL(image)}
+                              alt={`upload-${index}`}
+                              className="w-full h-32 object-cover rounded-lg border border-gray-200 dark:border-gray-700"
+                            />
+                            <Badge
+                              variant="outline"
+                              className="absolute top-1 left-1 text-xs cursor-pointer opacity-0 group-hover:opacity-100 transition hover:bg-red-50 dark:hover:bg-red-900"
+                              onClick={() => removeImage(index)}
+                            >
+                              Remove
+                            </Badge>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* VIDEO UPLOAD */}
+                  <div
+                    className="border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-lg p-6 text-center cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-900 transition"
+                    onClick={() =>
+                      document.getElementById("video-upload")?.click()
+                    }
+                  >
+                    <Video className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                    <p className="text-gray-600 dark:text-gray-300 mb-2">
+                      Upload property video (Max 1 photos)
+                    </p>
+                    <p className="text-sm text-gray-500 mb-4">
+                      MP4 files up to 5MB each
+                    </p>
+
+                    <Input
+                      id="video-upload"
+                      type="file"
+                      multiple
+                      accept="video/*"
+                      onChange={handleVideoUpload}
+                      className="hidden"
+                    />
+
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="cursor-pointer bg-transparent"
+                    >
+                      <Upload className="h-4 w-4 mr-2" />
+                      Choose Photos
+                    </Button>
+                  </div>
+                  {formData.video && (
+                    <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden shadow-sm p-2">
+                      <video
+                        src={URL.createObjectURL(formData.video)}
+                        controls
+                        className="w-full rounded-lg max-h-64 object-cover"
+                      />
+                      <div className="flex items-center justify-between mt-2 px-1">
+                        <p className="text-sm text-gray-500 truncate">
+                          {formData.video.name}
+                        </p>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={removeVideo}
+                          className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30"
+                        >
+                          Remove
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* THUMBNAIL UPLOAD */}
+                </div>
+              </CardContent>
 
               {/* Contact Preferences */}
               <Card>
@@ -737,34 +860,6 @@ export default function AddPropertyPage() {
               </Card>
 
               {/* Free Trial Info */}
-              <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
-                <CardHeader>
-                  <CardTitle className="text-blue-800 flex items-center">
-                    <CheckCircle className="h-5 w-5 mr-2" />
-                    🎉 Free 3-Day Trial
-                  </CardTitle>
-                  <CardDescription className="text-blue-600">
-                    Your property will be live for 3 days absolutely free! After
-                    that, you can choose from our affordable plans to continue.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                    <div className="flex items-center space-x-2">
-                      <CheckCircle className="h-4 w-4 text-green-600" />
-                      <span>Unlimited property views</span>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <CheckCircle className="h-4 w-4 text-green-600" />
-                      <span>Direct tenant contact</span>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <CheckCircle className="h-4 w-4 text-green-600" />
-                      <span>Visit scheduling</span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
             </div>
           )}
 
@@ -790,7 +885,7 @@ export default function AddPropertyPage() {
                   Next Step
                 </Button>
               ) : (
-                <Button type="submit" disabled={isLoading}>
+                <Button disabled={isLoading}>
                   {isLoading
                     ? "Publishing Property..."
                     : "Publish Property - FREE"}
