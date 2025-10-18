@@ -57,7 +57,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Search } from "lucide-react";
+import { Search, Spline } from "lucide-react";
 
 import Header from "@/app/components/Header";
 import PropertyCard from "../components/PropertyCard";
@@ -65,6 +65,7 @@ import Req from "@/app/utility/axois";
 import { priceRanges, propertyType, statesAndLGAs } from "../data";
 import { Slider } from "@/components/ui/slider";
 import NoResults from "../components/NoResults";
+import { Spinner } from "@/components/ui/spinner";
 export default function PropertiesPage() {
   const { base, app } = Req;
   const [searchQuery, setSearchQuery] = useState({
@@ -161,6 +162,7 @@ export default function PropertiesPage() {
       : `₦${value.toLocaleString()}`;
 
   const [selectedState, setSelectedState] = useState<string>("all");
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -291,31 +293,24 @@ export default function PropertiesPage() {
         {/* Property Grid */}
 
         <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-          {data.length > 0 ? (
-            data.map((property) => (
-              <PropertyCard
-                key={property._id}
-                property={property}
-                favorites={favorites}
-              />
-            ))
+          {!loading ? (
+            data.length === 0 ? (
+              <NoResults />
+            ) : (
+              data.map((property) => (
+                <PropertyCard
+                  key={property._id}
+                  property={property}
+                  favorites={favorites}
+                />
+              ))
+            )
           ) : (
-            <NoResults
-              onClearFilters={() => {
-                setSearchQuery({
-                  keyword: "",
-                  type: "",
-                  max: 100000000,
-                  min: 0,
-                  category: "",
-                  lga: "",
-                  state: "",
-                  landmark: "",
-                  limit: "50",
-                  priceRange: [0, 0],
-                });
-              }}
-            />
+            <div className="min-h-screen flex items-center justify-center">
+              <p className="text-gray-500 text-lg">
+                <Spinner className=" size-20" />
+              </p>
+            </div>
           )}
         </div>
       </div>

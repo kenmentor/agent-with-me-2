@@ -85,7 +85,7 @@ export default function PayRentPage() {
     dueDate: "2024-02-25",
     lateFee: 0,
     totalAmount: 45000,
-    paymentMethod: "card",
+    paymentMethod: "",
     upiId: "",
     cardNumber: "",
     cardExpiry: "",
@@ -93,6 +93,8 @@ export default function PayRentPage() {
     cardName: "",
     bankName: "",
     notes: "",
+    scheduledDate: "",
+    scheduledTime: "",
   });
   const [property, setProperty] = useState<property | null>(null);
   const [loading, setLoading] = useState(true);
@@ -107,7 +109,13 @@ export default function PayRentPage() {
       console.log("helloe", res.data.data);
       const result = res.data;
 
-      setPaymentData({ ...paymentData });
+      setPaymentData((prev) => ({
+        ...result,
+        propertyTitle: result.data.title,
+
+        amount: result.data.price,
+        totalAmount: result.data.price + prev.lateFee,
+      }));
     } catch (err) {
       console.log("Fetch error:", err);
     }
@@ -207,31 +215,7 @@ export default function PayRentPage() {
     setIsLoading(false);
     setPaymentStep(4);
   };
-  async function generatePaymentDetails() {
-    console.log({
-      email: user.email,
-      hostId: paymentData?.host?._id,
-      houseId: houseId,
-      guestId: user._id,
-      amount: paymentData?.totalAmount,
-      method: paymentData?.paymentMethod,
-      notes: paymentData?.notes,
-    });
-    const paymentDetails = await app.post(
-      `${base}/v1/payment/initialize-bank-transfer`,
-      {
-        email: user.email,
-        hostId: paymentData?.host?._id,
-        houseId: houseId,
-        guestId: user._id,
-        amount: paymentData?.totalAmount,
-        method: paymentData?.paymentMethod,
-        notes: paymentData?.notes,
-      }
-    );
-    console.log(paymentDetails.data);
-    return paymentDetails.data;
-  }
+
   const sendPaymentNotification = () => {
     // Simulate sending notification to landlord
     toast.success(
@@ -273,7 +257,7 @@ export default function PayRentPage() {
         {/* Progress Steps */}
         <div className="mb-8">
           <div className="flex items-center justify-center space-x-8">
-            {[1, 2, 3].map((step) => (
+            {[1, 2, 3, 4].map((step) => (
               <div key={step} className="flex items-center">
                 <div
                   className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-medium ${
@@ -450,6 +434,54 @@ export default function PayRentPage() {
                     rows={3}
                   />
                 </div>
+
+                {/* Schedule Payment */}
+                <div className="space-y-4">
+                  <h4 className="font-semibold">Schedule Payment (Optional)</h4>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="scheduledDate">Date</Label>
+                      <Input
+                        id="scheduledDate"
+                        type="date"
+                        value={paymentData?.scheduledDate}
+                        onChange={(e) =>
+                          setPaymentData({
+                            ...paymentData,
+                            scheduledDate: e.target.value,
+                          })
+                        }
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="scheduledTime">Time</Label>
+                      <Input
+                        id="scheduledTime"
+                        type="time"
+                        value={paymentData?.scheduledTime}
+                        onChange={(e) =>
+                          setPaymentData({
+                            ...paymentData,
+                            scheduledTime: e.target.value,
+                          })
+                        }
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Security Notice */}
+                <div className="flex items-start space-x-3 p-4 bg-green-50 border border-green-200 rounded-lg">
+                  <Shield className="h-5 w-5 text-green-600 mt-0.5" />
+                  <div className="text-sm">
+                    <p className="font-medium text-green-800">Secure Payment</p>
+                    <p className="text-green-700">
+                      Your payment is secured with 256-bit SSL encryption. Your
+                      landlord will be notified once payment is completed and
+                      will approve it within 24-48 hours.
+                    </p>
+                  </div>
+                </div>
               </CardContent>
             </Card>
 
@@ -462,9 +494,223 @@ export default function PayRentPage() {
         )}
 
         {/* Step 2: Payment Method */}
+        {paymentStep === 2 && (
+          <div className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Account Details</CardTitle>
+                <CardDescription>
+                  you are to pay in the exact amount to this account
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {/* Payment Method Selection */}
+                {/* <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div
+                    className={`p-4 border-2 rounded-lg cursor-pointer transition-colors ${
+                      paymentData?.paymentMethod === "upi"
+                        ? "border-blue-500 bg-blue-50"
+                        : "border-gray-200 hover:border-gray-300"
+                    }`}
+                    onClick={() =>
+                      setPaymentData({ ...paymentData, paymentMethod: "upi" })
+                    }
+                  >
+                    <div className="text-center">
+                      <Smartphone className="h-8 w-8 mx-auto mb-2 text-blue-600" />
+                      <h3 className="font-semibold">UPI</h3>
+                      <p className="text-sm text-gray-600">Pay using UPI ID</p>
+                    </div>
+                  </div>
+
+                  <div
+                    className={`p-4 border-2 rounded-lg cursor-pointer transition-colors ${
+                      paymentData?.paymentMethod === "card"
+                        ? "border-blue-500 bg-blue-50"
+                        : "border-gray-200 hover:border-gray-300"
+                    }`}
+                    onClick={() =>
+                      setPaymentData({ ...paymentData, paymentMethod: "card" })
+                    }
+                  >
+                    <div className="text-center">
+                      <CreditCard className="h-8 w-8 mx-auto mb-2 text-blue-600" />
+                      <h3 className="font-semibold">Credit/Debit Card</h3>
+                      <p className="text-sm text-gray-600">
+                        Visa, Mastercard, RuPay
+                      </p>
+                    </div>
+                  </div>
+
+                  <div
+                    className={`p-4 border-2 rounded-lg cursor-pointer transition-colors ${
+                      paymentData?.paymentMethod === "netbanking"
+                        ? "border-blue-500 bg-blue-50"
+                        : "border-gray-200 hover:border-gray-300"
+                    }`}
+                    onClick={() =>
+                      setPaymentData({
+                        ...paymentData,
+                        paymentMethod: "netbanking",
+                      })
+                    }
+                  >
+                    <div className="text-center">
+                      <Building2 className="h-8 w-8 mx-auto mb-2 text-blue-600" />
+                      <h3 className="font-semibold">Net Banking</h3>
+                      <p className="text-sm text-gray-600">All major banks</p>
+                    </div>
+                  </div>
+                </div> */}
+
+                {/* UPI Form */}
+                {paymentData?.paymentMethod === "upi" && (
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="upiId">UPI ID *</Label>
+                      <Input
+                        id="upiId"
+                        placeholder="yourname@paytm / yourname@gpay"
+                        value={paymentData?.upiId}
+                        onChange={(e) =>
+                          setPaymentData({
+                            ...paymentData,
+                            upiId: e.target.value,
+                          })
+                        }
+                        required
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* Card Form */}
+                {paymentData?.paymentMethod === "card" && (
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="cardName">Cardholder Name *</Label>
+                      <Input
+                        id="cardName"
+                        placeholder="Name as on card"
+                        value={paymentData?.cardName}
+                        onChange={(e) =>
+                          setPaymentData({
+                            ...paymentData,
+                            cardName: e.target.value,
+                          })
+                        }
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="cardNumber">Card Number *</Label>
+                      <Input
+                        id="cardNumber"
+                        placeholder="1234 5678 9012 3456"
+                        value={paymentData?.cardNumber}
+                        onChange={(e) =>
+                          setPaymentData({
+                            ...paymentData,
+                            cardNumber: e.target.value,
+                          })
+                        }
+                        required
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="cardExpiry">Expiry Date *</Label>
+                        <Input
+                          id="cardExpiry"
+                          placeholder="MM/YY"
+                          value={paymentData?.cardExpiry}
+                          onChange={(e) =>
+                            setPaymentData({
+                              ...paymentData,
+                              cardExpiry: e.target.value,
+                            })
+                          }
+                          required
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="cardCvv">CVV *</Label>
+                        <Input
+                          id="cardCvv"
+                          placeholder="123"
+                          value={paymentData?.cardCvv}
+                          onChange={(e) =>
+                            setPaymentData({
+                              ...paymentData,
+                              cardCvv: e.target.value,
+                            })
+                          }
+                          required
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Net Banking */}
+                {paymentData?.paymentMethod === "netbanking" && (
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label>Select Your Bank *</Label>
+                      <Select
+                        value={paymentData?.bankName}
+                        onValueChange={(value) =>
+                          setPaymentData({ ...paymentData, bankName: value })
+                        }
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Choose your bank" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="sbi">
+                            State Bank of India
+                          </SelectItem>
+                          <SelectItem value="hdfc">HDFC Bank</SelectItem>
+                          <SelectItem value="icici">ICICI Bank</SelectItem>
+                          <SelectItem value="axis">Axis Bank</SelectItem>
+                          <SelectItem value="kotak">
+                            Kotak Mahindra Bank
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                )}
+
+                {/* Payment Summary */}
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <div className="flex justify-between items-center">
+                    <span className="font-semibold">Amount to Pay:</span>
+                    <span className="text-2xl font-bold text-blue-600">
+                      ₦{paymentData?.totalAmount.toLocaleString()}
+                    </span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <div className="flex justify-between">
+              <Button variant="outline" onClick={() => setPaymentStep(1)}>
+                Back
+              </Button>
+              <Button
+                onClick={() => setPaymentStep(3)}
+                disabled={!validatePaymentDetails()}
+                size="lg"
+              >
+                Review Payment
+              </Button>
+            </div>
+          </div>
+        )}
 
         {/* Step 3: Confirmation */}
-        {paymentStep === 2 && (
+        {paymentStep === 3 && (
           <div className="space-y-6">
             <Card>
               <CardHeader>
@@ -560,21 +806,17 @@ export default function PayRentPage() {
             </Card>
 
             <div className="flex justify-between">
-              <Button variant="outline" onClick={() => setPaymentStep(1)}>
+              <Button variant="outline" onClick={() => setPaymentStep(2)}>
                 Back
               </Button>
-              <Button
-                onClick={generatePaymentDetails}
-                disabled={isLoading}
-                size="lg"
-              >
+              <Button onClick={handlePayment} disabled={isLoading} size="lg">
                 {isLoading ? (
                   <>
                     <Clock className="h-4 w-4 mr-2 animate-spin" />
-                    Generating Payment Details.
+                    Processing Payment...
                   </>
                 ) : (
-                  "Pay Now"
+                  `Pay ₦${paymentData?.totalAmount.toLocaleString()}`
                 )}
               </Button>
             </div>
