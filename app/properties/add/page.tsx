@@ -42,7 +42,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { amenitiesList } from "@/app/data";
+import { amenitiesList, propertyType, statesAndLGAs } from "@/app/data";
 import { useAuthStore } from "@/store/authStore";
 import Req from "@/app/utility/axois";
 import { set } from "date-fns";
@@ -62,7 +62,7 @@ export default function AddPropertyPage() {
     type: "",
     category: "",
     price: "",
-
+    pincode: "",
     // Location
     location: "",
     address: "",
@@ -91,6 +91,7 @@ export default function AddPropertyPage() {
     contactPreference: "both", // phone, email, both
     availableFrom: "",
   });
+  const [selectedState, setSelectedState] = useState<string>("all");
 
   const handleAmenityChange = (amenityId: string, checked: boolean) => {
     if (checked) {
@@ -135,7 +136,8 @@ export default function AddPropertyPage() {
         data.append("amenities[]", amenity);
       });
 
-      data.append("maxgeust", "1"); // 👈 default since schema requires it
+      data.append("maxgeust", "1");
+      data.append("thumbnail", formData.images[0]); // 👈 default since schema requires it
       toast.message(String(data.get("thumbnail")));
       // Use gallery instead of files
       formData.images.forEach((file) => {
@@ -217,7 +219,7 @@ export default function AddPropertyPage() {
             <Link href="/" className="flex items-center space-x-2">
               <Home className="h-8 w-8 text-blue-600" />
               <span className="text-2xl font-bold text-gray-900">
-                Ghar Konnect
+                AgentWithMe
               </span>
             </Link>
             <Link href="/dashboard">
@@ -314,12 +316,11 @@ export default function AddPropertyPage() {
                         <SelectValue placeholder="Select property type" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="apartment">Apartment</SelectItem>
-                        <SelectItem value="house">Independent House</SelectItem>
-                        <SelectItem value="villa">Villa</SelectItem>
-                        <SelectItem value="studio">Studio</SelectItem>
-                        <SelectItem value="penthouse">Penthouse</SelectItem>
-                        <SelectItem value="plot">Plot/Land</SelectItem>
+                        {propertyType.map((type) => (
+                          <SelectItem key={type} value={type}>
+                            {type}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>
@@ -404,48 +405,54 @@ export default function AddPropertyPage() {
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="state">state *</Label>
+                  <Label htmlFor="lga">state *</Label>
+                  <Select
+                    name="state"
+                    onValueChange={(value) => {
+                      setSelectedState(value);
+                      setFormData((prev) => ({
+                        ...prev,
+                        state: value,
+                        lga: "all",
+                      }));
+                    }}
+                  >
+                    <SelectTrigger className="w-40 w-full">
+                      <SelectValue placeholder="State" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Object.keys(statesAndLGAs).map((state) => (
+                        <SelectItem key={state} value={state}>
+                          {state}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {/* ✅ LGA (depends on selected state) */}
+                  <div className="space-y-2 ">
+                    <Label htmlFor="lga">LGA *</Label>
                     <Select
-                      value={formData.state}
+                      name="lga"
                       onValueChange={(value) =>
-                        setFormData({ ...formData, state: value })
+                        setFormData((prev) => ({ ...prev, lga: value }))
                       }
+                      disabled={selectedState === "all"}
                     >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select state" />
+                      <SelectTrigger className=" w-full">
+                        <SelectValue placeholder="LGA" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="mumbai">Mumbai</SelectItem>
-                        <SelectItem value="pune">Pune</SelectItem>
-                        <SelectItem value="bangalore">Bangalore</SelectItem>
-                        <SelectItem value="gurgaon">Gurgaon</SelectItem>
-                        <SelectItem value="delhi">Delhi</SelectItem>
-                        <SelectItem value="hyderabad">Hyderabad</SelectItem>
-                        <SelectItem value="chennai">Chennai</SelectItem>
-                        <SelectItem value="kolkata">Kolkata</SelectItem>
+                        <SelectItem value="all">Any LGA</SelectItem>
+                        {selectedState !== "all" &&
+                          statesAndLGAs[selectedState]?.map((lga) => (
+                            <SelectItem key={lga} value={lga}>
+                              {lga}
+                            </SelectItem>
+                          ))}
                       </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="location">Area/Locality *</Label>
-                    <div className="relative">
-                      <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                      <Input
-                        id="location"
-                        placeholder="e.g., Bandra West, Koregaon Park"
-                        value={formData.location}
-                        onChange={(e) =>
-                          setFormData({ ...formData, location: e.target.value })
-                        }
-                        className="pl-10"
-                        required
-                      />
-                    </div>
+                    </Select>{" "}
                   </div>
                 </div>
-
                 <div className="space-y-2">
                   <Label htmlFor="address">Complete Address *</Label>
                   <Textarea
@@ -503,11 +510,11 @@ export default function AddPropertyPage() {
                           <SelectValue placeholder="Select" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="1">1 BHK</SelectItem>
-                          <SelectItem value="2">2 BHK</SelectItem>
-                          <SelectItem value="3">3 BHK</SelectItem>
-                          <SelectItem value="4">4 BHK</SelectItem>
-                          <SelectItem value="5">5+ BHK</SelectItem>
+                          <SelectItem value="1">1 room</SelectItem>
+                          <SelectItem value="2">2 room</SelectItem>
+                          <SelectItem value="3">3 room</SelectItem>
+                          <SelectItem value="4">4 room</SelectItem>
+                          <SelectItem value="5">5+ room</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>

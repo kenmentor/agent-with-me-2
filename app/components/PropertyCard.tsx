@@ -108,8 +108,12 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property, favorites }) => {
             {"₦"} {property.price.toLocaleString()}
           </p>
           <div className="flex items-center space-x-1">
-            <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-            <span className="text-sm font-medium">{property.rating}</span>
+            {property.rating && (
+              <>
+                <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                <span className="text-sm font-medium">{property.rating}</span>
+              </>
+            )}
           </div>
         </div>
         {"₦"} {Math.floor(property.price / 12).toLocaleString()} /month
@@ -129,10 +133,8 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property, favorites }) => {
         </div>
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center space-x-2">
-            <div className="w-6 h-6 bg-gray-300 rounded-full flex items-center justify-center text-xs font-medium">
-              {property.landlord?.charAt(0)}
-            </div>
-            <span className="text-sm text-gray-600">{property.landlord}</span>
+            <div className="w-6 h-6 bg-gray-300 rounded-full flex items-center justify-center text-xs font-medium"></div>
+            {/* <span className="text-sm text-gray-600">{property.host}</span> */}
             {property.verified && (
               <Badge variant="outline" className="text-xs">
                 <Shield className="h-3 w-3 mr-1" />
@@ -149,7 +151,7 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property, favorites }) => {
           <a href={`properties/${property._id}`} className="w-full">
             <Button size="sm" className="flex-1 w-full">
               <Book className="h-4 w-4 mr-1" />
-              Book now
+              View Details
             </Button>
           </a>
           <a href={`/chat/${property.host}/`} className="w-full">

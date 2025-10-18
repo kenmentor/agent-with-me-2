@@ -88,7 +88,7 @@ export default function PropertyDetailPage() {
       "Fitness center",
       "Concierge service",
     ],
-    gallery: [
+    images: [
       {
         url: "/placeholder.svg?height=600&width=800",
         type: "image/jpeg",
@@ -145,7 +145,7 @@ export default function PropertyDetailPage() {
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat("en-US", {
       style: "currency",
-      currency: "USD",
+      currency: "NGN",
       maximumFractionDigits: 0,
     }).format(price);
   };
@@ -208,14 +208,16 @@ export default function PropertyDetailPage() {
         </div>
         <div className="flex flex-col items-end justify-center">
           <div className="text-3xl font-bold">
-            {formatPrice(property.price)}
+            {" "}
+            {"₦"}
+            {property.price}
           </div>
           <div className="mt-4 flex gap-2">
-            <Link href={`/payments/pay/${property._id}`}>
-              {property.host.adminVerified && (
+            {property.host.adminVerified && (
+              <Link href={`/payments/pay/${property._id}`}>
                 <Button size="lg">Book Now</Button>
-              )}
-            </Link>
+              </Link>
+            )}
             <Button size="lg" variant="outline">
               <Heart className="mr-2 h-4 w-4" />
               Save
@@ -237,7 +239,7 @@ export default function PropertyDetailPage() {
             className="h-full w-full object-cover"
           />
         </div>
-        {property.gallery?.map((image, index) => (
+        {property.images?.map((image, index) => (
           <div
             key={index}
             className="col-span-2 aspect-video overflow-hidden rounded-lg sm:col-span-1"
