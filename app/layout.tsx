@@ -4,6 +4,7 @@ import { GeistMono } from "geist/font/mono";
 import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 import { Toaster } from "sonner";
+import InstallAppPrompt from "./components/InstallAppPrompt";
 
 export const metadata: Metadata = {
   title: "v0 App",
@@ -29,6 +30,7 @@ html {
       </head>
       <body>
         {children}
+        <InstallAppPrompt />
         <Analytics />
         <Toaster richColors position="top-right" />
       </body>
