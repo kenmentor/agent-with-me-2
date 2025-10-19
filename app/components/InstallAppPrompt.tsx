@@ -11,6 +11,7 @@ export default function InstallAppPrompt() {
       e.preventDefault();
       setDeferredPrompt(e);
       setIsVisible(true);
+      handleInstall();
     };
 
     window.addEventListener("beforeinstallprompt", handler);
