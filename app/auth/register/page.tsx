@@ -22,7 +22,7 @@ import { useAuthStore } from "@/store/authStore";
 export default function RegisterPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const defaultRole = searchParams.get("role") || "guest";
+  const defaultRole = "guest";
   const signup = useAuthStore((state) => state.signup);
   const isLoading = useAuthStore((state) => state.isLoading);
   const error = useAuthStore((state) => state.error);
@@ -111,7 +111,6 @@ export default function RegisterPage() {
               <form onSubmit={handleSubmit} className="space-y-4">
                 {/* Role Selection */}
                 <div className="space-y-3">
-                  <Label>I am a:</Label>
                   <RadioGroup
                     value={formData.role}
                     onValueChange={(value) =>
@@ -135,7 +134,7 @@ export default function RegisterPage() {
                       </Label>
                     </div>
                     <div className="flex items-center space-x-2 border rounded-lg p-3 hover:bg-gray-50">
-                      <RadioGroupItem value="host" id="landlord" disabled />
+                      <RadioGroupItem value="host" id="landlord" />
                       <Label
                         htmlFor="landlord"
                         className="flex items-center space-x-2 cursor-pointer"
