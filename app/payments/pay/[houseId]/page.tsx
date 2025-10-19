@@ -119,7 +119,7 @@ export default function PayRentPage() {
     getData();
     console.log(paymentData);
     if (!isAuthenticated) {
-      router.push("/auth/gg");
+      router.push("/auth/register");
     }
   }, [_hasHydrated, isAuthenticated, router]);
 
