@@ -24,34 +24,26 @@ const NAV_LINKS = [
 ];
 
 // pages that should display the bottom nav
-const SHOW_BOTTOM_NAV_ROUTES = ["/", "/properties", "/dashboard", "/upload"];
+const SHOW_BOTTOM_NAV_ROUTES = ["/properties", "/dashboard", "payments"];
 
 export default function RootLayout() {
   const pathname = usePathname();
-  const showBottomNav = SHOW_BOTTOM_NAV_ROUTES.includes(pathname);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [scrollState, setScrollState] = useState(0);
-  const [headerOpacity, setHeaderOpacity] = useState(0);
-  const { height } = useWindowDimensions();
-  const user = useAuthStore((s) => s.user);
-  const [hasNotification] = useState(true); // fake notifications for now
 
-  useEffect(() => {
-    const handleScroll = () => setScrollState(window.scrollY);
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
+  const showBottomNav = SHOW_BOTTOM_NAV_ROUTES.some((path) => {
+    console.log(pathname, path, pathname.startsWith(path)); // ✅ fix
+    return pathname.startsWith(path);
+  });
 
-  useEffect(() => {
-    const threshold = height - 100;
-    setHeaderOpacity(scrollState > threshold ? 1 : 0);
-  }, [scrollState, height]);
+  console.log("Show Bottom Nav?", showBottomNav);
+  // true
+
+  // fake notifications for now
 
   const activeRoute = (path: string) => pathname === path;
 
   return (
     <>
-      {showBottomNav && !mobileMenuOpen && (
+      {showBottomNav && (
         <motion.nav
           initial={{ y: 80, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
