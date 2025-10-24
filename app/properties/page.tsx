@@ -59,12 +59,12 @@ import {
 } from "@/components/ui/select";
 import { Search, Spline } from "lucide-react";
 
-import Header from "@/app/components/Header";
-import PropertyCard from "../components/PropertyCard";
+import Header from "@/components/Header";
+import PropertyCard from "../../components/PropertyCard";
 import Req from "@/app/utility/axois";
 import { priceRanges, propertyType, statesAndLGAs } from "../data";
 import { Slider } from "@/components/ui/slider";
-import NoResults from "../components/NoResults";
+import NoResults from "../../components/NoResults";
 import { Spinner } from "@/components/ui/spinner";
 export default function PropertiesPage() {
   const { base, app } = Req;
@@ -164,11 +164,11 @@ export default function PropertiesPage() {
   const [selectedState, setSelectedState] = useState<string>("all");
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 ">
       {/* Header */}
-      <Header />
+      <Header color="black" />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pt-[120px] md:pt-[100px] ">
         {/* Search */}
         <div className="bg-white rounded-lg shadow-sm p-6 mb-8">
           <div className="flex flex-col lg:flex-row gap-4">
@@ -258,26 +258,33 @@ export default function PropertiesPage() {
                     ))}
                 </SelectContent>
               </Select>
-              <div className="flex flex-col w-64">
-                <label className="text-sm mb-1 text-gray-300">
-                  Price Range:{" "}
-                  <span className="font-medium text-black">
-                    {formatPrice(searchQuery.priceRange[0])} –{" "}
-                    {formatPrice(searchQuery.priceRange[1])}
-                  </span>
-                </label>
-                <Slider
-                  defaultValue={[0, 5000000]}
-                  min={0}
-                  max={10000000}
-                  step={100000}
-                  value={searchQuery.priceRange}
-                  onValueChange={(value) =>
-                    setSearchQuery((prev) => ({ ...prev, priceRange: value }))
-                  }
-                  className="w-full"
-                />
-              </div>
+
+              <Select
+                onValueChange={(value: string) => {
+                  console.log(value);
+                  let range = value.split("-");
+                  setSearchQuery((prev) => ({
+                    ...prev,
+                    min: Number(range[0]),
+                    max: Number(range[1]),
+                  }));
+                  console.log(searchQuery.max, searchQuery.min);
+                }}
+              >
+                <SelectTrigger className="w-auto">
+                  <SelectValue placeholder="Budget" />
+                </SelectTrigger>
+                <SelectContent>budget</SelectContent>
+                <SelectContent>
+                  {priceRanges.map((range) => {
+                    return (
+                      <SelectItem value={`${range.min}-${range.max}`}>
+                        {range.label}
+                      </SelectItem>
+                    );
+                  })}
+                </SelectContent>
+              </Select>
             </div>
           </div>
         </div>
@@ -292,27 +299,27 @@ export default function PropertiesPage() {
 
         {/* Property Grid */}
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-          {!loading ? (
-            data.length === 0 ? (
-              <NoResults />
-            ) : (
-              data.map((property) => (
+        {!loading ? (
+          data.length === 0 ? (
+            <NoResults />
+          ) : (
+            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+              {data.map((property) => (
                 <PropertyCard
                   key={property._id}
                   property={property}
                   favorites={favorites}
                 />
-              ))
-            )
-          ) : (
-            <div className="min-h-screen flex items-center justify-center">
-              <p className="text-gray-500 text-lg">
-                <Spinner className=" size-20" />
-              </p>
+              ))}
             </div>
-          )}
-        </div>
+          )
+        ) : (
+          <div className="min-h-screen flex items-center justify-center">
+            <p className="text-gray-500 text-lg">
+              <Spinner className=" size-20" />
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );

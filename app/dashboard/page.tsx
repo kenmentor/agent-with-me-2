@@ -22,9 +22,9 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import Header from "../components/Header";
+import Header from "../../components/Header";
 import { useAuthStore } from "@/store/authStore";
-import BookingCard from "../components/BookingCard";
+import BookingCard from "../../components/BookingCard";
 import Req from "@/app/utility/axois";
 export default function DashboardPage() {
   const router = useRouter();

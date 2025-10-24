@@ -52,7 +52,7 @@ import Req from "@/app/utility/axois";
 import { useAuthStore } from "@/store/authStore";
 import router from "next/router";
 import { toast } from "sonner";
-import AutoPlayVideo from "@/app/components/AutoplayVideo";
+import AutoPlayVideo from "@/components/AutoplayVideo";
 export default function PropertyDetailPage() {
   const { id } = useParams();
   const { app, base } = Req;

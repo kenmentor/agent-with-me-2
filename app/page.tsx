@@ -1,4 +1,26 @@
 "use client";
+import { Button } from "@/components/ui/button";
+import { AnimatedCounter } from "@/components/animated-counter";
+import { useState, useEffect } from "react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Home, Shield, Users, MapPin, Phone } from "lucide-react";
+import Link from "next/link";
+import Image from "next/image";
+import backgroundImage from "@/public/image1.png";
+import Header from "@/components/Header";
+import useWindowDimensions from "@/hooks/useWindowDimenstions";
+import FeaturedPropertyCard from "@/components/FeaturedPropertyCard";
+import Req from "@/app/utility/axois";
+
+const { base, app } = Req;
+
 interface Property {
   id: number;
   title: string;
@@ -14,90 +36,56 @@ interface Property {
   verified: boolean;
   views: number;
 }
-import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Home, Shield, Users, MapPin, Phone } from "lucide-react";
-import Link from "next/link";
-import PropertyCard from "./components/PropertyCard";
-import FeaturedPropertyCard from "./components/FeaturedPropertyCard";
-import Req from "@/app/utility/axois";
-import { useEffect, useState } from "react";
-
-const { base, app } = Req;
 
 export default function HomePage() {
   const [data, setData] = useState<Property[]>([]);
-  useEffect(() => {
-    //https://agent-with-me-backend.onrender.com
 
-    const finalUrl = `${base}/v1/house?limit=3
-   `;
+  useEffect(() => {
+    const finalUrl = `${base}/v1/house?limit=3`;
 
     const fetchData = async () => {
       try {
-        console.log(await app.get(finalUrl));
         const res = (await app.get(finalUrl)).data;
-        const result = await res.data;
-        console.log(result);
-
+        const result = res.data;
         setData(result);
       } catch (err) {
         console.error(err);
-      } finally {
       }
     };
-    console.log("gfgg");
 
     fetchData();
   }, []);
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+    <div className="max-h-screen min-w-screen">
       {/* Header */}
-      <header className="bg-white shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center space-x-2">
-              <Home className="h-8 w-8 text-blue-600" />
-              <span className="text-2xl font-bold text-gray-900">
-                Agent with me
-              </span>
-            </div>
-            <div className="flex items-center space-x-4">
-              <Link href="/properties">
-                <Button variant="ghost">Browse Properties</Button>
-              </Link>
-              <Link href="/auth/login">
-                <Button variant="outline">Login</Button>
-              </Link>
-              <Link href="/auth/register">
-                <Button>Sign Up </Button>
-              </Link>
-            </div>
-          </div>
-        </div>
-      </header>
+      <Header />
 
       {/* Hero Section */}
-      <section className="py-20 px-4">
+      <section
+        className="py-20 px-4 h-screen flex justify-center items-center flex-col"
+        style={{
+          backgroundImage: `url(${backgroundImage.src})`,
+          backgroundSize: "cover",
+          backgroundRepeat: "no-repeat",
+          backgroundPosition: "center",
+        }}
+      >
         <div className="max-w-6xl mx-auto text-center">
-          <h1 className="text-5xl font-bold text-gray-900 mb-6">
-            Find Your Perfect <span className="text-blue-600">Home</span>
+          <h1 className="text-5xl font-bold text-white mb-6">
+            The smart way to find your next home
           </h1>
-          <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
+          <p className="text-xl text-white mb-8 max-w-3xl mx-auto">
             Connect with verified landlords and tenants. Rent, buy, or sell
             properties with confidence.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link href="/properties">
-              <Button size="lg" className="w-full sm:w-auto">
+              <Button
+                size="lg"
+                className="w-auto sm:w-auto text-white hover:border hover:bg-transparent hover:text-white"
+              >
                 Browse Properties
               </Button>
             </Link>
@@ -105,11 +93,37 @@ export default function HomePage() {
               <Button
                 size="lg"
                 variant="outline"
-                className="w-full sm:w-auto bg-white"
+                className="w-auto sm:w-auto bg-white"
               >
-                List Your Property
+                List Your Property For FREE
               </Button>
             </Link>
+          </div>
+        </div>
+
+        {/* Counters */}
+        <div className="relative flex-row w-[460px] justify-between top-32 hidden md:flex">
+          <div>
+            <AnimatedCounter
+              target={800}
+              className="text-white text-3xl font-semibold"
+            />
+            <p className="text-white">Listed Properties</p>
+          </div>
+          <div>
+            <AnimatedCounter
+              target={5300}
+              className="text-white text-3xl font-semibold"
+            />
+            <p className="text-white">Happy Customers</p>
+          </div>
+          <div>
+            <AnimatedCounter
+              target={23}
+              includePlusIcon={false}
+              className="text-white text-3xl font-semibold"
+            />
+            <p className="text-white">Awards</p>
           </div>
         </div>
       </section>
@@ -120,7 +134,7 @@ export default function HomePage() {
           <h2 className="text-3xl font-bold text-center mb-12">
             Why Choose Agent with me ?
           </h2>
-          <div className="grid md:grid-cols-3 gap-8">
+          <div className="grid md:grid-cols-4 gap-8">
             <Card className="text-center">
               <CardHeader>
                 <Shield className="h-12 w-12 text-blue-600 mx-auto mb-4" />
@@ -141,7 +155,16 @@ export default function HomePage() {
                 </CardDescription>
               </CardHeader>
             </Card>
-
+            <Card className="text-center">
+              <CardHeader>
+                <Users className="h-12 w-12 text-purple-600 mx-auto mb-4" />
+                <CardTitle>Free Trial</CardTitle>
+                <CardDescription>
+                  3-day free listing for landlords. No hidden charges during
+                  beta phase.
+                </CardDescription>
+              </CardHeader>
+            </Card>
             <Card className="text-center">
               <CardHeader>
                 <Home className="h-12 w-12 text-orange-600 mx-auto mb-4" />
@@ -156,7 +179,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Featured Properties */}
+      {/* Featured Properties (Dynamic) */}
       <section className="py-16 px-4 bg-gray-50">
         <div className="max-w-6xl mx-auto">
           <div className="flex justify-between items-center mb-8">
@@ -167,11 +190,19 @@ export default function HomePage() {
           </div>
 
           <div className="grid md:grid-cols-3 gap-6">
-            {data?.map((property) => {
-              return (
-                <FeaturedPropertyCard property={property} favorites={[]} />
-              );
-            })}
+            {data.length > 0 ? (
+              data.map((property) => (
+                <FeaturedPropertyCard
+                  key={property.id}
+                  property={property}
+                  favorites={[]}
+                />
+              ))
+            ) : (
+              <p className="text-gray-500 text-center w-full">
+                Loading properties...
+              </p>
+            )}
           </div>
         </div>
       </section>
@@ -217,7 +248,8 @@ export default function HomePage() {
             Ready to Find Your Perfect Home?
           </h2>
           <p className="text-xl text-blue-100 mb-8">
-            Join Agent with me today and start your property journey
+            Join Agent with me today and start your property journey with our
+            free trial!
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link href="/auth/register?role=tenant">
@@ -247,11 +279,46 @@ export default function HomePage() {
           <div className="grid md:grid-cols-4 gap-8">
             <div>
               <div className="flex items-center space-x-2 mb-4">
-                <Home className="h-6 w-6" />
-                <span className="text-xl font-bold">Agent with me </span>
+                <svg
+                  width="45.396"
+                  height="60"
+                  viewBox="0 0 45.396 60"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="w-8"
+                >
+                  <g>
+                    <path
+                      d="M0 0L17.9781 5.93773L18.3963 60L0 53.9894L0 0Z"
+                      fill="#FFFFFF"
+                      fillRule="evenodd"
+                      transform="translate(27 0)"
+                    />
+                    <path
+                      d="M0 5.80534L12.975 0L12.975 53.9767L0 59L0 5.80534Z"
+                      fill="#C0C0C0"
+                      fillRule="evenodd"
+                      transform="translate(14.35 0)"
+                    />
+                    <path
+                      d="M0 0L14.7218 4.49413L15.0642 45.4126L0 40.8633L0 0Z"
+                      fill="#FFFFFF"
+                      fillRule="evenodd"
+                      transform="translate(9.181 7.587)"
+                    />
+                    <path
+                      d="M0 4.32941L9.23646 0L9.23645 40.6186L0 44L0 4.32941Z"
+                      fill="#C0C0C0"
+                      fillRule="evenodd"
+                      transform="translate(0 7.587)"
+                    />
+                  </g>
+                </svg>
+                <span className="text-xl font-bold">Agent with me</span>
               </div>
               <p className="text-gray-400">
-                Making home finding simple and secure for everyone in India.
+                Simplifying the way you find your next home, securely and
+                confidently.
               </p>
             </div>
             <div>
@@ -267,7 +334,7 @@ export default function HomePage() {
                     href="/auth/register?role=tenant"
                     className="hover:text-white"
                   >
-                    Sign Up
+                    Sign Up Free
                   </Link>
                 </li>
               </ul>
@@ -307,7 +374,7 @@ export default function HomePage() {
             </div>
           </div>
           <div className="border-t border-gray-700 mt-8 pt-8 text-center text-gray-400">
-            <p>&copy; 2024 Agent with me . All rights reserved.</p>
+            <p>&copy; 2025 Agent with me. All rights reserved.</p>
           </div>
         </div>
       </footer>

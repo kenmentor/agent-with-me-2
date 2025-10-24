@@ -413,11 +413,16 @@ export const amenitiesList = [
 
 // ✅ Price Ranges (Optional helper)
 export const priceRanges: { label: string; min: number; max: number }[] = [
-  { label: "₦100k - ₦500k", min: 100000, max: 500000 },
-  { label: "₦500k - ₦1M", min: 500000, max: 1000000 },
-  { label: "₦1M - ₦3M", min: 1000000, max: 3000000 },
-  { label: "₦3M - ₦5M", min: 3000000, max: 5000000 },
-  { label: "₦5M+", min: 5000000, max: Infinity },
+  { label: "₦0 - ₦25,000", min: 0, max: 25000 },
+  { label: "₦25,000 - ₦50,000", min: 25000, max: 50000 },
+  { label: "₦50,000 - ₦100,000", min: 50000, max: 100000 },
+  { label: "₦100,000 - ₦250,000", min: 100000, max: 250000 },
+  { label: "₦250,000 - ₦500,000", min: 250000, max: 500000 },
+  { label: "₦500,000 - ₦750,000", min: 500000, max: 750000 },
+  { label: "₦750,000 - ₦1,000,000", min: 750000, max: 1000000 },
+  { label: "₦1,000,000 - ₦2,000,000", min: 1000000, max: 2000000 },
+  { label: "₦2,000,000 - ₦5,000,000", min: 2000000, max: 5000000 },
+  { label: "₦5,000,000+", min: 5000000, max: Infinity },
 ];
 
 // ✅ Property Types (If you need broader grouping)

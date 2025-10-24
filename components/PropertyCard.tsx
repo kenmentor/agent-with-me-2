@@ -38,7 +38,7 @@ import {
   Book,
 } from "lucide-react";
 import Link from "next/link";
-import Header from "@/app/components/Header";
+import Header from "@/components/Header";
 
 interface PropertyCardProps {
   property: Property;
