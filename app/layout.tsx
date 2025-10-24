@@ -7,9 +7,9 @@ import { Toaster } from "sonner";
 import InstallAppPrompt from "./components/InstallAppPrompt";
 
 export const metadata: Metadata = {
-  title: "v0 App",
-  description: "Created with v0",
-  generator: "v0.app",
+  title: "Agentwithme",
+  description: "this app helps youget affordable property easily",
+  generator: "Next.js",
 };
 
 export default function RootLayout({

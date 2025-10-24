@@ -837,6 +837,15 @@ export default function AddPropertyPage() {
                 <CardHeader>
                   <CardTitle>Contact Preferences</CardTitle>
                   <CardDescription>
+                    {" "}
+                    <CardHeader>
+                      <Users className="h-12 w-12 text-purple-600 mx-auto mb-4" />
+                      <CardTitle>Free Trial</CardTitle>
+                      <CardDescription>
+                        3-day free listing for landlords. No hidden charges
+                        during beta phase.
+                      </CardDescription>
+                    </CardHeader>
                     How would you like to be contacted?
                   </CardDescription>
                 </CardHeader>
@@ -866,7 +875,7 @@ export default function AddPropertyPage() {
                 </CardContent>
               </Card>
 
-              {/* Free Trial Info */}
+              {/*  Trial Info */}
             </div>
           )}
 
@@ -893,9 +902,7 @@ export default function AddPropertyPage() {
                 </Button>
               ) : (
                 <Button disabled={isLoading}>
-                  {isLoading
-                    ? "Publishing Property..."
-                    : "Publish Property - FREE"}
+                  {isLoading ? "Publishing Property..." : "Publish Property - "}
                 </Button>
               )}
             </div>

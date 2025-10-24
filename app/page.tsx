@@ -77,7 +77,7 @@ export default function HomePage() {
                 <Button variant="outline">Login</Button>
               </Link>
               <Link href="/auth/register">
-                <Button>Sign Up Free</Button>
+                <Button>Sign Up </Button>
               </Link>
             </div>
           </div>
@@ -93,7 +93,6 @@ export default function HomePage() {
           <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
             Connect with verified landlords and tenants. Rent, buy, or sell
             properties with confidence.
-            <strong> Free 3-day trial for all listings!</strong>
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -108,7 +107,7 @@ export default function HomePage() {
                 variant="outline"
                 className="w-full sm:w-auto bg-white"
               >
-                List Your Property - FREE Trial
+                List Your Property
               </Button>
             </Link>
           </div>
@@ -121,7 +120,7 @@ export default function HomePage() {
           <h2 className="text-3xl font-bold text-center mb-12">
             Why Choose Agent with me ?
           </h2>
-          <div className="grid md:grid-cols-4 gap-8">
+          <div className="grid md:grid-cols-3 gap-8">
             <Card className="text-center">
               <CardHeader>
                 <Shield className="h-12 w-12 text-blue-600 mx-auto mb-4" />
@@ -142,16 +141,7 @@ export default function HomePage() {
                 </CardDescription>
               </CardHeader>
             </Card>
-            <Card className="text-center">
-              <CardHeader>
-                <Users className="h-12 w-12 text-purple-600 mx-auto mb-4" />
-                <CardTitle>Free Trial</CardTitle>
-                <CardDescription>
-                  3-day free listing for landlords. No hidden charges during
-                  beta phase.
-                </CardDescription>
-              </CardHeader>
-            </Card>
+
             <Card className="text-center">
               <CardHeader>
                 <Home className="h-12 w-12 text-orange-600 mx-auto mb-4" />
@@ -227,8 +217,7 @@ export default function HomePage() {
             Ready to Find Your Perfect Home?
           </h2>
           <p className="text-xl text-blue-100 mb-8">
-            Join Agent with me today and start your property journey with our
-            free trial!
+            Join Agent with me today and start your property journey
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link href="/auth/register?role=tenant">
@@ -278,7 +267,7 @@ export default function HomePage() {
                     href="/auth/register?role=tenant"
                     className="hover:text-white"
                   >
-                    Sign Up Free
+                    Sign Up
                   </Link>
                 </li>
               </ul>

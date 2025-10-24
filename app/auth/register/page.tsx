@@ -105,7 +105,7 @@ export default function RegisterPage() {
                 <Home className="h-12 w-12 text-blue-600" />
               </div>
               <CardTitle className="text-2xl">Join Agent with me </CardTitle>
-              <CardDescription>Create your free account</CardDescription>
+              <CardDescription>Create your account</CardDescription>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-4">
@@ -321,7 +321,7 @@ export default function RegisterPage() {
                 )}
 
                 <Button type="submit" className="w-full" disabled={isLoading}>
-                  {isLoading ? "Creating Account..." : "Create Free Account"}
+                  {isLoading ? "Creating Account..." : "Create Account"}
                 </Button>
               </form>
 
@@ -345,7 +345,7 @@ export default function RegisterPage() {
                 <Home className="h-12 w-12 text-blue-600" />
               </div>
               <CardTitle className="text-2xl">Check Email For Code </CardTitle>
-              <CardDescription>Create your free account</CardDescription>
+              <CardDescription>Create your account</CardDescription>
             </CardHeader>
             <CardContent>
               <a

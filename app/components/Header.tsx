@@ -27,7 +27,7 @@ const Header = () => {
                 <Button variant="outline">Login</Button>
               </Link>
               <Link href="/auth/register">
-                <Button>Sign Up Free</Button>
+                <Button>Sign Up</Button>
               </Link>
             </div>
           ) : (

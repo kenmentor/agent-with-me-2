@@ -63,11 +63,12 @@ import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useAuthStore } from "@/store/authStore";
 import Req from "@/app/utility/axois";
 import { toast } from "sonner";
+import PaystackPop from "@paystack/inline-js";
+
 export default function PayRentPage() {
   const { houseId } = useParams();
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const paymentId = searchParams.get("id");
+
   const { base, app } = Req;
   const { user, isAuthenticated, _hasHydrated } = useAuthStore();
   const [isLoading, setIsLoading] = useState(false);
@@ -94,8 +95,8 @@ export default function PayRentPage() {
     bankName: "",
     notes: "",
   });
-  const [property, setProperty] = useState<property | null>(null);
-  const [loading, setLoading] = useState(true);
+  // const [property, setProperty] = useState<property | null>(null);
+  // const [loading, setLoading] = useState(true);
   const [paymentResult, setPaymentResult] = useState({
     transactionId: "",
     paidDateTime: "",
@@ -105,9 +106,10 @@ export default function PayRentPage() {
     try {
       const res = await app.get(`${base}/v1/house/detail/${houseId}`);
       console.log("helloe", res.data.data);
-      const result = res.data;
+      const result = res.data.data;
 
-      setPaymentData({ ...paymentData });
+      setPaymentData(result);
+      console.log(res.data.data);
     } catch (err) {
       console.log("Fetch error:", err);
     }
@@ -224,13 +226,15 @@ export default function PayRentPage() {
         hostId: paymentData?.host?._id,
         houseId: houseId,
         guestId: user._id,
-        amount: paymentData?.totalAmount,
+        amount: paymentData?.price,
         method: paymentData?.paymentMethod,
         notes: paymentData?.notes,
       }
     );
-    console.log(paymentDetails.data);
-    return paymentDetails.data;
+    console.log(paymentDetails.data.data.access_code);
+    const popup = new PaystackPop();
+    console.log(paymentDetails.data.data.access_code);
+    return popup.resumeTransaction(paymentDetails.data.data.access_code);
   }
   const sendPaymentNotification = () => {
     // Simulate sending notification to landlord
@@ -420,19 +424,19 @@ export default function PayRentPage() {
                           className="w-32 text-right"
                         />
                       ) : (
-                        <span>₦{paymentData?.amount.toLocaleString()}</span>
+                        <span>₦{paymentData?.amount?.toLocaleString()}</span>
                       )}
                     </div>
                     {paymentData?.lateFee > 0 && (
                       <div className="flex justify-between text-red-600">
                         <span>Late Fee</span>
-                        <span>₦{paymentData?.lateFee.toLocaleString()}</span>
+                        <span>₦{paymentData?.lateFee?.toLocaleString()}</span>
                       </div>
                     )}
                     <hr />
                     <div className="flex justify-between font-semibold text-lg">
                       <span>Total Amount</span>
-                      <span>₦{paymentData?.totalAmount.toLocaleString()}</span>
+                      <span>₦{paymentData?.totalAmount?.toLocaleString()}</span>
                     </div>
                   </div>
                 </div>
@@ -512,14 +516,14 @@ export default function PayRentPage() {
                       <div className="flex justify-between">
                         <span>Amount:</span>
                         <span className="font-medium">
-                          ₦{paymentData?.amount.toLocaleString()}
+                          ₦{paymentData?.amount?.toLocaleString()}
                         </span>
                       </div>
                       {paymentData?.lateFee > 0 && (
                         <div className="flex justify-between text-red-600">
                           <span>Late Fee:</span>
                           <span className="font-medium">
-                            ₦{paymentData?.lateFee.toLocaleString()}
+                            ₦{paymentData?.lateFee?.toLocaleString()}
                           </span>
                         </div>
                       )}
@@ -527,7 +531,7 @@ export default function PayRentPage() {
                       <div className="flex justify-between font-semibold">
                         <span>Total:</span>
                         <span>
-                          ₦{paymentData?.totalAmount.toLocaleString()}
+                          ₦{paymentData?.totalAmount?.toLocaleString()}
                         </span>
                       </div>
                     </div>
