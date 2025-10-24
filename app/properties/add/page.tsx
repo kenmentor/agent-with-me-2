@@ -39,6 +39,7 @@ import {
   Camera,
   CheckCircle,
   Video,
+  Users,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -382,14 +383,6 @@ export default function AddPropertyPage() {
                       : "Enter total sale price"}
                   </p>
                 </div>
-                <Slider>
-                  <Range
-                    min={0}
-                    max={10000000}
-                    step={100000}
-                    className="w-full"
-                  />
-                </Slider>
               </CardContent>
             </Card>
           )}
@@ -840,11 +833,7 @@ export default function AddPropertyPage() {
                     {" "}
                     <CardHeader>
                       <Users className="h-12 w-12 text-purple-600 mx-auto mb-4" />
-                      <CardTitle>Free Trial</CardTitle>
-                      <CardDescription>
-                        3-day free listing for landlords. No hidden charges
-                        during beta phase.
-                      </CardDescription>
+                      <CardTitle>Contact method</CardTitle>
                     </CardHeader>
                     How would you like to be contacted?
                   </CardDescription>

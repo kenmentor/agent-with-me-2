@@ -5,6 +5,7 @@ import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 import { Toaster } from "sonner";
 import InstallAppPrompt from "../components/InstallAppPrompt";
+import Nav from "@/components/Nav";
 
 export const metadata: Metadata = {
   title: "Agentwithme",
@@ -33,6 +34,7 @@ html {
         <InstallAppPrompt />
         <Analytics />
         <Toaster richColors position="top-right" />
+        <Nav />
       </body>
     </html>
   );

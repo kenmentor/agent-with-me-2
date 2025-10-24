@@ -95,7 +95,7 @@ export default function HomePage() {
                 variant="outline"
                 className="w-auto sm:w-auto bg-white"
               >
-                List Your Property For FREE
+                List Your Property
               </Button>
             </Link>
           </div>
@@ -155,16 +155,7 @@ export default function HomePage() {
                 </CardDescription>
               </CardHeader>
             </Card>
-            <Card className="text-center">
-              <CardHeader>
-                <Users className="h-12 w-12 text-purple-600 mx-auto mb-4" />
-                <CardTitle>Free Trial</CardTitle>
-                <CardDescription>
-                  3-day free listing for landlords. No hidden charges during
-                  beta phase.
-                </CardDescription>
-              </CardHeader>
-            </Card>
+
             <Card className="text-center">
               <CardHeader>
                 <Home className="h-12 w-12 text-orange-600 mx-auto mb-4" />
@@ -248,8 +239,7 @@ export default function HomePage() {
             Ready to Find Your Perfect Home?
           </h2>
           <p className="text-xl text-blue-100 mb-8">
-            Join Agent with me today and start your property journey with our
-            free trial!
+            Join Agent with me today and start your property journey
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link href="/auth/register?role=tenant">
@@ -334,7 +324,7 @@ export default function HomePage() {
                     href="/auth/register?role=tenant"
                     className="hover:text-white"
                   >
-                    Sign Up Free
+                    Sign Up
                   </Link>
                 </li>
               </ul>
