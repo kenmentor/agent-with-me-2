@@ -64,6 +64,7 @@ import { useAuthStore } from "@/store/authStore";
 import Req from "@/app/utility/axois";
 import { toast } from "sonner";
 import PaystackPop from "@paystack/inline-js";
+import PayRentSkeleton from "@/components/PayRentSkeleton";
 
 export default function PayRentPage() {
   const { houseId } = useParams();
@@ -82,7 +83,7 @@ export default function PayRentPage() {
       userName: "Rajesh Kumar",
       phoneNumber: 9876543210,
     },
-    amount: 45000,
+    price: 45000,
     dueDate: "2024-02-25",
     lateFee: 0,
     totalAmount: 45000,
@@ -102,18 +103,19 @@ export default function PayRentPage() {
     paidDateTime: "",
     status: "pending_approval",
   });
+  const [loading, setLoading] = useState(true);
+
   async function getData() {
     try {
       const res = await app.get(`${base}/v1/house/detail/${houseId}`);
-      console.log("helloe", res.data.data);
-      const result = res.data.data;
-
-      setPaymentData(result);
-      console.log(res.data.data);
+      setPaymentData(res.data.data);
     } catch (err) {
       console.log("Fetch error:", err);
+    } finally {
+      setLoading(false);
     }
   }
+
   useEffect(() => {
     if (!_hasHydrated) return;
 
@@ -172,7 +174,7 @@ export default function PayRentPage() {
       propertyTitle: paymentData?.propertyTitle,
       landlordName: paymentData?.host?.userName,
       landlordPhone: paymentData?.host?.phoneNumber,
-      amount: paymentData?.amount,
+      amount: paymentData?.price,
       lateFee: paymentData?.lateFee,
       totalAmount: paymentData?.totalAmount,
       dueDate: paymentData?.dueDate,
@@ -249,6 +251,9 @@ export default function PayRentPage() {
         Loading...
       </div>
     );
+  }
+  if (loading) {
+    return <PayRentSkeleton />;
   }
 
   return (
@@ -412,19 +417,19 @@ export default function PayRentPage() {
                       {isEditing ? (
                         <Input
                           type="number"
-                          value={paymentData?.amount}
+                          value={paymentData?.price}
                           onChange={(e) => {
-                            const amount = Number.parseInt(e.target.value) || 0;
+                            const price = Number.parseInt(e.target.value) || 0;
                             setPaymentData({
                               ...paymentData,
-                              amount,
-                              totalAmount: amount + paymentData?.lateFee,
+                              price,
+                              totalAmount: price + paymentData?.lateFee,
                             });
                           }}
                           className="w-32 text-right"
                         />
                       ) : (
-                        <span>₦{paymentData?.amount?.toLocaleString()}</span>
+                        <span>₦{paymentData?.price?.toLocaleString()}</span>
                       )}
                     </div>
                     {paymentData?.lateFee > 0 && (
@@ -516,7 +521,7 @@ export default function PayRentPage() {
                       <div className="flex justify-between">
                         <span>Amount:</span>
                         <span className="font-medium">
-                          ₦{paymentData?.amount?.toLocaleString()}
+                          ₦{paymentData?.price?.toLocaleString()}
                         </span>
                       </div>
                       {paymentData?.lateFee > 0 && (

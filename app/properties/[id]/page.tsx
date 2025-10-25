@@ -1,30 +1,5 @@
 "use client";
 
-interface data {
-  _id?: string;
-  title: string;
-  lga: string;
-  video: string;
-  country: string;
-  description: string;
-  views: number;
-  rating: number;
-  category: string;
-  thumbnail: string;
-  gallery: [{ url: string; type: string }];
-  price: number;
-  address: string;
-  state: string;
-  type: string;
-  waterSuply: boolean;
-  electricity: number;
-  location: string;
-  host: {
-    _id: string;
-    phoneNumber: number;
-  };
-  amenities: string[];
-}
 import Image from "next/image";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -42,24 +17,22 @@ import {
   Share2,
   Home,
   ChevronRight,
-  MessageCircleWarning,
-  MessageCircleWarningIcon,
   BanIcon,
 } from "lucide-react";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import Req from "@/app/utility/axois";
 import { useAuthStore } from "@/store/authStore";
-import router from "next/router";
-import { toast } from "sonner";
 import AutoPlayVideo from "@/components/AutoplayVideo";
+import { Skeleton } from "@/components/ui/skeleton";
+
 export default function PropertyDetailPage() {
   const { id } = useParams();
-  const { app, base } = Req;
-  const [loading, setLoading] = useState(false);
+  const { app } = Req;
+  const [loading, setLoading] = useState(true);
   const user = useAuthStore((state) => state.user);
   const [selectedImage, setSelectedImage] = useState<string>("hello");
-  // This would normally fetch from a database based on the ID
+
   const [property, setProperty] = useState({
     _id: id,
     title: "Luxury Waterfront Condo",
@@ -73,38 +46,17 @@ export default function PropertyDetailPage() {
     status: "Available",
     video: "",
     description:
-      "This stunning waterfront condo offers breathtaking views of the ocean and city skyline. Featuring floor-to-ceiling windows, a gourmet kitchen with top-of-the-line appliances, and a spacious open floor plan perfect for entertaining. The master suite includes a luxurious bathroom with a soaking tub and walk-in shower. Additional amenities include a private balcony, two assigned parking spaces, and access to the building's pool, fitness center, and 24-hour concierge service.",
+      "This stunning waterfront condo offers breathtaking views of the ocean and city skyline...",
     amenities: [
       "Waterfront",
       "Floor-to-ceiling windows",
       "Gourmet kitchen",
       "Private balcony",
-      "Walk-in closets",
-      "Hardwood floors",
-      "Central air conditioning",
-      "In-unit laundry",
-      "24-hour security",
-      "Pool",
-      "Fitness center",
-      "Concierge service",
     ],
     images: [
-      {
-        url: "/placeholder.svg?height=600&width=800",
-        type: "image/jpeg",
-      },
-      {
-        url: "/placeholder.svg?height=600&width=800",
-        type: "image/jpeg",
-      },
-      {
-        url: "/placeholder.svg?height=600&width=800",
-        type: "image/jpeg",
-      },
-      {
-        url: "/placeholder.svg?height=600&width=800",
-        type: "image/jpeg",
-      },
+      { url: "/placeholder.svg?height=600&width=800", type: "image/jpeg" },
+      { url: "/placeholder.svg?height=600&width=800", type: "image/jpeg" },
+      { url: "/placeholder.svg?height=600&width=800", type: "image/jpeg" },
     ],
     host: {
       _id: "agent123",
@@ -115,14 +67,13 @@ export default function PropertyDetailPage() {
       adminVerified: false,
     },
   });
+
   async function getData() {
     try {
       const res = await app.get(
         `https://agent-with-me-backend.onrender.com/v1/house/detail/${id}`
       );
-      console.log("helloe", res.data.data);
       const result = res.data;
-
       if (result && result.data) {
         setProperty(result.data);
         const thumbnail =
@@ -130,26 +81,86 @@ export default function PropertyDetailPage() {
           (result.data.gallery && result.data.gallery[0]) ||
           "";
         setSelectedImage(thumbnail);
-        setLoading(false);
-      } else {
-        console.error("Invalid data structure:", result);
       }
     } catch (err) {
       console.log("Fetch error:", err);
+    } finally {
+      setLoading(false);
     }
   }
 
   useEffect(() => {
     getData();
-  }, ["ffj"]);
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "NGN",
-      maximumFractionDigits: 0,
-    }).format(price);
-  };
+  }, [id]);
 
+  // ---------- Skeleton Loading Section ----------
+  if (loading) {
+    return (
+      <div className="container mx-auto px-4 py-8 space-y-6">
+        {/* Breadcrumb skeleton */}
+        <div className="flex gap-2 items-center">
+          <Skeleton className="h-4 w-12" />
+          <Skeleton className="h-4 w-4" />
+          <Skeleton className="h-4 w-16" />
+        </div>
+
+        {/* Title and top section */}
+        <div className="grid gap-6 lg:grid-cols-[2fr_1fr]">
+          <div className="space-y-3">
+            <Skeleton className="h-8 w-2/3" />
+            <Skeleton className="h-5 w-1/2" />
+            <div className="flex gap-3">
+              <Skeleton className="h-5 w-24" />
+              <Skeleton className="h-5 w-24" />
+              <Skeleton className="h-5 w-24" />
+            </div>
+          </div>
+          <div className="flex flex-col items-end justify-center gap-3">
+            <Skeleton className="h-8 w-32" />
+            <div className="flex gap-2">
+              <Skeleton className="h-10 w-24" />
+              <Skeleton className="h-10 w-24" />
+              <Skeleton className="h-10 w-10 rounded-full" />
+            </div>
+          </div>
+        </div>
+
+        {/* Image gallery */}
+        <div className="grid grid-cols-4 gap-4">
+          <Skeleton className="col-span-4 aspect-video rounded-lg lg:col-span-2 lg:row-span-2" />
+          <Skeleton className="col-span-2 aspect-video rounded-lg sm:col-span-1" />
+          <Skeleton className="col-span-2 aspect-video rounded-lg sm:col-span-1" />
+          <Skeleton className="col-span-2 aspect-video rounded-lg sm:col-span-1" />
+        </div>
+
+        {/* Tabs and video */}
+        <div className="grid gap-8 lg:grid-cols-[2fr_1fr]">
+          <div className="space-y-4">
+            <Skeleton className="h-8 w-1/3" />
+            <Skeleton className="h-24 w-full" />
+          </div>
+          <div className="space-y-3">
+            <Skeleton className="h-8 w-1/3" />
+            <Skeleton className="aspect-video rounded-lg" />
+          </div>
+        </div>
+
+        {/* Agent info */}
+        <div className="rounded-lg border bg-card p-6 shadow-sm space-y-4">
+          <div className="flex gap-4 items-center">
+            <Skeleton className="h-16 w-16 rounded-full" />
+            <div className="space-y-2">
+              <Skeleton className="h-5 w-32" />
+              <Skeleton className="h-4 w-24" />
+            </div>
+          </div>
+          <Skeleton className="h-10 w-full" />
+        </div>
+      </div>
+    );
+  }
+
+  // ---------- Actual Page (unchanged design) ----------
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="mb-6 flex items-center gap-2 text-sm text-muted-foreground">
@@ -207,11 +218,7 @@ export default function PropertyDetailPage() {
           </div>
         </div>
         <div className="flex flex-col items-end justify-center">
-          <div className="text-3xl font-bold">
-            {" "}
-            {"₦"}
-            {property.price}
-          </div>
+          <div className="text-3xl font-bold">₦{property.price}</div>
           <div className="mt-4 flex gap-2">
             {property.host.adminVerified && (
               <Link href={`/payments/pay/${property._id}`}>
@@ -256,7 +263,6 @@ export default function PropertyDetailPage() {
         ))}
       </div>
 
-      <div></div>
       <div className="mb-8 grid gap-8 lg:grid-cols-[2fr_1fr]">
         <div>
           <Tabs defaultValue="description">
@@ -298,6 +304,7 @@ export default function PropertyDetailPage() {
             <AutoPlayVideo src={`${property.video}`} />
           </div>
         </div>
+
         <div className="mb-5 block ">
           {property.host.adminVerified ? (
             <Link className="!w-full" href={`/payments/pay/${property._id}`}>
@@ -309,9 +316,8 @@ export default function PropertyDetailPage() {
               <div className="text-sm">
                 <p className="font-medium text-red-800">Secure Payment</p>
                 <p className="text-red-700">
-                  this agent is not verified by admin, you can still chat with
-                  them but booking is disabled make sure you verify them before
-                  making any payment
+                  This agent is not verified by admin, booking is disabled. Make
+                  sure you verify them before making any payment.
                 </p>
               </div>
             </div>
@@ -348,7 +354,7 @@ export default function PropertyDetailPage() {
               <Button
                 size="sm"
                 variant="outline"
-                className="flex-1 bg-transparent   w-full"
+                className="flex-1 bg-transparent w-full"
               >
                 <Calendar className="h-4 w-4 mr-1" />
                 Chat with agent
@@ -359,7 +365,4 @@ export default function PropertyDetailPage() {
       </div>
     </div>
   );
-}
-function setLoading(arg0: boolean) {
-  throw new Error("Function not implemented.");
 }

@@ -18,23 +18,23 @@ import { useAuthStore } from "@/store/authStore";
 const NAV_LINKS = [
   { name: "Home", href: "/", icon: Home },
   { name: "Properties", href: "/properties", icon: Building2 },
-  { name: "Upload", href: "/upload", icon: PlusCircle },
+  { name: "Upload", href: "/properties/add", icon: PlusCircle },
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { name: "Account", href: "/auth/login", icon: User },
 ];
 
 // pages that should display the bottom nav
-const SHOW_BOTTOM_NAV_ROUTES = ["/properties", "/dashboard", "payments"];
+const SHOW_BOTTOM_NAV_ROUTES = ["properties", "dashboard", "payments"];
 
 export default function RootLayout() {
   const pathname = usePathname();
 
-  const showBottomNav = SHOW_BOTTOM_NAV_ROUTES.some((path) => {
-    console.log(pathname, path, pathname.startsWith(path)); // ✅ fix
+  const showBottomNav = SHOW_BOTTOM_NAV_ROUTES.some((path: string) => {
+    console.log(pathname, path, pathname.startsWith(path.slice(0))); // ✅ fix
     return pathname.startsWith(path);
   });
 
-  console.log("Show Bottom Nav?", showBottomNav);
+  console.log("Show Bottom Nav?", showBottomNav, pathname);
   // true
 
   // fake notifications for now

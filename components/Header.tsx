@@ -56,7 +56,7 @@ const Header = ({ color }: { color?: string }) => {
     <>
       {/* ================= DESKTOP HEADER ================= */}
       <header
-        className="hidden md:block fixed w-full backdrop-blur-md bg-black pt-5 pb-5"
+        className="hidden md:block fixed w-full backdrop-blur-md bg-black pt-3 pb-2"
         style={{
           backgroundColor: `${
             !color ? `rgba(0,0,0,${headerOpacity})` : `${color}`
@@ -69,7 +69,7 @@ const Header = ({ color }: { color?: string }) => {
             {/* Logo Section */}
             <div className="flex items-center space-x-2">
               <svg
-                width="45.396"
+                width="30.396"
                 height="60"
                 viewBox="0 0 45.396 60"
                 fill="none"
@@ -148,8 +148,8 @@ const Header = ({ color }: { color?: string }) => {
         {/* Logo */}
         <div className="flex items-center space-x-2">
           <svg
-            width="45.396"
-            height="60"
+            width="20.396"
+            height="30"
             viewBox="0 0 45.396 60"
             fill="none"
             xmlns="http://www.w3.org/2000/svg"
@@ -181,7 +181,7 @@ const Header = ({ color }: { color?: string }) => {
               />
             </g>
           </svg>
-          <span className="text-xl sm:text-2xl font-bold text-white">
+          <span className="text-[20px] sm:text-2xl font-bold text-white">
             Agent with me
           </span>
         </div>
@@ -202,62 +202,6 @@ const Header = ({ color }: { color?: string }) => {
       </header>
 
       {/* ================= MOBILE BOTTOM NAV ================= */}
-      {!mobileMenuOpen && (
-        <motion.nav
-          initial={{ y: 80, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ duration: 0.45, ease: "easeOut" }}
-          className="md:hidden fixed bottom-0 left-0 right-0 bg-black/90 backdrop-blur-xl border-t border-white/10 shadow-[0_-3px_15px_rgba(0,0,0,0.4)] z-[99]"
-          role="navigation"
-          aria-label="Mobile bottom navigation"
-        >
-          <div className="flex justify-around items-center py-2">
-            {NAV_LINKS.map(({ name, href, icon: Icon }) => {
-              const isActive = activeRoute(href);
-              return (
-                <Link
-                  key={name}
-                  href={href}
-                  className="flex flex-col items-center touch-manipulation"
-                >
-                  <motion.div
-                    animate={{
-                      y: isActive ? -5 : 0,
-                      scale: isActive ? 1.12 : 1,
-                      opacity: isActive ? 1 : 0.8,
-                    }}
-                    whileHover={{ scale: 1.06, y: -3 }}
-                    transition={{ type: "spring", stiffness: 260, damping: 18 }}
-                    className="flex flex-col items-center text-white"
-                  >
-                    <div
-                      className={`relative flex items-center justify-center w-10 h-10 rounded-full transition-all duration-300 ${
-                        isActive
-                          ? "bg-blue-500/20 shadow-inner shadow-blue-400/30 ring-1 ring-blue-400/30"
-                          : "hover:bg-white/10"
-                      }`}
-                    >
-                      <Icon
-                        className={`w-6 h-6 transition-colors duration-300 ${
-                          isActive ? "text-blue-400" : "text-white/70"
-                        }`}
-                        aria-hidden
-                      />
-                    </div>
-                    <span
-                      className={`text-[10px] mt-1 font-medium transition-colors duration-300 ${
-                        isActive ? "text-blue-400" : "text-white/60"
-                      }`}
-                    >
-                      {name}
-                    </span>
-                  </motion.div>
-                </Link>
-              );
-            })}
-          </div>
-        </motion.nav>
-      )}
     </>
   );
 };

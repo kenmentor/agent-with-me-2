@@ -66,6 +66,7 @@ import { priceRanges, propertyType, statesAndLGAs } from "../data";
 import { Slider } from "@/components/ui/slider";
 import NoResults from "../../components/NoResults";
 import { Spinner } from "@/components/ui/spinner";
+import PropertySkeleton from "@/components/PropertySkeleton";
 export default function PropertiesPage() {
   const { base, app } = Req;
   const [searchQuery, setSearchQuery] = useState({
@@ -298,26 +299,29 @@ export default function PropertiesPage() {
         </div>
 
         {/* Property Grid */}
+        {loading && (
+          <div className="flex justify-center items-center mb-4">
+            <Spinner className="size-6 text-gray-400 animate-spin" />
+          </div>
+        )}
 
-        {!loading ? (
-          data.length === 0 ? (
-            <NoResults />
-          ) : (
-            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-              {data.map((property) => (
-                <PropertyCard
-                  key={property._id}
-                  property={property}
-                  favorites={favorites}
-                />
-              ))}
-            </div>
-          )
+        {loading ? (
+          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+            {[...Array(6)].map((_, i) => (
+              <PropertySkeleton key={i} />
+            ))}
+          </div>
+        ) : data.length === 0 ? (
+          <NoResults />
         ) : (
-          <div className="min-h-screen flex items-center justify-center">
-            <p className="text-gray-500 text-lg">
-              <Spinner className=" size-20" />
-            </p>
+          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+            {data.map((property) => (
+              <PropertyCard
+                key={property._id}
+                property={property}
+                favorites={favorites}
+              />
+            ))}
           </div>
         )}
       </div>
