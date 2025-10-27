@@ -45,6 +45,7 @@ export default function LoginPage() {
       setIsLoading(false);
       router.push("/properties");
     }
+    setIsLoading(false);
   };
 
   return (
