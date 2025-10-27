@@ -15,37 +15,42 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Home, Mail, Lock, Eye, EyeOff } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/authStore";
 
-export default function LoginPage() {
+export default function LoginPage({
+  redirectPage,
+}: {
+  redirectPage: { page?: string };
+}) {
   const login = useAuthStore((state) => state.login);
   const router = useRouter();
   const [formData, setFormData] = useState({
     email: "",
     password: "",
   });
-  const [isLoading, setIsLoading] = useState(false);
+
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState<any>({});
   const error = useAuthStore((state) => state.error);
+  const isLoading = useAuthStore((state) => state.isLoading);
+  const params = useParams();
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
+
     setErrors({});
 
     if (!formData.email || !formData.password) {
       setErrors({ general: "Please fill in all fields" });
-      setIsLoading(false);
+
       return;
     }
 
     await login(formData);
     if (!error) {
-      setIsLoading(false);
-      router.push("/properties");
+      router.push(`${redirectPage?.page}`);
     }
-    setIsLoading(false);
   };
 
   return (
