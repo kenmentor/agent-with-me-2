@@ -1,5 +1,42 @@
 "use client";
+interface Property {
+  // Basic Info
 
+  _id?: string;
+  title: string;
+  description: string;
+  type: string;
+  category: string;
+  price: string;
+  pincode: string;
+  // Location
+  location: string;
+  address: string;
+  state: string;
+  lga: string;
+
+  // Property Details
+  bedrooms: string;
+  bathrooms: string;
+  area: string;
+  furnishing: string;
+  floor: string;
+  totalFloors: string;
+  age: string;
+  waterSuply: true;
+  electricity: 0;
+
+  // Amenities
+  amenities: string[];
+
+  // Images
+  images: File[];
+  video: File | null;
+  thumbnail: File | null;
+  // Contact
+  contactPreference: string; // phone, email, both
+  availableFrom: string;
+}
 import type React from "react";
 
 import { useState } from "react";
@@ -40,6 +77,11 @@ import {
   CheckCircle,
   Video,
   Users,
+  Copy,
+  Facebook,
+  Linkedin,
+  MessageCircle,
+  Twitter,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -56,7 +98,9 @@ export default function AddPropertyPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
   const [selected, setSelected] = useState<number | null>(null);
-  const [formData, setFormData] = useState({
+  const [copied, setCopied] = useState(false);
+  const [property, setProperty] = useState<Property>();
+  const [formData, setFormData] = useState<Property>({
     // Basic Info
     title: "",
     description: "",
@@ -112,7 +156,6 @@ export default function AddPropertyPage() {
     try {
       const data = new FormData();
       if (formData.thumbnail) {
-        alert("ok");
         data.append("thumbnail", formData.thumbnail);
       }
       data.append("title", formData.title);
@@ -139,21 +182,26 @@ export default function AddPropertyPage() {
 
       data.append("maxgeust", "1");
       data.append("thumbnail", formData.images[0]); // 👈 default since schema requires it
-      toast.message(String(data.get("thumbnail")));
+
       // Use gallery instead of files
       formData.images.forEach((file) => {
         data.append("files", file);
       });
       data.append("video", formData.video as Blob);
       console.log(data.getAll("files"));
-      const res = await fetch(`${base}/v1/house`, {
-        method: "POST",
-        body: data,
-      });
+      if (currentStep === 4) {
+        const res = await fetch(`${base}/v1/house`, {
+          method: "POST",
+          body: data,
+        });
 
-      const result = await res.json();
-      if (!res.ok) throw new Error(result.message || "Upload failed");
-      toast.success("Property listed successfully!");
+        const result = await res.json();
+        if (!res.ok) throw new Error(result.message || "Upload failed");
+        toast.success("Property listed successfully!");
+        console.log(result);
+        setProperty(result.data);
+        nextStep();
+      }
     } catch (err) {
       console.error(err);
       toast.error((err as Error).message);
@@ -204,15 +252,57 @@ export default function AddPropertyPage() {
   };
 
   const nextStep = () => {
-    if (currentStep < 5) setCurrentStep(currentStep + 1);
+    if (currentStep < 6) setCurrentStep(currentStep + 1);
   };
 
   const prevStep = () => {
     if (currentStep > 1) setCurrentStep(currentStep - 1);
   };
 
+  const propertyLink = `https://agent-with-me-v2.vercel.app/properties/${property?._id}`;
+  const shareText = `🏠 ${
+    formData.title
+  }\n💰 ₦${formData.price.toLocaleString()} • 📍 ${property?.address}, ${
+    formData.state
+  }\n\nCheck it out on EasyRent:\n${propertyLink}`;
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(propertyLink);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error("Failed to copy link:", err);
+    }
+  };
+
+  const handleSocialShare = (platform: string) => {
+    const encodedText = encodeURIComponent(shareText);
+    const encodedURL = encodeURIComponent(propertyLink);
+    let shareUrl = "";
+
+    switch (platform) {
+      case "facebook":
+        shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodedURL}`;
+        break;
+      case "twitter":
+        shareUrl = `https://twitter.com/intent/tweet?text=${encodedText}`;
+        break;
+      case "linkedin":
+        shareUrl = `https://www.linkedin.com/shareArticle?mini=true&url=${encodedURL}&title=${encodedText}`;
+        break;
+      case "whatsapp":
+        shareUrl = `https://wa.me/?text=${encodedText}`;
+        break;
+      default:
+        return;
+    }
+
+    window.open(shareUrl, "_blank", "noopener,noreferrer");
+  };
+
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 pb-[100px] md:pb-[0px]">
       {/* Header */}
       <header className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -221,6 +311,7 @@ export default function AddPropertyPage() {
               <Home className="h-8 w-8 text-blue-600" />
               <span className="text-2xl font-bold text-gray-900">
                 AgentWithMe
+                {currentStep}
               </span>
             </Link>
             <Link href="/dashboard">
@@ -247,7 +338,7 @@ export default function AddPropertyPage() {
             {[1, 2, 3, 4].map((step) => (
               <div key={step} className="flex items-center">
                 <div
-                  className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
+                  className={`p-3  rounded-full flex items-center justify-center  md:text-sm  font-medium ${
                     step <= currentStep
                       ? "bg-blue-600 text-white"
                       : "bg-gray-200 text-gray-600"
@@ -867,35 +958,147 @@ export default function AddPropertyPage() {
               {/*  Trial Info */}
             </div>
           )}
+          {currentStep == 5 && (
+            <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-b from-gray-50 via-white to-gray-100 px-4 sm:px-6 py-10 sm:py-16">
+              <Card className="w-full max-w-md sm:max-w-lg shadow-md sm:shadow-xl border border-gray-100 rounded-2xl bg-white">
+                <CardHeader className="text-center">
+                  <div className="flex justify-center mb-3 sm:mb-4">
+                    <CheckCircle className="text-green-500 w-14 h-14 sm:w-16 sm:h-16 animate-bounce drop-shadow-md" />
+                  </div>
+                  <CardTitle className="text-xl sm:text-2xl font-semibold text-gray-800 tracking-tight">
+                    Property Listed Successfully 🎉
+                  </CardTitle>
+                  <p className="text-gray-500 text-sm mt-1 sm:text-base">
+                    Your listing is live and ready to be shared.
+                  </p>
+                </CardHeader>
 
+                <CardContent className="space-y-6 sm:space-y-8 px-4 sm:px-6 pb-8">
+                  {/* Thumbnail Preview */}
+                  <div className="rounded-xl overflow-hidden border border-gray-200 shadow-sm">
+                    <img
+                      //@ts-expect-error this would just workit will alway return strin
+                      src={property?.thumbnail}
+                      alt={property?.title}
+                      className="w-full h-48 sm:h-56 object-cover"
+                    />
+                    <div className="p-4">
+                      <h3 className="font-semibold text-lg text-gray-900 leading-snug">
+                        {property?.title}
+                      </h3>
+                      <p className="text-gray-600 text-sm sm:text-base mt-1">
+                        ₦{property?.price.toLocaleString()} •{" "}
+                        {property?.address}, {property?.state}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Property Link */}
+                  <div className="bg-gray-50 rounded-lg p-3 flex items-center justify-between text-sm text-gray-700 border border-gray-200 overflow-hidden">
+                    <span className="truncate text-xs sm:text-sm text-gray-600">
+                      {propertyLink}
+                    </span>
+                    <Button
+                      type="button"
+                      onClick={handleCopy}
+                      variant="ghost"
+                      size="sm"
+                      className="ml-2 text-gray-600 hover:text-gray-900 flex items-center gap-1"
+                    >
+                      <Copy className="w-4 h-4" />
+                      {copied ? "Copied!" : "Copy"}
+                    </Button>
+                  </div>
+
+                  {/* Social Share */}
+                  <div className="flex flex-wrap justify-center gap-2 sm:gap-3 mt-4">
+                    <Button
+                      type="button"
+                      onClick={() => handleSocialShare("facebook")}
+                      variant="outline"
+                      className="rounded-full border-blue-600 text-blue-600 hover:bg-blue-50 flex items-center gap-2 text-xs sm:text-sm"
+                    >
+                      <Facebook className="w-4 h-4" /> Facebook
+                    </Button>
+                    <Button
+                      onClick={() => handleSocialShare("twitter")}
+                      variant="outline"
+                      className="rounded-full border-sky-500 text-sky-500 hover:bg-sky-50 flex items-center gap-2 text-xs sm:text-sm"
+                    >
+                      <Twitter className="w-4 h-4" /> X
+                    </Button>
+                    <Button
+                      type="button"
+                      onClick={() => handleSocialShare("linkedin")}
+                      variant="outline"
+                      className="rounded-full border-blue-800 text-blue-800 hover:bg-blue-50 flex items-center gap-2 text-xs sm:text-sm"
+                    >
+                      <Linkedin className="w-4 h-4" /> LinkedIn
+                    </Button>
+                    <Button
+                      type="button"
+                      onClick={() => handleSocialShare("whatsapp")}
+                      variant="outline"
+                      className="rounded-full border-green-600 text-green-600 hover:bg-green-50 flex items-center gap-2 text-xs sm:text-sm"
+                    >
+                      <MessageCircle className="w-4 h-4" /> WhatsApp
+                    </Button>
+                  </div>
+
+                  {/* Navigation Buttons */}
+                  <div className="flex flex-col items-center mt-6 space-y-2">
+                    <Button
+                      type="button"
+                      onClick={() => router.push("/properties")}
+                      className="flex items-center gap-2 bg-green-600 hover:bg-green-700 w-full sm:w-auto px-6 py-2 sm:py-3 text-sm sm:text-base"
+                    >
+                      <Home className="w-4 h-4" /> Go to Dashboard
+                    </Button>
+                    <Button
+                      type="button"
+                      onClick={() => router.push("/properties/add")}
+                      variant="link"
+                      className="text-green-700 text-sm sm:text-base"
+                    >
+                      + Create Another Property
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
           {/* Navigation Buttons */}
-          <div className="flex justify-between mt-8">
-            <div>
-              {currentStep > 1 && (
-                <Button type="button" variant="outline" onClick={prevStep}>
-                  Previous
-                </Button>
+          {currentStep <= 4 && (
+            <div className="flex justify-between mt-8">
+              <div>
+                {currentStep > 1 && (
+                  <Button type="button" variant="outline" onClick={prevStep}>
+                    Previous
+                  </Button>
+                )}
+              </div>
+
+              {currentStep <= 4 && (
+                <div className="flex space-x-4">
+                  {currentStep < 4 ? (
+                    <Button type="button" onClick={nextStep}>
+                      Next Step
+                    </Button>
+                  ) : (
+                    <Button
+                      disabled={isLoading}
+                      type="button"
+                      onClick={handleSubmit}
+                    >
+                      {isLoading
+                        ? "Publishing formData..."
+                        : "Publish Property - "}
+                    </Button>
+                  )}
+                </div>
               )}
             </div>
-
-            <div className="flex space-x-4">
-              <Link href="/dashboard">
-                <Button type="button" variant="outline">
-                  Save as Draft
-                </Button>
-              </Link>
-
-              {currentStep < 4 ? (
-                <Button type="button" onClick={nextStep}>
-                  Next Step
-                </Button>
-              ) : (
-                <Button disabled={isLoading}>
-                  {isLoading ? "Publishing Property..." : "Publish Property - "}
-                </Button>
-              )}
-            </div>
-          </div>
+          )}
         </form>
       </div>
     </div>
