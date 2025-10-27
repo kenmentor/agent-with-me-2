@@ -19,6 +19,7 @@ import {
   CheckCircle2,
   Eye,
   Download,
+  House,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -81,6 +82,7 @@ export default function DashboardPage() {
       expiredDate: "2025-11-04T00:00:00Z",
     },
   ]);
+  const [loading, setLoading] = useState(false);
   const [recentPayments, setRecentPayments] = useState<any[]>([]);
 
   // 🧠 Fetch bookings & payments (populated data from backend)
@@ -159,7 +161,7 @@ export default function DashboardPage() {
     }
   };
 
-  if (!user)
+  if (!user && !loading)
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -171,8 +173,8 @@ export default function DashboardPage() {
 
   return (
     <>
-      <Header />
-      <div className="min-h-screen bg-gray-50">
+      <Header color="black" />
+      <div className="min-h-screen bg-gray-50 md:pt-[60px] pt-[40px]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="flex flex-col lg:flex-row gap-8">
             {/* Sidebar */}
@@ -196,30 +198,86 @@ export default function DashboardPage() {
                 </CardHeader>
                 <CardContent>
                   <nav className="space-y-2">
-                    {["overview", "booking", "messages", "settings"].map(
-                      (tab) => (
-                        <Button
-                          key={tab}
-                          variant={activeTab === tab ? "default" : "ghost"}
-                          className="w-full justify-start"
-                          onClick={() => setActiveTab(tab)}
-                        >
-                          {tab === "overview" && (
-                            <Home className="h-4 w-4 mr-2" />
-                          )}
-                          {tab === "booking" && (
-                            <CreditCard className="h-4 w-4 mr-2" />
-                          )}
-                          {tab === "messages" && (
-                            <MessageSquare className="h-4 w-4 mr-2" />
-                          )}
-                          {tab === "settings" && (
-                            <Settings className="h-4 w-4 mr-2" />
-                          )}
-                          {tab.charAt(0).toUpperCase() + tab.slice(1)}
-                        </Button>
-                      )
-                    )}
+                    {[
+                      { name: "overview", link: "" },
+
+                      { name: "booking", link: "" },
+
+                      { name: "payment", link: "payments/history" },
+                      { name: "messages", link: "" },
+
+                      { name: "settings", link: "" },
+                    ].map((tab) => (
+                      <>
+                        {tab.link ? (
+                          <Link
+                            href={tab.link}
+                            onClick={() => setLoading(true)}
+                          >
+                            <Button
+                              key={tab.name}
+                              variant={
+                                activeTab === tab.name ? "default" : "ghost"
+                              }
+                              className="w-full justify-start"
+                              onClick={() => setActiveTab(tab.name)}
+                            >
+                              {tab.name === "overview" && (
+                                <Home className="h-4 w-4 mr-2" />
+                              )}
+                              {tab.name === "booking" && (
+                                <House className="h-4 w-4 mr-2" />
+                              )}
+                              {tab.name === "payment" && (
+                                <CreditCard className="h-4 w-4 mr-2" />
+                              )}
+                              {tab.name === "messages" && (
+                                <MessageSquare className="h-4 w-4 mr-2" />
+                              )}
+                              {tab.name === "settings" && (
+                                <Settings className="h-4 w-4 mr-2" />
+                              )}
+                              {tab.name.charAt(0).toUpperCase() +
+                                tab.name.slice(1)}
+                            </Button>
+                          </Link>
+                        ) : (
+                          <Button
+                            key={tab.name}
+                            variant={
+                              activeTab === tab.name ? "default" : "ghost"
+                            }
+                            className="w-full justify-start"
+                            onClick={() => setActiveTab(tab.name)}
+                          >
+                            {tab.name === "overview" && (
+                              <Home className="h-4 w-4 mr-2" />
+                            )}
+                            {tab.name === "booking" && (
+                              <House className="h-4 w-4 mr-2" />
+                            )}
+                            {tab.name === "payment" && (
+                              <CreditCard className="h-4 w-4 mr-2" />
+                            )}
+                            {tab.name === "messages" && (
+                              <MessageSquare className="h-4 w-4 mr-2" />
+                            )}
+                            {tab.name === "settings" && (
+                              <Settings className="h-4 w-4 mr-2" />
+                            )}
+                            {tab.name.charAt(0).toUpperCase() +
+                              tab.name.slice(1)}
+                          </Button>
+                        )}
+                      </>
+                    ))}
+                    <Button
+                      variant={activeTab === "editlist" ? "default" : "ghost"}
+                      className="w-full justify-start"
+                      onClick={() => setActiveTab("editlist")}
+                    >
+                      Edit listing
+                    </Button>
                   </nav>
                 </CardContent>
               </Card>

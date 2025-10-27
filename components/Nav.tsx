@@ -10,17 +10,21 @@ import {
   PlusCircle,
   LayoutDashboard,
   User,
+  Wallet,
+  ChartArea,
+  MessageCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import useWindowDimensions from "@/hooks/useWindowDimenstions";
 import { useAuthStore } from "@/store/authStore";
 
 const NAV_LINKS = [
-  { name: "Home", href: "/", icon: Home },
-  { name: "Properties", href: "/properties", icon: Building2 },
-  { name: "Upload", href: "/properties/add", icon: PlusCircle },
+  { name: "Home", href: "/properties", icon: Home },
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { name: "Account", href: "/auth/login", icon: User },
+
+  { name: "Upload", href: "/properties/add", icon: PlusCircle },
+  { name: "Chat", href: "/chat", icon: MessageCircle },
+  { name: "payment", href: "/payments/history", icon: Wallet },
 ];
 
 // pages that should display the bottom nav
@@ -43,7 +47,7 @@ export default function RootLayout() {
 
   return (
     <>
-      {showBottomNav && (
+      {!showBottomNav && (
         <motion.nav
           initial={{ y: 80, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}

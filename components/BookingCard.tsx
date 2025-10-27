@@ -22,13 +22,18 @@ export interface BookingCardProps {
     checkOut: string;
     platformFee: number;
     expiredDate: string;
-    onApprove?: (id: string) => void;
-    onReject?: (id: string) => void;
-    onRefund?: (id: string) => void;
   };
+  onApprove?: (id: string) => void;
+  onReject?: (id: string) => void;
+  onRefund?: (id: string) => void;
 }
 
-export default function BookingCard({ booking }: BookingCardProps) {
+export default function BookingCard({
+  booking,
+  onApprove,
+  onReject,
+  onRefund,
+}: BookingCardProps) {
   const now = new Date();
   const expired = new Date(booking.expiredDate) < now;
 
@@ -116,7 +121,7 @@ export default function BookingCard({ booking }: BookingCardProps) {
                 size="sm"
                 onClick={() =>
                   confirmAction("Do you want to approve this booking?", () =>
-                    booking.onApprove?.(booking._id)
+                    onApprove?.(booking._id)
                   )
                 }
                 className="bg-green-600 hover:bg-green-700 text-white"
@@ -130,7 +135,7 @@ export default function BookingCard({ booking }: BookingCardProps) {
                 variant="outline"
                 onClick={() =>
                   confirmAction("Do you want to reject this booking?", () =>
-                    booking.onReject?.(booking._id)
+                    onReject?.(booking._id)
                   )
                 }
                 className="text-red-600 border-red-600 hover:bg-red-50"
