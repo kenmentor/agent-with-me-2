@@ -8,9 +8,8 @@ interface Property {
   type: string;
   category: string;
   price: string;
-  pincode: string;
   // Location
-  location: string;
+
   address: string;
   state: string;
   lga: string;
@@ -18,13 +17,8 @@ interface Property {
   // Property Details
   bedrooms: string;
   bathrooms: string;
-  area: string;
+
   furnishing: string;
-  floor: string;
-  totalFloors: string;
-  age: string;
-  waterSuply: true;
-  electricity: 0;
 
   // Amenities
   amenities: string[];
@@ -33,9 +27,6 @@ interface Property {
   images: File[];
   video: File | null;
   thumbnail: File | null;
-  // Contact
-  contactPreference: string; // phone, email, both
-  availableFrom: string;
 }
 import type React from "react";
 
@@ -82,6 +73,7 @@ import {
   Linkedin,
   MessageCircle,
   Twitter,
+  LoaderIcon,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -91,6 +83,8 @@ import Req from "@/app/utility/axois";
 import { set } from "date-fns";
 import { toast } from "sonner";
 import { Range, Slider } from "@radix-ui/react-slider";
+import { validateProperty } from "@/app/utility/validateform";
+import getPlaceValue from "@/app/utility/placVealue";
 export default function AddPropertyPage() {
   const { base } = Req;
   const user = useAuthStore((state) => state.user);
@@ -107,9 +101,8 @@ export default function AddPropertyPage() {
     type: "",
     category: "",
     price: "",
-    pincode: "",
+
     // Location
-    location: "",
     address: "",
     state: "",
     lga: "",
@@ -117,13 +110,8 @@ export default function AddPropertyPage() {
     // Property Details
     bedrooms: "",
     bathrooms: "",
-    area: "",
+
     furnishing: "",
-    floor: "",
-    totalFloors: "",
-    age: "",
-    waterSuply: true,
-    electricity: 0,
 
     // Amenities
     amenities: [] as string[],
@@ -133,9 +121,8 @@ export default function AddPropertyPage() {
     video: null as File | null,
     thumbnail: null as File | null,
     // Contact
-    contactPreference: "both", // phone, email, both
-    availableFrom: "",
   });
+
   const [selectedState, setSelectedState] = useState<string>("all");
 
   const handleAmenityChange = (amenityId: string, checked: boolean) => {
@@ -153,8 +140,14 @@ export default function AddPropertyPage() {
   };
   const handleSubmit = async (e: { preventDefault: () => void }) => {
     e.preventDefault();
+    if (!formData.thumbnail)
+      setFormData((prev) => ({ ...prev, thumbnail: prev.images[0] }));
     try {
+      const valid = validateProperty(formData);
+      if (!valid) return;
       const data = new FormData();
+
+      setIsLoading(true);
       if (formData.thumbnail) {
         data.append("thumbnail", formData.thumbnail);
       }
@@ -163,25 +156,19 @@ export default function AddPropertyPage() {
       data.append("description", formData.description);
       data.append("category", formData.category);
       data.append("price", formData.price.toString()); // 👈 string but numeric value
-      data.append("location", formData.location);
+
       data.append("type", formData.type);
       data.append("address", formData.address);
       data.append("bedroom", formData.bedrooms);
       data.append("bathroom", formData.bathrooms);
-      data.append("floor", formData.floor);
-      data.append("age", formData.age);
-      data.append("area", formData.area);
-      data.append("totalFloors", formData.totalFloors);
-      data.append("age", formData.age);
-      data.append("waterSuply", String(formData.waterSuply)); // 👈 "true"/"false"
-      data.append("electricity", formData.electricity.toString());
+
       data.append("host", user?._id || "");
       formData.amenities.forEach((amenity) => {
         data.append("amenities[]", amenity);
       });
 
       data.append("maxgeust", "1");
-      data.append("thumbnail", formData.images[0]); // 👈 default since schema requires it
+      // data.append("thumbnail", formData.images[0]); // 👈 default since schema requires it
 
       // Use gallery instead of files
       formData.images.forEach((file) => {
@@ -189,6 +176,7 @@ export default function AddPropertyPage() {
       });
       data.append("video", formData.video as Blob);
       console.log(data.getAll("files"));
+      console.log();
       if (currentStep === 4) {
         const res = await fetch(`${base}/v1/house`, {
           method: "POST",
@@ -204,6 +192,7 @@ export default function AddPropertyPage() {
       }
     } catch (err) {
       console.error(err);
+
       toast.error((err as Error).message);
     } finally {
       setIsLoading(false);
@@ -304,6 +293,11 @@ export default function AddPropertyPage() {
   return (
     <div className="min-h-screen bg-gray-50 pb-[100px] md:pb-[0px]">
       {/* Header */}
+      {isLoading && (
+        <div className="fixed  left-0 bg-black/50 backdrop:blur-sm right-0 flex justify-center top-0 bottom-0 pt-[50px] ">
+          <LoaderIcon className=" animate-spin " color="white" />
+        </div>
+      )}
       <header className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
@@ -451,6 +445,9 @@ export default function AddPropertyPage() {
 
                 <div className="space-y-2">
                   <Label htmlFor="price">Price *</Label>
+                  <span className="bg-green-500 text-white px-1">
+                    {getPlaceValue(formData?.price)}
+                  </span>
                   <div className="relative">
                     <Input
                       id="price"
@@ -550,21 +547,6 @@ export default function AddPropertyPage() {
                     required
                   />
                 </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="pincode">PIN Code *</Label>
-                  <Input
-                    id="pincode"
-                    type="text"
-                    placeholder="e.g., 400050"
-                    value={formData.pincode}
-                    onChange={(e) =>
-                      setFormData({ ...formData, pincode: e.target.value })
-                    }
-                    maxLength={6}
-                    required
-                  />
-                </div>
               </CardContent>
             </Card>
           )}
@@ -627,24 +609,6 @@ export default function AddPropertyPage() {
                       </Select>
                     </div>
                   </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="area">Area (sq ft) *</Label>
-                    <div className="relative">
-                      <Square className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                      <Input
-                        id="area"
-                        type="number"
-                        placeholder="e.g., 850"
-                        value={formData.area}
-                        onChange={(e) =>
-                          setFormData({ ...formData, area: e.target.value })
-                        }
-                        className="pl-10"
-                        required
-                      />
-                    </div>
-                  </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -670,59 +634,9 @@ export default function AddPropertyPage() {
                       </SelectContent>
                     </Select>
                   </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="age">Property Age</Label>
-                    <Select
-                      value={formData.age}
-                      onValueChange={(value) =>
-                        setFormData({ ...formData, age: "1" })
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select age" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="1">0-1 :: years (New)</SelectItem>
-                        <SelectItem value="1">1-5 years</SelectItem>
-                        <SelectItem value="5">5-10 years</SelectItem>
-                        <SelectItem value="10">10-15 years</SelectItem>
-                        <SelectItem value="15">15+ years</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="floor">Floor</Label>
-                    <Input
-                      id="floor"
-                      type="text"
-                      placeholder="e.g., 3rd Floor, Ground Floor"
-                      value={formData.floor}
-                      onChange={(e) =>
-                        setFormData({ ...formData, floor: e.target.value })
-                      }
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="totalFloors">Total Floors</Label>
-                    <Input
-                      id="totalFloors"
-                      type="number"
-                      placeholder="e.g., 10"
-                      value={formData.totalFloors}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          totalFloors: e.target.value,
-                        })
-                      }
-                    />
-                  </div>
-                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
 
                 {/* Amenities */}
                 <div className="space-y-4">
@@ -750,21 +664,6 @@ export default function AddPropertyPage() {
                       </div>
                     ))}
                   </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="availableFrom">Available From</Label>
-                  <Input
-                    id="availableFrom"
-                    type="date"
-                    value={formData.availableFrom}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        availableFrom: e.target.value,
-                      })
-                    }
-                  />
                 </div>
               </CardContent>
             </Card>
@@ -917,43 +816,6 @@ export default function AddPropertyPage() {
               </CardContent>
 
               {/* Contact Preferences */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Contact Preferences</CardTitle>
-                  <CardDescription>
-                    {" "}
-                    <CardHeader>
-                      <Users className="h-12 w-12 text-purple-600 mx-auto mb-4" />
-                      <CardTitle>Contact method</CardTitle>
-                    </CardHeader>
-                    How would you like to be contacted?
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <Label>Preferred Contact Method</Label>
-                      <Select
-                        value={formData.contactPreference}
-                        onValueChange={(value) =>
-                          setFormData({ ...formData, contactPreference: value })
-                        }
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="phone">Phone Only</SelectItem>
-                          <SelectItem value="email">Email Only</SelectItem>
-                          <SelectItem value="both">
-                            Both Phone & Email
-                          </SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
 
               {/*  Trial Info */}
             </div>
@@ -1092,7 +954,7 @@ export default function AddPropertyPage() {
                     >
                       {isLoading
                         ? "Publishing formData..."
-                        : "Publish Property - "}
+                        : "Publish Property "}
                     </Button>
                   )}
                 </div>

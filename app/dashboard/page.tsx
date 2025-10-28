@@ -1,5 +1,22 @@
 "use client";
-
+interface Property {
+  _id?: string;
+  title: string;
+  description: string;
+  type: string;
+  category: string;
+  price: string;
+  address: string;
+  state: string;
+  lga: string;
+  bedrooms: string;
+  bathrooms: string;
+  area: string;
+  furnishing: string;
+  amenities: string[];
+  contactPreference: string;
+  availableFrom: string;
+}
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -20,6 +37,7 @@ import {
   Eye,
   Download,
   House,
+  Edit,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -27,6 +45,9 @@ import Header from "../../components/Header";
 import { useAuthStore } from "@/store/authStore";
 import BookingCard from "../../components/BookingCard";
 import Req from "@/app/utility/axois";
+import EditablePropertyCard from "@/components/EditablePropertyCard";
+import { toast } from "sonner";
+import { getDate } from "date-fns";
 export default function DashboardPage() {
   const router = useRouter();
   const { user, logout, isAuthenticated, _hasHydrated } = useAuthStore();
@@ -84,7 +105,7 @@ export default function DashboardPage() {
   ]);
   const [loading, setLoading] = useState(false);
   const [recentPayments, setRecentPayments] = useState<any[]>([]);
-
+  const [properties, setProperties] = useState<Property[]>([]);
   // 🧠 Fetch bookings & payments (populated data from backend)
   useEffect(() => {
     if (!_hasHydrated) return;
@@ -160,6 +181,18 @@ export default function DashboardPage() {
       router.push(`/refund?id=${id}`);
     }
   };
+
+  async function getProperties() {
+    try {
+      const res = await app.get(`${base}/v1/house?hostId=${user._id}`);
+      const data: Property[] = res.data.data;
+      console.log(data);
+      await setProperties(data);
+      console.log(properties);
+    } catch (err) {
+      toast.error("an error occured");
+    }
+  }
 
   if (!user && !loading)
     return (
@@ -274,9 +307,12 @@ export default function DashboardPage() {
                     <Button
                       variant={activeTab === "editlist" ? "default" : "ghost"}
                       className="w-full justify-start"
-                      onClick={() => setActiveTab("editlist")}
+                      onClick={() => {
+                        setActiveTab("editlist");
+                        getProperties();
+                      }}
                     >
-                      Edit listing
+                      <Edit /> Edit listing
                     </Button>
                   </nav>
                 </CardContent>
@@ -368,6 +404,38 @@ export default function DashboardPage() {
                         Logout
                       </Button>
                     </CardContent>
+                  </Card>
+                </div>
+              )}
+
+              {activeTab === "editlist" && (
+                <div className="min-h-screen ">
+                  {/* Page Header */}
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
+                    <h1 className="text-2xl md:text-3xl font-bold text-gray-800">
+                      Edit Property
+                    </h1>
+                  </div>
+
+                  {/* Tabs Section */}
+                  <Card defaultValue="details" className="w-full gap-1">
+                    {/* Details Tab */}
+                    <CardContent className="p-7 flex flex-col gap-3">
+                      {properties.length > 0 ? (
+                        properties?.map((data) => {
+                          return (
+                            <EditablePropertyCard
+                              getData={getProperties}
+                              data={data}
+                            />
+                          );
+                        })
+                      ) : (
+                        <div>no result</div>
+                      )}
+                    </CardContent>
+
+                    {/* Map Tab */}
                   </Card>
                 </div>
               )}

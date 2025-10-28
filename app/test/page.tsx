@@ -1,70 +1,33 @@
-// import { ImageResponse } from "next/og";
-// import { readFile } from "node:fs/promises";
-// import { join } from "node:path";
-
-// // Image metadata
-// export const alt = "About Acme";
-// export const size = {
-//   width: 1200,
-//   height: 630,
-// };
-
-// export const contentType = "image/png";
-
-// // Image generation
-// export default async function Image() {
-//   // Font loading, process.cwd() is Next.js project directory
-//   const interSemiBold = await readFile(
-//     join(process.cwd(), "assets/Inter-SemiBold.ttf")
-//   );
-
-//   return new ImageResponse(
-//     (
-//       // ImageResponse JSX element
-//       <div
-//         style={{
-//           fontSize: 128,
-//           background: "white",
-//           width: "100%",
-//           height: "100%",
-//           display: "flex",
-//           alignItems: "center",
-//           justifyContent: "center",
-//         }}
-//       >
-//         About Acme
-//       </div>
-//     ),
-//     // ImageResponse options
-//     {
-//       // For convenience, we can re-use the exported opengraph-image
-//       // size config to also set the ImageResponse's width and height.
-//       ...size,
-//       fonts: [
-//         {
-//           name: "Inter",
-//           data: interSemiBold,
-//           style: "normal",
-//           weight: 400,
-//         },
-//       ],
-//     }
-//   );
-// }
-
-"use client";
-
+import React from "react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { useAuthStore } from "@/store/authStore";
-import { Avatar, AvatarFallback, AvatarImage } from "@radix-ui/react-avatar";
+import EditablePropertyCard from "@/components/EditablePropertyCard";
+import { MapPin, Edit3, Trash2 } from "lucide-react";
 
-import { Badge, Bell, Home, Plus } from "lucide-react";
-import Link from "next/link";
-import router, { useRouter } from "next/navigation";
+export default function PropertyOverview() {
+  return (
+    <div className="min-h-screen bg-gray-50 p-6 md:p-10">
+      {/* Page Header */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
+        <h1 className="text-2xl md:text-3xl font-bold text-gray-800">
+          Edit Property
+        </h1>
+      </div>
 
-const Header = () => {
-  const router = useRouter();
-  const user = useAuthStore((state) => state.user);
-  return <div></div>;
-};
-export default Header;
+      {/* Tabs Section */}
+      <Tabs defaultValue="details" className="w-full">
+        {/* Details Tab */}
+        <TabsContent value="details">
+          <Card className="shadow-sm border border-gray-200">
+            <CardContent className="p-6">
+              <EditablePropertyCard />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Map Tab */}
+      </Tabs>
+    </div>
+  );
+}
