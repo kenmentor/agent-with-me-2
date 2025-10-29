@@ -279,7 +279,10 @@ export default function PropertiesPage() {
                 <SelectContent>
                   {priceRanges.map((range) => {
                     return (
-                      <SelectItem value={`${range.min}-${range.max}`}>
+                      <SelectItem
+                        value={`${range.min}-${range.max}`}
+                        key={range.label}
+                      >
                         {range.label}
                       </SelectItem>
                     );

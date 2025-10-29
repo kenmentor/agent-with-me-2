@@ -113,7 +113,8 @@ export default function PayRentPage() {
     try {
       const res = await app.get(`${base}/v1/house/detail/${houseId}`);
       const data = res.data.data;
-      setPaymentData((prev) => ({ ...prev, data }));
+      console.log(data);
+      setPaymentData((prev) => ({ ...prev, ...data }));
     } catch (err) {
       console.log("Fetch error:", err);
     } finally {
@@ -143,6 +144,8 @@ export default function PayRentPage() {
       amount: paymentData?.totalAmount,
       notes: paymentData?.notes,
     });
+
+    // Step 1: Initialize transaction on backend
     const paymentDetails = await app.post(
       `${base}/v1/payment/initialize-bank-transfer`,
       {
@@ -154,14 +157,26 @@ export default function PayRentPage() {
         notes: paymentData?.notes,
       }
     );
-    console.log(paymentDetails.data.data.access_code);
-    const popup = new PaystackPop();
-    console.log();
+
     const access_code = paymentDetails.data.data.access_code;
-    return popup.resumeTransaction(access_code);
+
+    // Step 2: Start Paystack popup
+    const popup = new PaystackPop();
+
+    popup.resumeTransaction(access_code, {
+      onSuccess: (response: any) => {
+        console.log("✅ Payment successful:", response);
+        setPaymentStep(3);
+      },
+      onCancel: () => {
+        toast.error(
+          "something went wrong check your internet connection and try again"
+        );
+      },
+    });
   }
+
   const sendPaymentNotification = () => {
-    // Simulate sending notification to landlord
     toast.success(
       `Payment notification sent to ${paymentData?.host?.userName} at ${paymentData?.host?.phoneNumber}`
     );
@@ -297,7 +312,7 @@ export default function PayRentPage() {
                     <hr />
                     <div className="flex justify-between font-semibold text-lg">
                       <span>Total Amount</span>
-                      <span>₦{paymentData?.totalAmount?.toLocaleString()}</span>
+                      <span>₦{paymentData?.price?.toLocaleString()}</span>
                     </div>
                   </div>
                 </div>
@@ -413,8 +428,7 @@ export default function PayRentPage() {
                 Back
               </Button>
               <Button
-                // onClick={generatePaymentDetails}
-                onClick={() => setPaymentStep(3)}
+                onClick={generatePaymentDetails}
                 disabled={isLoading}
                 size="lg"
               >

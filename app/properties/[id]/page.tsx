@@ -220,7 +220,7 @@ export default function PropertyDetailPage() {
         <div className="flex flex-col items-end justify-center">
           <div className="text-3xl font-bold">₦{property.price}</div>
           <div className="mt-4 flex gap-2">
-            {property.host.adminVerified && (
+            {!property.host.adminVerified && (
               <Link href={`/payments/pay/${property._id}`}>
                 <Button size="lg">Book Now</Button>
               </Link>
