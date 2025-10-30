@@ -13,6 +13,7 @@ export async function generateMetadata({
       `https://agent-with-me-backend.onrender.com/v1/house/detail/${params.id}`,
       { cache: "no-store" }
     );
+
     const result = await res.json();
     const property = result.data;
 
@@ -31,6 +32,7 @@ export async function generateMetadata({
     return {
       title,
       description,
+      metadataBase: new URL(baseUrl),
       openGraph: {
         type: "website",
         title,
@@ -53,18 +55,6 @@ export async function generateMetadata({
         description,
         images: [imageUrl],
       },
-      // Extra tags for broader support
-      other: {
-        "og:type": "website",
-        "og:site_name": "Agent With Me",
-        "og:locale": "en_US",
-        "og:image:width": "1200",
-        "og:image:height": "630",
-        "og:image:type": "image/jpeg",
-        "whatsapp:image": imageUrl,
-        "telegram:image": imageUrl,
-        "linkedin:image": imageUrl,
-      },
     };
   } catch (error) {
     console.error("Metadata generation failed:", error);
@@ -80,6 +70,7 @@ export default async function PropertyDetailPage({ params }: PageProps) {
     `https://agent-with-me-backend.onrender.com/v1/house/detail/${params.id}`,
     { cache: "no-store" }
   );
+
   const result = await res.json();
   const property = result.data;
 
