@@ -61,7 +61,7 @@ export default function PropertyDetailPage() {
     host: {
       _id: "agent123",
       userName: "Jane Smith",
-      phone: "(305) 555-1234",
+      phoneNumber: "(305) 555-1234",
       email: "jane.smith@example.com",
       image: "/placeholder.svg?height=200&width=200",
       adminVerified: false,
@@ -229,7 +229,26 @@ export default function PropertyDetailPage() {
               <Heart className="mr-2 h-4 w-4" />
               Save
             </Button>
-            <Button size="icon" variant="outline">
+            <Button
+              size="icon"
+              variant="outline"
+              onClick={() => {
+                if (navigator.share) {
+                  navigator
+                    .share({
+                      title: property.title,
+                      text: property.description,
+                      url: `${window.location.origin}/property/${property._id}`,
+                    })
+                    .catch((err) => console.log("Share failed:", err));
+                } else {
+                  navigator.clipboard.writeText(
+                    `${window.location.origin}/property/${property._id}`
+                  );
+                  alert("Link copied to clipboard!");
+                }
+              }}
+            >
               <Share2 className="h-4 w-4" />
             </Button>
           </div>
@@ -344,7 +363,7 @@ export default function PropertyDetailPage() {
           <div className="mb-6 space-y-2">
             <div className="flex items-center gap-2">
               <Phone className="h-4 w-4 text-muted-foreground" />
-              <span>{property?.host?.phone}</span>
+              <span>{property?.host?.phoneNumber}</span>
             </div>
             <div className="flex items-center gap-2">
               <Mail className="h-4 w-4 text-muted-foreground" />
