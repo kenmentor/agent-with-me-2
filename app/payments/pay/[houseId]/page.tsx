@@ -166,7 +166,7 @@ export default function PayRentPage() {
     popup.resumeTransaction(access_code, {
       onSuccess: (response: any) => {
         console.log("✅ Payment successful:", response);
-        setPaymentStep(3);
+        // setPaymentStep(3);
       },
       onCancel: () => {
         toast.error(
