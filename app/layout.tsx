@@ -28,6 +28,7 @@ html {
   --font-mono: ${GeistMono.variable};
 }
         `}</style>
+        <link rel="icon" href="/main.png" type="image/png" />
       </head>
       <body>
         {children}

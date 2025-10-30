@@ -1,914 +1,386 @@
 "use client";
-interface property {
-  _id?: string;
-  title: string;
-  lga: string;
-  country: string;
-  description: string;
-  views: number;
-  rating: number;
-  category: string;
-  thumbnail: string;
-  gallery: [{ url: string; type: string }];
-  price: number;
-  address: string;
-  state: string;
-  type: string;
-  waterSuply: boolean;
-  electricity: number;
-  location: string;
-  host: {
-    _id: string;
-    phoneNumber: number;
-  };
-  amenities: string[];
-}
-import { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
-import { Textarea } from "@/components/ui/textarea";
-import {
-  Home,
-  CreditCard,
-  Smartphone,
-  Building2,
-  Shield,
-  CheckCircle2,
-  AlertCircle,
-  ArrowLeft,
-  Receipt,
-  Calendar,
-  Clock,
-  Send,
-  Edit3,
-} from "lucide-react";
+
+import Image from "next/image";
 import Link from "next/link";
-import { useParams, useRouter, useSearchParams } from "next/navigation";
-import { useAuthStore } from "@/store/authStore";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Bed,
+  Bath,
+  Square,
+  Calendar,
+  MapPin,
+  Phone,
+  Mail,
+  Heart,
+  Share2,
+  Home,
+  ChevronRight,
+  BanIcon,
+} from "lucide-react";
+import { useParams } from "next/navigation";
+import { useEffect, useState } from "react";
 import Req from "@/app/utility/axois";
-import { toast } from "sonner";
-export default function PayRentPage() {
-  const { houseId } = useParams();
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const paymentId = searchParams.get("id");
-  const { base, app } = Req;
-  const { user, isAuthenticated, _hasHydrated } = useAuthStore();
-  const [isLoading, setIsLoading] = useState(false);
-  const [paymentStep, setPaymentStep] = useState(1); // 1: Details, 2: Payment, 3: Confirmation, 4: Success
-  const [isEditing, setIsEditing] = useState(false);
-  const [paymentData, setPaymentData] = useState({
-    propertyTitle: "2BHK Apartment in Bandra West",
-    host: {
-      adminVerified: true,
-      _id: "64a7f4c3e4b0f5b6c8d9e8f1",
-      userName: "Rajesh Kumar",
-      phoneNumber: 9876543210,
-    },
-    amount: 45000,
-    dueDate: "2024-02-25",
-    lateFee: 0,
-    totalAmount: 45000,
-    paymentMethod: "",
-    upiId: "",
-    cardNumber: "",
-    cardExpiry: "",
-    cardCvv: "",
-    cardName: "",
-    bankName: "",
-    notes: "",
-    scheduledDate: "",
-    scheduledTime: "",
-  });
-  const [property, setProperty] = useState<property | null>(null);
+import { useAuthStore } from "@/store/authStore";
+import AutoPlayVideo from "@/components/AutoplayVideo";
+import { Skeleton } from "@/components/ui/skeleton";
+
+export default function PropertyDetailPage() {
+  const { id } = useParams();
+  const { app } = Req;
   const [loading, setLoading] = useState(true);
-  const [paymentResult, setPaymentResult] = useState({
-    transactionId: "",
-    paidDateTime: "",
-    status: "pending_approval",
+  const user = useAuthStore((state) => state.user);
+  const [selectedImage, setSelectedImage] = useState<string>("hello");
+
+  const [property, setProperty] = useState({
+    _id: id,
+    title: "Luxury Waterfront Condo",
+    type: "Condo",
+    address: "789 Beach Blvd, Miami, FL 33139",
+    price: 2100000,
+    bedrooms: 3,
+    bathrooms: 3.5,
+    squareFeet: 2200,
+    yearBuilt: 2018,
+    status: "Available",
+    video: "",
+    description:
+      "This stunning waterfront condo offers breathtaking views of the ocean and city skyline...",
+    amenities: [
+      "Waterfront",
+      "Floor-to-ceiling windows",
+      "Gourmet kitchen",
+      "Private balcony",
+    ],
+    images: [
+      { url: "/placeholder.svg?height=600&width=800", type: "image/jpeg" },
+      { url: "/placeholder.svg?height=600&width=800", type: "image/jpeg" },
+      { url: "/placeholder.svg?height=600&width=800", type: "image/jpeg" },
+    ],
+    host: {
+      _id: "agent123",
+      userName: "Jane Smith",
+      phoneNumber: "(305) 555-1234",
+      email: "jane.smith@example.com",
+      image: "/placeholder.svg?height=200&width=200",
+      adminVerified: false,
+    },
   });
+
   async function getData() {
     try {
-      const res = await app.get(`${base}/v1/house/detail/${houseId}`);
-      console.log("helloe", res.data.data);
+      const res = await app.get(
+        `https://agent-with-me-backend.onrender.com/v1/house/detail/${id}`
+      );
       const result = res.data;
-
-      setPaymentData((prev) => ({
-        ...result,
-        propertyTitle: result.data.title,
-
-        amount: result.data.price,
-        totalAmount: result.data.price + prev.lateFee,
-      }));
+      if (result && result.data) {
+        setProperty(result.data);
+        const thumbnail =
+          result.data.thumbnail ||
+          (result.data.gallery && result.data.gallery[0]) ||
+          "";
+        setSelectedImage(thumbnail);
+      }
     } catch (err) {
       console.log("Fetch error:", err);
+    } finally {
+      setLoading(false);
     }
   }
+
   useEffect(() => {
-    if (!_hasHydrated) return;
-
-    // wait for Zustand to load from localStorage
     getData();
-    console.log(paymentData);
-    if (!isAuthenticated) {
-      router.push("/auth/gg");
-    }
-  }, [_hasHydrated, isAuthenticated, router]);
+  }, [id]);
 
-  // Calculate late fee if overdue
-
-  const validatePaymentDetails = () => {
-    if (!paymentData?.paymentMethod) return false;
-
-    if (paymentData?.paymentMethod === "upi" && !paymentData?.upiId)
-      return false;
-
-    if (paymentData?.paymentMethod === "card") {
-      if (
-        !paymentData?.cardNumber ||
-        !paymentData?.cardExpiry ||
-        !paymentData?.cardCvv ||
-        !paymentData?.cardName
-      ) {
-        return false;
-      }
-    }
-
-    if (paymentData?.paymentMethod === "netbanking" && !paymentData?.bankName)
-      return false;
-
-    return true;
-  };
-
-  const handlePayment = async () => {
-    setIsLoading(true);
-
-    // Simulate payment processing with real-time updates
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-
-    const now = new Date();
-    const transactionId = `TXN${Date.now()}`;
-    const paidDateTime = now.toISOString();
-
-    setPaymentResult({
-      transactionId,
-      paidDateTime,
-      status: "pending_approval",
-    });
-
-    // Store payment record with detailed information
-    const paymentRecord = {
-      id: Date.now(),
-      propertyTitle: paymentData?.propertyTitle,
-      landlordName: paymentData?.host?.userName,
-      landlordPhone: paymentData?.host?.phoneNumber,
-      amount: paymentData?.amount,
-      lateFee: paymentData?.lateFee,
-      totalAmount: paymentData?.totalAmount,
-      dueDate: paymentData?.dueDate,
-      paidDate: now.toISOString().split("T")[0],
-      paidTime: now.toTimeString().split(" ")[0],
-      paidDateTime: paidDateTime,
-      method: paymentData?.paymentMethod,
-      transactionId,
-      status: "pending_approval",
-      landlordApproved: false,
-      approvedDate: null,
-      approvedTime: null,
-      notes: paymentData?.notes,
-      tenantId: user.id,
-      tenantName: user.name,
-      tenantPhone: user.phone,
-      createdAt: paidDateTime,
-    };
-
-    // Save to localStorage (in real app, send to backend)
-    const existingPayments = JSON.parse(
-      localStorage.getItem("userPayments") || "[]"
-    );
-    existingPayments.push(paymentRecord);
-    localStorage.setItem("userPayments", JSON.stringify(existingPayments));
-
-    // Also add to pending approvals for landlord
-    const pendingApprovals = JSON.parse(
-      localStorage.getItem("pendingApprovals") || "[]"
-    );
-    pendingApprovals.push(paymentRecord);
-    localStorage.setItem("pendingApprovals", JSON.stringify(pendingApprovals));
-
-    setIsLoading(false);
-    setPaymentStep(4);
-  };
-
-  const sendPaymentNotification = () => {
-    // Simulate sending notification to landlord
-    toast.success(
-      `Payment notification sent to ${paymentData?.host?.userName} at ${paymentData?.host?.phoneNumber}`
-    );
-  };
-
-  if (!user) {
+  // ---------- Skeleton Loading Section ----------
+  if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        Loading...
+      <div className="container mx-auto px-4 py-8 space-y-6">
+        {/* Breadcrumb skeleton */}
+        <div className="flex gap-2 items-center">
+          <Skeleton className="h-4 w-12" />
+          <Skeleton className="h-4 w-4" />
+          <Skeleton className="h-4 w-16" />
+        </div>
+
+        {/* Title and top section */}
+        <div className="grid gap-6 lg:grid-cols-[2fr_1fr]">
+          <div className="space-y-3">
+            <Skeleton className="h-8 w-2/3" />
+            <Skeleton className="h-5 w-1/2" />
+            <div className="flex gap-3">
+              <Skeleton className="h-5 w-24" />
+              <Skeleton className="h-5 w-24" />
+              <Skeleton className="h-5 w-24" />
+            </div>
+          </div>
+          <div className="flex flex-col items-end justify-center gap-3">
+            <Skeleton className="h-8 w-32" />
+            <div className="flex gap-2">
+              <Skeleton className="h-10 w-24" />
+              <Skeleton className="h-10 w-24" />
+              <Skeleton className="h-10 w-10 rounded-full" />
+            </div>
+          </div>
+        </div>
+
+        {/* Image gallery */}
+        <div className="grid grid-cols-4 gap-4">
+          <Skeleton className="col-span-4 aspect-video rounded-lg lg:col-span-2 lg:row-span-2" />
+          <Skeleton className="col-span-2 aspect-video rounded-lg sm:col-span-1" />
+          <Skeleton className="col-span-2 aspect-video rounded-lg sm:col-span-1" />
+          <Skeleton className="col-span-2 aspect-video rounded-lg sm:col-span-1" />
+        </div>
+
+        {/* Tabs and video */}
+        <div className="grid gap-8 lg:grid-cols-[2fr_1fr]">
+          <div className="space-y-4">
+            <Skeleton className="h-8 w-1/3" />
+            <Skeleton className="h-24 w-full" />
+          </div>
+          <div className="space-y-3">
+            <Skeleton className="h-8 w-1/3" />
+            <Skeleton className="aspect-video rounded-lg" />
+          </div>
+        </div>
+
+        {/* Agent info */}
+        <div className="rounded-lg border bg-card p-6 shadow-sm space-y-4">
+          <div className="flex gap-4 items-center">
+            <Skeleton className="h-16 w-16 rounded-full" />
+            <div className="space-y-2">
+              <Skeleton className="h-5 w-32" />
+              <Skeleton className="h-4 w-24" />
+            </div>
+          </div>
+          <Skeleton className="h-10 w-full" />
+        </div>
       </div>
     );
   }
 
+  // ---------- Actual Page (unchanged design) ----------
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <Link href="/" className="flex items-center space-x-2">
-              <Home className="h-8 w-8 text-blue-600" />
-              <span className="text-2xl font-bold text-gray-900">
-                Agent with me
-              </span>
-            </Link>
-            <Link href="/dashboard">
-              <Button variant="outline">
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Back to Dashboard
-              </Button>
-            </Link>
+    <div className="container mx-auto px-4 py-8">
+      <div className="mb-6 flex items-center gap-2 text-sm text-muted-foreground">
+        <Link
+          href="/"
+          className="flex items-center gap-1 hover:text-foreground"
+        >
+          <Home className="h-4 w-4" />
+          Home
+        </Link>
+        <ChevronRight className="h-4 w-4" />
+        <Link href="/properties" className="hover:text-foreground">
+          Properties
+        </Link>
+        <ChevronRight className="h-4 w-4" />
+        <span className="text-foreground">{property.title}</span>
+      </div>
+
+      <div className="mb-8 grid gap-6 lg:grid-cols-[2fr_1fr]">
+        <div>
+          <h1 className="mb-2 text-3xl font-bold">{property.title}</h1>
+          <div className="mb-4 flex items-center gap-2">
+            <MapPin className="h-4 w-4 text-muted-foreground" />
+            <span>{property.address}</span>
+            <Badge
+              className={
+                property.status === "Available"
+                  ? "bg-green-100 text-green-800"
+                  : property.status === "Pending"
+                  ? "bg-yellow-100 text-yellow-800"
+                  : "bg-red-100 text-red-800"
+              }
+              variant="outline"
+            >
+              {property.status}
+            </Badge>
+          </div>
+          <div className="mb-6 flex flex-wrap items-center gap-4 text-muted-foreground">
+            <div className="flex items-center gap-1">
+              <Bed className="h-5 w-5" />
+              <span>{property.bedrooms} Bedrooms</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <Bath className="h-5 w-5" />
+              <span>{property.bathrooms} Bathrooms</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <Square className="h-5 w-5" />
+              <span>{property.squareFeet} sq ft</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <Calendar className="h-5 w-5" />
+              <span>Built in {property.yearBuilt}</span>
+            </div>
           </div>
         </div>
-      </header>
+        <div className="flex flex-col items-end justify-center">
+          <div className="text-3xl font-bold">₦{property.price}</div>
+          <div className="mt-4 flex gap-2">
+            {!property.host.adminVerified && (
+              <Link href={`/payments/pay/${property._id}`}>
+                <Button size="lg">Book Now</Button>
+              </Link>
+            )}
+            <Button size="lg" variant="outline">
+              <Heart className="mr-2 h-4 w-4" />
+              Save
+            </Button>
+            <Button
+              size="icon"
+              variant="outline"
+              onClick={() => {
+                if (navigator.share) {
+                  navigator
+                    .share({
+                      title: property.title,
+                      text: property.description,
+                      url: `${window.location.origin}/property/${property._id}`,
+                    })
+                    .catch((err) => console.log("Share failed:", err));
+                } else {
+                  navigator.clipboard.writeText(
+                    `${window.location.origin}/property/${property._id}`
+                  );
+                  alert("Link copied to clipboard!");
+                }
+              }}
+            >
+              <Share2 className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      </div>
 
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Progress Steps */}
-        <div className="mb-8">
-          <div className="flex items-center justify-center space-x-8">
-            {[1, 2, 3, 4].map((step) => (
-              <div key={step} className="flex items-center">
-                <div
-                  className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-medium ${
-                    step <= paymentStep
-                      ? "bg-blue-600 text-white"
-                      : "bg-gray-200 text-gray-600"
-                  }`}
-                >
-                  {step < paymentStep ? (
-                    <CheckCircle2 className="h-5 w-5" />
-                  ) : (
-                    step
-                  )}
-                </div>
-                {step < 4 && (
-                  <div
-                    className={`w-20 h-1 mx-4 ${
-                      step < paymentStep ? "bg-blue-600" : "bg-gray-200"
-                    }`}
-                  />
-                )}
+      <div className="mb-3 grid grid-cols-4 gap-4">
+        <div className="col-span-4 aspect-video overflow-hidden rounded-lg lg:col-span-2 lg:row-span-2">
+          <Image
+            src={selectedImage || "/placeholder.svg"}
+            alt={property.title}
+            width={800}
+            height={600}
+            className="h-full w-full object-cover"
+          />
+        </div>
+        {property.images?.map((image, index) => (
+          <div
+            key={index}
+            className="col-span-2 aspect-video overflow-hidden rounded-lg sm:col-span-1"
+          >
+            <Image
+              src={image.url || "/placeholder.svg"}
+              alt={`${property.title} ${index + 1}`}
+              onClick={() => setSelectedImage(image.url)}
+              width={400}
+              height={300}
+              className="h-full w-full object-cover"
+            />
+          </div>
+        ))}
+      </div>
+
+      <div className="mb-8 grid gap-8 lg:grid-cols-[2fr_1fr]">
+        <div>
+          <Tabs defaultValue="description">
+            <TabsList className="mb-4 grid w-full grid-cols-3">
+              <TabsTrigger value="description">Description</TabsTrigger>
+              <TabsTrigger value="features">Features</TabsTrigger>
+              <TabsTrigger value="location">Location</TabsTrigger>
+            </TabsList>
+            <TabsContent value="description" className="space-y-4">
+              <h2 className="text-2xl font-semibold">Property Description</h2>
+              <p className="leading-relaxed">{property.description}</p>
+            </TabsContent>
+            <TabsContent value="features">
+              <h2 className="mb-4 text-2xl font-semibold">Property Features</h2>
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                {property.amenities?.map((feature, index) => (
+                  <div key={index} className="flex items-center gap-2">
+                    <div className="h-2 w-2 rounded-full bg-primary"></div>
+                    <span>{feature}</span>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
-          <div className="flex justify-center space-x-12 mt-2 text-sm text-gray-600">
-            <span>Details</span>
-            <span>Payment</span>
-            <span>Confirm</span>
-            <span>Success</span>
-          </div>
-        </div>
-
-        {/* Step 1: Payment Details */}
-        {paymentStep === 1 && (
-          <div className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center justify-between">
-                  <span className="flex items-center">
-                    <Receipt className="h-5 w-5 mr-2" />
-                    Rent Payment Details
-                  </span>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setIsEditing(!isEditing)}
-                  >
-                    <Edit3 className="h-4 w-4 mr-2" />
-                    {isEditing ? "Save" : "Edit"}
-                  </Button>
-                </CardTitle>
-                <CardDescription>
-                  Review and edit your rent payment information
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                {/* Property Info */}
-                <div className="flex items-start space-x-4 p-4 bg-gray-50 rounded-lg">
-                  <Building2 className="h-8 w-8 text-blue-600 mt-1" />
-                  <div className="flex-1">
-                    {isEditing ? (
-                      <div className="space-y-3">
-                        <Input
-                          value={paymentData?.propertyTitle}
-                          onChange={(e) =>
-                            setPaymentData({
-                              ...paymentData,
-                              propertyTitle: e.target.value,
-                            })
-                          }
-                          placeholder="Property Title"
-                        />
-                        <Input
-                          value={paymentData?.host?.userName}
-                          onChange={(e) =>
-                            setPaymentData((prev) => ({
-                              ...prev,
-                              host: { ...prev.host, userName: e.target.value },
-                            }))
-                          }
-                          placeholder="Landlord Name"
-                        />
-                        <Input
-                          value={paymentData?.host?.phoneNumber}
-                          onChange={(e) =>
-                            setPaymentData((prev) => ({
-                              ...prev,
-                              host: {
-                                ...prev.host,
-                                phoneNumber: Number(e.target.value),
-                              },
-                            }))
-                          }
-                          placeholder="Landlord Phone"
-                        />
-                      </div>
-                    ) : (
-                      <>
-                        <h3 className="font-semibold text-lg">
-                          {paymentData?.propertyTitle}
-                        </h3>
-                        <p className="text-gray-600">
-                          {paymentData?.host?.userName}
-                          jdjdjdj host: {paymentData?.host?.userName}
-                        </p>
-                        <p className="text-gray-600">
-                          Phone: {paymentData?.host?.phoneNumber}
-                        </p>
-                      </>
-                    )}
-                    <div className="flex items-center space-x-4 mt-2 text-sm text-gray-500">
-                      <span className="flex items-center">
-                        <Calendar className="h-4 w-4 mr-1" />
-                        Due: {paymentData?.dueDate}
-                      </span>
-                      {paymentData?.lateFee > 0 && (
-                        <Badge variant="destructive" className="text-xs">
-                          <AlertCircle className="h-3 w-3 mr-1" />
-                          Overdue
-                        </Badge>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Payment Breakdown */}
-                <div className="space-y-4">
-                  <h4 className="font-semibold">Payment Breakdown</h4>
-                  <div className="space-y-2">
-                    <div className="flex justify-between">
-                      <span>Monthly Rent</span>
-                      {isEditing ? (
-                        <Input
-                          type="number"
-                          value={paymentData?.amount}
-                          onChange={(e) => {
-                            const amount = Number.parseInt(e.target.value) || 0;
-                            setPaymentData({
-                              ...paymentData,
-                              amount,
-                              totalAmount: amount + paymentData?.lateFee,
-                            });
-                          }}
-                          className="w-32 text-right"
-                        />
-                      ) : (
-                        <span>₦{paymentData?.amount.toLocaleString()}</span>
-                      )}
-                    </div>
-                    {paymentData?.lateFee > 0 && (
-                      <div className="flex justify-between text-red-600">
-                        <span>Late Fee</span>
-                        <span>₦{paymentData?.lateFee.toLocaleString()}</span>
-                      </div>
-                    )}
-                    <hr />
-                    <div className="flex justify-between font-semibold text-lg">
-                      <span>Total Amount</span>
-                      <span>₦{paymentData?.totalAmount.toLocaleString()}</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Payment Notes */}
-                <div className="space-y-2">
-                  <Label htmlFor="notes">Payment Notes (Optional)</Label>
-                  <Textarea
-                    id="notes"
-                    placeholder="Add any notes for the landlord..."
-                    value={paymentData?.notes}
-                    onChange={(e) =>
-                      setPaymentData({ ...paymentData, notes: e.target.value })
-                    }
-                    rows={3}
-                  />
-                </div>
-
-                {/* Schedule Payment */}
-                <div className="space-y-4">
-                  <h4 className="font-semibold">Schedule Payment (Optional)</h4>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="scheduledDate">Date</Label>
-                      <Input
-                        id="scheduledDate"
-                        type="date"
-                        value={paymentData?.scheduledDate}
-                        onChange={(e) =>
-                          setPaymentData({
-                            ...paymentData,
-                            scheduledDate: e.target.value,
-                          })
-                        }
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="scheduledTime">Time</Label>
-                      <Input
-                        id="scheduledTime"
-                        type="time"
-                        value={paymentData?.scheduledTime}
-                        onChange={(e) =>
-                          setPaymentData({
-                            ...paymentData,
-                            scheduledTime: e.target.value,
-                          })
-                        }
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Security Notice */}
-                <div className="flex items-start space-x-3 p-4 bg-green-50 border border-green-200 rounded-lg">
-                  <Shield className="h-5 w-5 text-green-600 mt-0.5" />
-                  <div className="text-sm">
-                    <p className="font-medium text-green-800">Secure Payment</p>
-                    <p className="text-green-700">
-                      Your payment is secured with 256-bit SSL encryption. Your
-                      landlord will be notified once payment is completed and
-                      will approve it within 24-48 hours.
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <div className="flex justify-end">
-              <Button onClick={() => setPaymentStep(2)} size="lg">
-                Proceed to Payment
-              </Button>
-            </div>
-          </div>
-        )}
-
-        {/* Step 2: Payment Method */}
-        {paymentStep === 2 && (
-          <div className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Account Details</CardTitle>
-                <CardDescription>
-                  you are to pay in the exact amount to this account
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                {/* Payment Method Selection */}
-                {/* <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div
-                    className={`p-4 border-2 rounded-lg cursor-pointer transition-colors ${
-                      paymentData?.paymentMethod === "upi"
-                        ? "border-blue-500 bg-blue-50"
-                        : "border-gray-200 hover:border-gray-300"
-                    }`}
-                    onClick={() =>
-                      setPaymentData({ ...paymentData, paymentMethod: "upi" })
-                    }
-                  >
-                    <div className="text-center">
-                      <Smartphone className="h-8 w-8 mx-auto mb-2 text-blue-600" />
-                      <h3 className="font-semibold">UPI</h3>
-                      <p className="text-sm text-gray-600">Pay using UPI ID</p>
-                    </div>
-                  </div>
-
-                  <div
-                    className={`p-4 border-2 rounded-lg cursor-pointer transition-colors ${
-                      paymentData?.paymentMethod === "card"
-                        ? "border-blue-500 bg-blue-50"
-                        : "border-gray-200 hover:border-gray-300"
-                    }`}
-                    onClick={() =>
-                      setPaymentData({ ...paymentData, paymentMethod: "card" })
-                    }
-                  >
-                    <div className="text-center">
-                      <CreditCard className="h-8 w-8 mx-auto mb-2 text-blue-600" />
-                      <h3 className="font-semibold">Credit/Debit Card</h3>
-                      <p className="text-sm text-gray-600">
-                        Visa, Mastercard, RuPay
-                      </p>
-                    </div>
-                  </div>
-
-                  <div
-                    className={`p-4 border-2 rounded-lg cursor-pointer transition-colors ${
-                      paymentData?.paymentMethod === "netbanking"
-                        ? "border-blue-500 bg-blue-50"
-                        : "border-gray-200 hover:border-gray-300"
-                    }`}
-                    onClick={() =>
-                      setPaymentData({
-                        ...paymentData,
-                        paymentMethod: "netbanking",
-                      })
-                    }
-                  >
-                    <div className="text-center">
-                      <Building2 className="h-8 w-8 mx-auto mb-2 text-blue-600" />
-                      <h3 className="font-semibold">Net Banking</h3>
-                      <p className="text-sm text-gray-600">All major banks</p>
-                    </div>
-                  </div>
-                </div> */}
-
-                {/* UPI Form */}
-                {paymentData?.paymentMethod === "upi" && (
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="upiId">UPI ID *</Label>
-                      <Input
-                        id="upiId"
-                        placeholder="yourname@paytm / yourname@gpay"
-                        value={paymentData?.upiId}
-                        onChange={(e) =>
-                          setPaymentData({
-                            ...paymentData,
-                            upiId: e.target.value,
-                          })
-                        }
-                        required
-                      />
-                    </div>
-                  </div>
-                )}
-
-                {/* Card Form */}
-                {paymentData?.paymentMethod === "card" && (
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="cardName">Cardholder Name *</Label>
-                      <Input
-                        id="cardName"
-                        placeholder="Name as on card"
-                        value={paymentData?.cardName}
-                        onChange={(e) =>
-                          setPaymentData({
-                            ...paymentData,
-                            cardName: e.target.value,
-                          })
-                        }
-                        required
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="cardNumber">Card Number *</Label>
-                      <Input
-                        id="cardNumber"
-                        placeholder="1234 5678 9012 3456"
-                        value={paymentData?.cardNumber}
-                        onChange={(e) =>
-                          setPaymentData({
-                            ...paymentData,
-                            cardNumber: e.target.value,
-                          })
-                        }
-                        required
-                      />
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="cardExpiry">Expiry Date *</Label>
-                        <Input
-                          id="cardExpiry"
-                          placeholder="MM/YY"
-                          value={paymentData?.cardExpiry}
-                          onChange={(e) =>
-                            setPaymentData({
-                              ...paymentData,
-                              cardExpiry: e.target.value,
-                            })
-                          }
-                          required
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="cardCvv">CVV *</Label>
-                        <Input
-                          id="cardCvv"
-                          placeholder="123"
-                          value={paymentData?.cardCvv}
-                          onChange={(e) =>
-                            setPaymentData({
-                              ...paymentData,
-                              cardCvv: e.target.value,
-                            })
-                          }
-                          required
-                        />
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Net Banking */}
-                {paymentData?.paymentMethod === "netbanking" && (
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <Label>Select Your Bank *</Label>
-                      <Select
-                        value={paymentData?.bankName}
-                        onValueChange={(value) =>
-                          setPaymentData({ ...paymentData, bankName: value })
-                        }
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Choose your bank" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="sbi">
-                            State Bank of India
-                          </SelectItem>
-                          <SelectItem value="hdfc">HDFC Bank</SelectItem>
-                          <SelectItem value="icici">ICICI Bank</SelectItem>
-                          <SelectItem value="axis">Axis Bank</SelectItem>
-                          <SelectItem value="kotak">
-                            Kotak Mahindra Bank
-                          </SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                )}
-
-                {/* Payment Summary */}
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <div className="flex justify-between items-center">
-                    <span className="font-semibold">Amount to Pay:</span>
-                    <span className="text-2xl font-bold text-blue-600">
-                      ₦{paymentData?.totalAmount.toLocaleString()}
-                    </span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <div className="flex justify-between">
-              <Button variant="outline" onClick={() => setPaymentStep(1)}>
-                Back
-              </Button>
-              <Button
-                onClick={() => setPaymentStep(3)}
-                disabled={!validatePaymentDetails()}
-                size="lg"
-              >
-                Review Payment
-              </Button>
-            </div>
-          </div>
-        )}
-
-        {/* Step 3: Confirmation */}
-        {paymentStep === 3 && (
-          <div className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Confirm Payment Details</CardTitle>
-                <CardDescription>
-                  Please review all details before proceeding
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                {/* Payment Summary */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-4">
-                    <h4 className="font-semibold">Property Details</h4>
-                    <div className="space-y-2 text-sm">
-                      <div className="flex justify-between">
-                        <span>Property:</span>
-                        <span className="font-medium">
-                          {paymentData?.propertyTitle}
-                        </span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Landlord:</span>
-                        <span className="font-medium">
-                          {paymentData?.host?.userName}
-                        </span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Due Date:</span>
-                        <span className="font-medium">
-                          {paymentData?.dueDate}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="space-y-4">
-                    <h4 className="font-semibold">Payment Details</h4>
-                    <div className="space-y-2 text-sm">
-                      <div className="flex justify-between">
-                        <span>Method:</span>
-                        <span className="font-medium capitalize">
-                          {paymentData?.paymentMethod}
-                        </span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Amount:</span>
-                        <span className="font-medium">
-                          ₦{paymentData?.amount.toLocaleString()}
-                        </span>
-                      </div>
-                      {paymentData?.lateFee > 0 && (
-                        <div className="flex justify-between text-red-600">
-                          <span>Late Fee:</span>
-                          <span className="font-medium">
-                            ₦{paymentData?.lateFee.toLocaleString()}
-                          </span>
-                        </div>
-                      )}
-                      <hr />
-                      <div className="flex justify-between font-semibold">
-                        <span>Total:</span>
-                        <span>
-                          ₦{paymentData?.totalAmount.toLocaleString()}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {paymentData?.notes && (
-                  <div className="space-y-2">
-                    <h4 className="font-semibold">Notes</h4>
-                    <p className="text-sm text-gray-600 bg-gray-50 p-3 rounded">
-                      {paymentData?.notes}
-                    </p>
-                  </div>
-                )}
-
-                {/* Current Date/Time Display */}
-                <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg">
-                  <div className="flex items-center space-x-2 mb-2">
-                    <Clock className="h-5 w-5 text-blue-600" />
-                    <h4 className="font-semibold text-blue-800">
-                      Payment Date & Time
-                    </h4>
-                  </div>
-                  <p className="text-blue-700">
-                    {new Date().toLocaleDateString()} at{" "}
-                    {new Date().toLocaleTimeString()}
+            </TabsContent>
+            <TabsContent value="location">
+              <h2 className="mb-4 text-2xl font-semibold">Location</h2>
+              <div className="aspect-video overflow-hidden rounded-lg bg-muted">
+                <div className="flex h-full items-center justify-center">
+                  <p className="text-muted-foreground">
+                    Map would be displayed here
                   </p>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </TabsContent>
+          </Tabs>
+        </div>
+        <div>
+          <h2 className="mb-4 text-2xl font-semibold">Video Tour</h2>
+          <div className="aspect-video overflow-hidden rounded-lg bg-muted">
+            <AutoPlayVideo src={`${property.video}`} />
+          </div>
+        </div>
 
-            <div className="flex justify-between">
-              <Button variant="outline" onClick={() => setPaymentStep(2)}>
-                Back
-              </Button>
-              <Button onClick={handlePayment} disabled={isLoading} size="lg">
-                {isLoading ? (
-                  <>
-                    <Clock className="h-4 w-4 mr-2 animate-spin" />
-                    Processing Payment...
-                  </>
-                ) : (
-                  `Pay ₦${paymentData?.totalAmount.toLocaleString()}`
-                )}
-              </Button>
+        <div className="mb-5 block ">
+          {property.host.adminVerified ? (
+            <Link className="!w-full" href={`/payments/pay/${property._id}`}>
+              <Button size="lg">Book Now</Button>
+            </Link>
+          ) : (
+            <div className="flex items-start space-x-3 p-4 bg-red-50 border border-red-200 rounded-lg">
+              <BanIcon className="h-5 w-5 text-red-600 mt-0.5" />
+              <div className="text-sm">
+                <p className="font-medium text-red-800">Secure Payment</p>
+                <p className="text-red-700">
+                  This agent is not verified by admin, booking is disabled. Make
+                  sure you verify them before making any payment.
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="rounded-lg border bg-card p-6 shadow-sm">
+          <div className="mb-4 flex items-center gap-4">
+            <div className="relative h-16 w-16 overflow-hidden rounded-full">
+              <Image
+                src={property?.host?.image || "/placeholder.svg"}
+                alt={property?.host?.userName}
+                fill
+                className="object-cover"
+              />
+            </div>
+            <div>
+              <h3 className="font-semibold">{property?.host?.userName}</h3>
+              <p className="text-sm text-muted-foreground">
+                {property.host.userName}
+              </p>
             </div>
           </div>
-        )}
-
-        {/* Step 4: Success */}
-        {paymentStep === 4 && (
-          <div className="text-center space-y-6">
-            <Card>
-              <CardContent className="pt-6">
-                <CheckCircle2 className="h-16 w-16 text-green-600 mx-auto mb-4" />
-                <h2 className="text-2xl font-bold text-green-600 mb-2">
-                  Payment Successful!
-                </h2>
-                <p className="text-gray-600 mb-6">
-                  Your rent payment of ₦
-                  {paymentData?.totalAmount.toLocaleString()} has been processed
-                  successfully.
-                </p>
-
-                <div className="bg-gray-50 p-4 rounded-lg text-left space-y-2">
-                  <div className="flex justify-between">
-                    <span>Transaction ID:</span>
-                    <span className="font-mono">
-                      {paymentResult.transactionId}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Payment Date:</span>
-                    <span>
-                      {new Date(
-                        paymentResult.paidDateTime
-                      ).toLocaleDateString()}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Payment Time:</span>
-                    <span>
-                      {new Date(
-                        paymentResult.paidDateTime
-                      ).toLocaleTimeString()}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Payment Method:</span>
-                    <span className="capitalize">
-                      {paymentData?.paymentMethod}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Status:</span>
-                    <Badge variant="secondary">Pending Landlord Approval</Badge>
-                  </div>
-                </div>
-
-                <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg mt-4">
-                  <div className="flex items-start space-x-3">
-                    <AlertCircle className="h-5 w-5 text-blue-600 mt-0.5" />
-                    <div className="text-sm text-left">
-                      <p className="font-medium text-blue-800">Next Steps:</p>
-                      <p className="text-blue-700">
-                        Your landlord ({paymentData?.host?.userName}) has been
-                        notified about this payment. They will review and
-                        approve it within 24-48 hours. You'll receive a
-                        confirmation once approved.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex flex-col sm:flex-row gap-4 mt-6">
-                  <Button
-                    variant="outline"
-                    className="flex-1 bg-transparent"
-                    onClick={sendPaymentNotification}
-                  >
-                    <Send className="h-4 w-4 mr-2" />
-                    Send Reminder to Landlord
-                  </Button>
-                  <Button variant="outline" className="flex-1 bg-transparent">
-                    <Receipt className="h-4 w-4 mr-2" />
-                    Download Receipt
-                  </Button>
-                  <Link href="/payments/history" className="flex-1">
-                    <Button className="w-full">View Payment History</Button>
-                  </Link>
-                </div>
-              </CardContent>
-            </Card>
+          <div className="mb-6 space-y-2">
+            <div className="flex items-center gap-2">
+              <Phone className="h-4 w-4 text-muted-foreground" />
+              <span>{property?.host?.phoneNumber}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Mail className="h-4 w-4 text-muted-foreground" />
+              <span>{property?.host?.email}</span>
+            </div>
+            <Link href={`/chat/${property?.host?._id}/${property._id}`}>
+              <Button
+                size="sm"
+                variant="outline"
+                className="flex-1 bg-transparent w-full"
+              >
+                <Calendar className="h-4 w-4 mr-1" />
+                Chat with agent
+              </Button>
+            </Link>
           </div>
-        )}
+        </div>
       </div>
     </div>
   );
