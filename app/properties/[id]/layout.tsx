@@ -27,10 +27,10 @@ export async function generateMetadata({
       title: property.name,
       description: property.description,
       type: "website",
-      url: `http://localhost:3000/property/${params.id}`,
+      url: `https://agent-with-me-v2.vercel.app/property/${params.id}`,
       images: [
         {
-          url: `http://localhost:3000/property/${params.id}/opengraph-image.png`,
+          url: `https://agent-with-me-v2.vercel.app/property/${params.id}/opengraph-image.png`,
           width: 1200,
           height: 630,
           alt: property.name,
