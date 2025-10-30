@@ -1,6 +1,5 @@
-// app/properties/[id]/page.tsx
 import PropertyDetailClient from "./client";
-import { Metadata } from "next";
+import type { Metadata } from "next";
 
 interface PageProps {
   params: { id: string };
@@ -9,38 +8,71 @@ interface PageProps {
 export async function generateMetadata({
   params,
 }: PageProps): Promise<Metadata> {
-  const res = await fetch(
-    `https://agent-with-me-backend.onrender.com/v1/house/detail/${params.id}`,
-    { cache: "no-store" }
-  );
-  const result = await res.json();
-  const property = result.data;
+  try {
+    const res = await fetch(
+      `https://agent-with-me-backend.onrender.com/v1/house/detail/${params.id}`,
+      { cache: "no-store" }
+    );
+    const result = await res.json();
+    const property = result.data;
 
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://yourdomain.com";
+    const baseUrl =
+      process.env.NEXT_PUBLIC_BASE_URL || "https://yourdomain.com";
+    const imageUrl =
+      property?.thumbnail ||
+      property?.gallery?.[0] ||
+      `${baseUrl}/fallback-image.png`;
 
-  return {
-    title: property.title,
-    description: property.description,
-    openGraph: {
-      title: property.title,
-      description: property.description,
-      url: `${baseUrl}/properties/${params.id}`,
-      images: [
-        {
-          url: property.thumbnail || `${baseUrl}/fallback-image.png`,
-          width: 1200,
-          height: 630,
-          alt: property.title,
-        },
-      ],
-    },
-    twitter: {
-      card: "summary_large_image",
-      title: property.title,
-      description: property.description,
-      images: [property.thumbnail || `${baseUrl}/fallback-image.png`],
-    },
-  };
+    const title = property?.title || "Beautiful Property Listing";
+    const description =
+      property?.description ||
+      "Discover this amazing property with great features and stunning design.";
+
+    return {
+      title,
+      description,
+      openGraph: {
+        type: "website",
+        title,
+        description,
+        url: `${baseUrl}/properties/${params.id}`,
+        siteName: "Agent With Me",
+        locale: "en_US",
+        images: [
+          {
+            url: imageUrl,
+            width: 1200,
+            height: 630,
+            alt: title,
+          },
+        ],
+      },
+      twitter: {
+        card: "summary_large_image",
+        title,
+        description,
+        images: [imageUrl],
+      },
+      // Extra tags for broader support
+      other: {
+        "og:type": "website",
+        "og:site_name": "Agent With Me",
+        "og:locale": "en_US",
+        "og:image:width": "1200",
+        "og:image:height": "630",
+        "og:image:type": "image/jpeg",
+        "whatsapp:image": imageUrl,
+        "telegram:image": imageUrl,
+        "linkedin:image": imageUrl,
+      },
+    };
+  } catch (error) {
+    console.error("Metadata generation failed:", error);
+    return {
+      title: "Property Not Found",
+      description: "We couldn’t load this property’s details.",
+    };
+  }
 }
 
 export default async function PropertyDetailPage({ params }: PageProps) {
