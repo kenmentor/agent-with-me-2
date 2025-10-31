@@ -19,10 +19,13 @@ export async function generateMetadata({
 
     const baseUrl =
       process.env.NEXT_PUBLIC_BASE_URL || "https://yourdomain.com";
-    const imageUrl =
+
+    // Use API route for dynamic resizing
+    const imageUrl = `${baseUrl}/api/og-image?url=${encodeURIComponent(
       property?.thumbnail ||
-      property?.gallery?.[0] ||
-      `${baseUrl}/fallback-image.png`;
+        property?.gallery?.[0] ||
+        `${baseUrl}/fallback-image.png`
+    )}`;
 
     const title = property?.title || "Beautiful Property Listing";
     const description =
