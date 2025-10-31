@@ -1,5 +1,5 @@
 "use client";
-interface Property {
+export interface Property {
   // Basic Info
 
   _id?: string;
@@ -27,6 +27,35 @@ interface Property {
   images: File[];
   video: File | null;
   thumbnail: File | null;
+}
+interface PropertyUpload {
+  // Basic Info
+
+  _id?: string;
+  title: string;
+  description: string;
+  type: string;
+  category: string;
+  price: number;
+  // Location
+
+  address: string;
+  state: string;
+  lga: string;
+
+  // Property Details
+  bedrooms: string;
+  bathrooms: string;
+
+  furnishing: string;
+
+  // Amenities
+  amenities: string[];
+
+  // Images
+  images: string[];
+  video: string;
+  thumbnail: string;
 }
 import type React from "react";
 
@@ -85,6 +114,7 @@ import { toast } from "sonner";
 import { Range, Slider } from "@radix-ui/react-slider";
 import { validateProperty } from "@/app/utility/validateform";
 import getPlaceValue from "@/app/utility/placVealue";
+import Share from "@/components/Share";
 export default function AddPropertyPage() {
   const { base } = Req;
   const user = useAuthStore((state) => state.user);
@@ -93,7 +123,7 @@ export default function AddPropertyPage() {
   const [currentStep, setCurrentStep] = useState(1);
   const [selected, setSelected] = useState<number | null>(null);
   const [copied, setCopied] = useState(false);
-  const [property, setProperty] = useState<Property>();
+  const [property, setProperty] = useState<PropertyUpload>();
   const [formData, setFormData] = useState<Property>({
     // Basic Info
     title: "",
@@ -835,97 +865,21 @@ export default function AddPropertyPage() {
                   </p>
                 </CardHeader>
 
-                <CardContent className="space-y-6 sm:space-y-8 px-4 sm:px-6 pb-8">
-                  {/* Thumbnail Preview */}
-                  <div className="rounded-xl overflow-hidden border border-gray-200 shadow-sm">
-                    <img
-                      //@ts-expect-error this would just workit will alway return strin
-                      src={property?.thumbnail}
-                      alt={property?.title}
-                      className="w-full h-48 sm:h-56 object-cover"
-                    />
-                    <div className="p-4">
-                      <h3 className="font-semibold text-lg text-gray-900 leading-snug">
-                        {property?.title}
-                      </h3>
-                      <p className="text-gray-600 text-sm sm:text-base mt-1">
-                        ₦{property?.price.toLocaleString()} •{" "}
-                        {property?.address}, {property?.state}
-                      </p>
-                    </div>
-                  </div>
+                <Share
+                  property={{
+                    _id: property?._id,
+                    title: property?.title,
+                    type: property?.type,
+                    address: property?.address,
+                    price: property?.price,
+                    state: property?.state,
 
-                  {/* Property Link */}
-                  <div className="bg-gray-50 rounded-lg p-3 flex items-center justify-between text-sm text-gray-700 border border-gray-200 overflow-hidden">
-                    <span className="truncate text-xs sm:text-sm text-gray-600">
-                      {propertyLink}
-                    </span>
-                    <Button
-                      type="button"
-                      onClick={handleCopy}
-                      variant="ghost"
-                      size="sm"
-                      className="ml-2 text-gray-600 hover:text-gray-900 flex items-center gap-1"
-                    >
-                      <Copy className="w-4 h-4" />
-                      {copied ? "Copied!" : "Copy"}
-                    </Button>
-                  </div>
+                    description: property?.description,
 
-                  {/* Social Share */}
-                  <div className="flex flex-wrap justify-center gap-2 sm:gap-3 mt-4">
-                    <Button
-                      type="button"
-                      onClick={() => handleSocialShare("facebook")}
-                      variant="outline"
-                      className="rounded-full border-blue-600 text-blue-600 hover:bg-blue-50 flex items-center gap-2 text-xs sm:text-sm"
-                    >
-                      <Facebook className="w-4 h-4" /> Facebook
-                    </Button>
-                    <Button
-                      onClick={() => handleSocialShare("twitter")}
-                      variant="outline"
-                      className="rounded-full border-sky-500 text-sky-500 hover:bg-sky-50 flex items-center gap-2 text-xs sm:text-sm"
-                    >
-                      <Twitter className="w-4 h-4" /> X
-                    </Button>
-                    <Button
-                      type="button"
-                      onClick={() => handleSocialShare("linkedin")}
-                      variant="outline"
-                      className="rounded-full border-blue-800 text-blue-800 hover:bg-blue-50 flex items-center gap-2 text-xs sm:text-sm"
-                    >
-                      <Linkedin className="w-4 h-4" /> LinkedIn
-                    </Button>
-                    <Button
-                      type="button"
-                      onClick={() => handleSocialShare("whatsapp")}
-                      variant="outline"
-                      className="rounded-full border-green-600 text-green-600 hover:bg-green-50 flex items-center gap-2 text-xs sm:text-sm"
-                    >
-                      <MessageCircle className="w-4 h-4" /> WhatsApp
-                    </Button>
-                  </div>
-
-                  {/* Navigation Buttons */}
-                  <div className="flex flex-col items-center mt-6 space-y-2">
-                    <Button
-                      type="button"
-                      onClick={() => router.push("/properties")}
-                      className="flex items-center gap-2 bg-green-600 hover:bg-green-700 w-full sm:w-auto px-6 py-2 sm:py-3 text-sm sm:text-base"
-                    >
-                      <Home className="w-4 h-4" /> Go to Dashboard
-                    </Button>
-                    <Button
-                      type="button"
-                      onClick={() => router.push("/properties/add")}
-                      variant="link"
-                      className="text-green-700 text-sm sm:text-base"
-                    >
-                      + Create Another Property
-                    </Button>
-                  </div>
-                </CardContent>
+                    thumbnail: property?.thumbnail || "",
+                  }}
+                  router={router}
+                />
               </Card>
             </div>
           )}

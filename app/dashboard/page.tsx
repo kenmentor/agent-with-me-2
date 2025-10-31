@@ -117,7 +117,7 @@ export default function DashboardPage() {
     const fetchData = async () => {
       try {
         const bookingRes = await app.get(`${base}/v1/booking/${user._id}`);
-        const bookingData = bookingRes.data;
+        const bookingData = bookingRes.data.data;
 
         // Add expiredDate logic (3 days after checkIn if not already present)
 

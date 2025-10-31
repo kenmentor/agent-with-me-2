@@ -21,6 +21,8 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import AutoPlayVideo from "@/components/AutoplayVideo";
+import Share from "@/components/Share";
+import { useRouter } from "next/router";
 
 interface Property {
   _id: string;
@@ -35,6 +37,10 @@ interface Property {
   status: string;
   video: string;
   description: string;
+  category?: string;
+  state?: string;
+  lga?: string;
+  furnishing?: string;
   amenities: string[];
   images: { url: string; type: string }[];
   thumbnail?: string;
@@ -58,10 +64,26 @@ export default function PropertyDetailClient({
     property.thumbnail || property.images?.[0]?.url || "/placeholder.svg"
   );
   const [imageLoading, setImageLoading] = useState(true);
-
+  const router = useRouter();
   return (
     <div className="container mx-auto px-4 py-8 pb-[100px]">
       {/* Breadcrumb */}
+      <Share
+        router={router}
+        property={{
+          _id: property._id,
+          title: property.title,
+          type: property.type,
+          address: property.address,
+          price: property.price,
+          state: property?.state,
+          status: property.status,
+
+          description: property.description,
+
+          thumbnail: property.thumbnail,
+        }}
+      />
       <div className="mb-6 flex items-center gap-2 text-sm text-muted-foreground">
         <Link
           href="/"

@@ -156,7 +156,7 @@ export default function paymentHistoryPage() {
     try {
       const res = await app.get(`${base}/v1/payment/${user._id}`);
       console.log("helloe", res.data);
-      const result = res.data;
+      const result = res.data.data;
 
       setpayments(result);
       console.log();
