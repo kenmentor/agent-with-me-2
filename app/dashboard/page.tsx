@@ -107,6 +107,37 @@ export default function DashboardPage() {
   const [recentPayments, setRecentPayments] = useState<any[]>([]);
   const [properties, setProperties] = useState<Property[]>([]);
   // 🧠 Fetch bookings & payments (populated data from backend)
+  const fetchBooking = async () => {
+    try {
+      setLoading(true);
+      const bookingRes = await app.get(`${base}/v1/booking/${user._id}`);
+      const bookingData = bookingRes.data;
+      console.log("data", bookingData);
+      // Add expiredDate logic (3 days after checkIn if not already present)
+
+      setBooking(bookingData);
+    } catch (err) {
+      console.error("Error fetching dashboard data:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+  const fetchPayment = async () => {
+    try {
+      setLoading(true);
+
+      const paymentRes = await app.get(
+        `${base}/v1/booking/${user._id}?role=guest`
+      );
+      const paymentsData = paymentRes.data;
+      console.log(paymentsData);
+      setRecentPayments(paymentsData);
+    } catch (err) {
+      console.error("Error fetching dashboard data:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
   useEffect(() => {
     if (!_hasHydrated) return;
     if (!isAuthenticated) {
@@ -114,24 +145,8 @@ export default function DashboardPage() {
       return;
     }
 
-    const fetchData = async () => {
-      try {
-        const bookingRes = await app.get(`${base}/v1/booking/${user._id}`);
-        const bookingData = bookingRes.data.data;
-
-        // Add expiredDate logic (3 days after checkIn if not already present)
-
-        setBooking(bookingData);
-
-        const paymentRes = await app.get(`${base}/v1/booking/${user._id}`);
-        const paymentsData = paymentRes.data;
-        setRecentPayments(paymentsData);
-      } catch (err) {
-        console.error("Error fetching dashboard data:", err);
-      }
-    };
-
-    fetchData();
+    fetchBooking();
+    fetchPayment();
   }, [_hasHydrated, isAuthenticated, router]);
 
   // 🧠 Approve booking logic
@@ -241,11 +256,12 @@ export default function DashboardPage() {
 
                       { name: "settings", link: "" },
                     ].map((tab) => (
-                      <>
+                      <span key={tab.name}>
                         {tab.link ? (
                           <Link
+                            key={tab.name}
                             href={tab.link}
-                            onClick={() => setLoading(true)}
+                            // onClick={() => setLoading(true)}
                           >
                             <Button
                               key={tab.name}
@@ -302,7 +318,7 @@ export default function DashboardPage() {
                               tab.name.slice(1)}
                           </Button>
                         )}
-                      </>
+                      </span>
                     ))}
                     <Button
                       variant={activeTab === "editlist" ? "default" : "ghost"}
@@ -331,13 +347,22 @@ export default function DashboardPage() {
                       <CardTitle>Recent Bookings</CardTitle>
                     </CardHeader>
                     <CardContent className="gap-5">
-                      {booking.length > 0 ? (
-                        booking
-                          .slice(0, 3)
-                          .map((b) => <BookingCard booking={b} />)
+                      {/* {!loading ? (
+                        <>
+                          {booking}
+                          {booking?.length > 0 ? (
+                            booking
+                              .slice(0, 3)
+                              .map((b, index) => (
+                                <BookingCard key={index} booking={b} />
+                              ))
+                          ) : (
+                            <p>No bookings yet.</p>
+                          )}
+                        </>
                       ) : (
-                        <p>No bookings yet.</p>
-                      )}
+                        <p>loading...</p>
+                      )} */}
                     </CardContent>
                   </Card>
                 </div>
