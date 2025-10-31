@@ -57,7 +57,7 @@ const Header = ({ color }: { color?: string }) => {
     <>
       {/* ================= DESKTOP HEADER ================= */}
       <header
-        className="hidden md:block fixed w-full backdrop-blur-md bg-black pt-3 pb-2"
+        className="hidden md:block fixed w-full backdrop-blur-md bg-black pt-3 pb-2 "
         style={{
           backgroundColor: `${
             !color ? `rgba(0,0,0,${headerOpacity})` : `${color}`
@@ -139,6 +139,14 @@ const Header = ({ color }: { color?: string }) => {
                   Sign Up
                 </Button>
               </Link>
+            </div>
+            <div className=" relative right-0 ">
+              <div className="relative">
+                <UserAvatar />
+                {hasNotification && (
+                  <span className="absolute top-0 right-0 block w-2.5 h-2.5 bg-red-500 rounded-full ring-2 ring-black"></span>
+                )}
+              </div>
             </div>
           </div>
         </div>

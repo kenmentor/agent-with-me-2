@@ -13,13 +13,14 @@ export async function generateMetadata({
       `https://agent-with-me-backend.onrender.com/v1/house/detail/${params.id}`,
       { cache: "no-store" }
     );
-
     const result = await res.json();
     const property = result.data;
 
     const baseUrl = "https://agent-with-me-v2.vercel.app";
 
-    // Use API route for dynamic resizing
+    // Use a static-like path instead of query parameters if possible
+    // Generate a filename (e.g. “og-prop-123.jpg”) and put it in public/og
+    // But fallback: dynamic
     const imageUrl = `${baseUrl}/api/og-image?url=${encodeURIComponent(
       property?.thumbnail ||
         property?.gallery?.[0] ||
@@ -39,7 +40,7 @@ export async function generateMetadata({
         type: "website",
         title,
         description,
-        url: `${baseUrl}/properties/${params.id}`,
+        url: imageUrl,
         siteName: "Agent With Me",
         locale: "en_US",
         images: [
@@ -72,7 +73,6 @@ export default async function PropertyDetailPage({ params }: PageProps) {
     `https://agent-with-me-backend.onrender.com/v1/house/detail/${params.id}`,
     { cache: "no-store" }
   );
-
   const result = await res.json();
   const property = result.data;
 
