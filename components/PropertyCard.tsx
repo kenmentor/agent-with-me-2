@@ -39,6 +39,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import Header from "@/components/Header";
+import Image from "next/image";
 
 interface PropertyCardProps {
   property: Property;
@@ -68,10 +69,15 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property, favorites }) => {
       className="overflow-hidden hover:shadow-lg transition-shadow"
     >
       <div className="relative">
-        <img
+        <Image
           src={property.thumbnail || "/placeholder.svg"}
           alt={property.title}
-          className="w-full h-48 object-cover"
+          width={800}
+          height={400}
+          quality={80}
+          placeholder="blur"
+          blurDataURL="/blur-placeholder.png" // small neutral blur
+          className="w-full h-48 object-cover  transition-all duration-500"
         />
         <Badge
           variant={property.type === "rent" ? "default" : "secondary"}

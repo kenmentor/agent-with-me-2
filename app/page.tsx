@@ -134,7 +134,7 @@ export default function HomePage() {
           <h2 className="text-3xl font-bold text-center mb-12">
             Why Choose Agent with me ?
           </h2>
-          <div className="grid md:grid-cols-4 gap-8">
+          <div className="grid md:grid-cols-3 gap-8">
             <Card className="text-center">
               <CardHeader>
                 <Shield className="h-12 w-12 text-blue-600 mx-auto mb-4" />

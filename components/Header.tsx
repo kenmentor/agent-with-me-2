@@ -17,6 +17,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import Image from "next/image";
 import { useAuthStore } from "@/store/authStore";
+import UserAvatar from "./UserAvater";
 
 /* MOBILE NAVIGATION LINKS */
 const NAV_LINKS = [
@@ -188,13 +189,7 @@ const Header = ({ color }: { color?: string }) => {
 
         {/* User Avatar with Notification Dot */}
         <div className="relative">
-          <Image
-            src={user?.avater ? user?.avater : "/"}
-            alt="User Avatar"
-            width={36}
-            height={36}
-            className="rounded-full border border-white/20 size-[40px] object-cover"
-          />
+          <UserAvatar />
           {hasNotification && (
             <span className="absolute top-0 right-0 block w-2.5 h-2.5 bg-red-500 rounded-full ring-2 ring-black"></span>
           )}
