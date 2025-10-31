@@ -17,8 +17,7 @@ export async function generateMetadata({
     const result = await res.json();
     const property = result.data;
 
-    const baseUrl =
-      process.env.NEXT_PUBLIC_BASE_URL || "https://yourdomain.com";
+    const baseUrl = "https://agent-with-me-v2.vercel.app";
 
     // Use API route for dynamic resizing
     const imageUrl = `${baseUrl}/api/og-image?url=${encodeURIComponent(
