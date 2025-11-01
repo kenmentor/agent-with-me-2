@@ -2,36 +2,52 @@
 
 import React, { useState } from "react";
 import { Facebook, Twitter, Linkedin, MessageCircle, Copy } from "lucide-react";
-
 import { Button } from "./ui/button";
 import { CardContent } from "./ui/card";
-import { useRouter } from "next/router";
+import { useRouter } from "next/navigation"; // ✅ FIXED IMPORT
+
 function Share({
-  property,
-  router,
+  _id,
+  title,
+  type,
+  address,
+  price,
+  state,
+  status,
+  description,
+  thumbnail,
 }: {
-  property: {
-    _id?: string;
-    title?: string;
-    type?: string;
-    address?: string;
-    price?: number;
-    state?: string;
-    status?: string;
-
-    description?: string;
-
-    thumbnail?: string;
-  };
-  router: { push: (input: string) => void };
+  _id?: string;
+  title?: string;
+  type?: string;
+  address?: string;
+  price?: number;
+  state?: string;
+  status?: string;
+  description?: string;
+  thumbnail?: string;
 }) {
   const [copied, setCopied] = useState(false);
-  const propertyLink = `https://agent-with-me-v2.vercel.app/properties/${property?._id}`;
-  const shareText = `🏠 ${
-    property?.title
-  }\n💰 ₦${property?.price?.toLocaleString()} • 📍 ${property?.address}, ${
-    property?.state
-  }\n\nCheck it out on EasyRent:\n${propertyLink}`;
+  const propertyLink = `https://agent-with-me-v2.vercel.app/properties/${_id}`;
+  const shareText = `${title?.trim() || "Property Listing"} available at ${
+    address || "N/A"
+  }${state ? `, ${state}` : ""}.
+${description?.trim() || ""}
+
+${"```Price:```"} ₦${price?.toLocaleString() || "Contact for price"}
+${"```Type:```"} ${type || "N/A"}${"```.```"}
+${"```Status:```"} ${status || "Available"}${"```.```"}
+
+${"```text```"}${"```.```"}
+
+${"```View full details:```"}
+\n
+${propertyLink}
+\n
+
+Agent With Me`;
+
+  const router = useRouter();
 
   const handleCopy = async () => {
     try {
@@ -42,7 +58,6 @@ function Share({
       console.error("Failed to copy link:", err);
     }
   };
-
   const handleSocialShare = (platform: string) => {
     const encodedText = encodeURIComponent(shareText);
     const encodedURL = encodeURIComponent(propertyLink);
@@ -59,7 +74,8 @@ function Share({
         shareUrl = `https://www.linkedin.com/shareArticle?mini=true&url=${encodedURL}&title=${encodedText}`;
         break;
       case "whatsapp":
-        shareUrl = `https://wa.me/?text=${encodedText}`;
+        // ⚡ Don't encode emojis for WhatsApp — it breaks them!
+        shareUrl = `https://wa.me/?text=${shareText}`;
         break;
       default:
         return;
@@ -69,22 +85,20 @@ function Share({
   };
 
   return (
-    <CardContent className="space-y-6 sm:space-y-8 px-4 sm:px-6 pb-8">
+    <CardContent className="space-y-6 sm:space-y-8 px-4 sm:px-6 pb-8 bg-slate-50 pt-2">
       {/* Thumbnail Preview */}
       <div className="rounded-xl overflow-hidden border border-gray-200 shadow-sm">
         <img
-          //@ts-expect-error this would just workit will alway return strin
-          src={property?.thumbnail}
-          alt={property?.title}
+          src={thumbnail ?? "/placeholder.svg"}
+          alt={title}
           className="w-full h-48 sm:h-56 object-cover"
         />
         <div className="p-4">
           <h3 className="font-semibold text-lg text-gray-900 leading-snug">
-            {property?.title}
+            {title}
           </h3>
           <p className="text-gray-600 text-sm sm:text-base mt-1">
-            ₦{property?.price?.toLocaleString()} • {property?.address},{" "}
-            {property?.state}
+            ₦{price?.toLocaleString()} • {address}, {state}
           </p>
         </div>
       </div>

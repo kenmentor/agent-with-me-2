@@ -31,7 +31,10 @@ export async function generateMetadata({
     const description =
       property?.description ||
       "Discover this amazing property with great features and stunning design.";
-
+    console.log(
+      "/////////////////////////////////////////////////////////////////////////////////////////////",
+      params.id
+    );
     return {
       title,
       description,

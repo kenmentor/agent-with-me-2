@@ -38,7 +38,7 @@ interface PropertyUpload {
   category: string;
   price: number;
   // Location
-
+  status?: string;
   address: string;
   state: string;
   lga: string;
@@ -866,19 +866,15 @@ export default function AddPropertyPage() {
                 </CardHeader>
 
                 <Share
-                  property={{
-                    _id: property?._id,
-                    title: property?.title,
-                    type: property?.type,
-                    address: property?.address,
-                    price: property?.price,
-                    state: property?.state,
-
-                    description: property?.description,
-
-                    thumbnail: property?.thumbnail || "",
-                  }}
-                  router={router}
+                  _id={property?._id}
+                  title={property?.title}
+                  type={property?.type}
+                  address={property?.address}
+                  price={property?.price}
+                  state={property?.state}
+                  status={property?.status}
+                  description={property?.description}
+                  thumbnail={property?.thumbnail}
                 />
               </Card>
             </div>
