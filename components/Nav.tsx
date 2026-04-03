@@ -9,19 +9,21 @@ import {
   MessageCircle,
   User,
 } from "lucide-react";
-
-const NAV_ITEMS = [
-  { name: "Explore", href: "/properties", icon: Building2 },
-  { name: "Add", href: "/properties/add", icon: PlusCircle },
-  { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { name: "Chat", href: "/chat", icon: MessageCircle },
-  { name: "Account", href: "/user", icon: User },
-];
-
-const SHOW_ON_PAGES = ["/properties", "/dashboard", "/chat", "/payments", "/user"];
+import { useAuthStore } from "@/store/authStore";
 
 export default function BottomNav() {
   const pathname = usePathname();
+  const user = useAuthStore((state) => state.user);
+
+  const NAV_ITEMS = [
+    { name: "Explore", href: "/properties", icon: Building2 },
+    { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+    ...(user && user.role !== "guest" ? [{ name: "Add", href: "/properties/add", icon: PlusCircle }] : []),
+    { name: "Chat", href: "/chat", icon: MessageCircle },
+    { name: "Account", href: "/account", icon: User },
+  ];
+
+  const SHOW_ON_PAGES = ["/properties", "/dashboard", "/chat", "/payments", "/account"];
 
   const shouldShow = SHOW_ON_PAGES.some((path) => pathname.startsWith(path));
 
@@ -30,10 +32,11 @@ export default function BottomNav() {
   return (
     <nav className="md:hidden fixed bottom-0 left-0 right-0 z-[100] bg-black/95 backdrop-blur-lg border-t border-white/10">
       <div className="flex items-center justify-around py-1.5">
-        {NAV_ITEMS.map((item) => {
+        {NAV_ITEMS.filter(Boolean).map((item: any) => {
           const isActive =
             pathname === item.href ||
             (item.href !== "/" && pathname.startsWith(item.href));
+            
 
           return (
             <Link

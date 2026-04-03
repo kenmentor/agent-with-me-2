@@ -2,6 +2,7 @@
 
 import type React from "react";
 import { useState, useEffect } from "react";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -14,30 +15,80 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { CheckCircle, Mail, AlertCircle, ArrowLeft, Loader2 } from "lucide-react";
 import Link from "next/link";
-import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useAuthStore } from "@/store/authStore";
+import Req from "@/app/utility/axois";
 import { toast } from "sonner";
+
+const { app, base } = Req;
 
 export default function VerifyPage() {
   const params = useParams();
-  const searchParams = useSearchParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   
-  const urlCode = params.urlCode as string | undefined;
-  const email = searchParams.get("email");
+  const urlCode = (params?.urlcode as string) || "";
+  const email = searchParams?.get("email") || "";
+  
   const [verificationCode, setVerificationCode] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isVerified, setIsVerified] = useState(false);
   const [countdown, setCountdown] = useState(30);
   const [error, setError] = useState("");
+  const [hasAttemptedVerify, setHasAttemptedVerify] = useState(false);
   
   const verifyEmail = useAuthStore((state) => state.verifyEmail);
-  const user = useAuthStore((state) => state.user);
+
+  const verifyCode = async (code: string) => {
+    if (!code || code.length < 4 || isLoading || isVerified || hasAttemptedVerify) return;
+    
+    setHasAttemptedVerify(true);
+    setIsLoading(true);
+    setError("");
+    try {
+      await verifyEmail(code);
+      setIsVerified(true);
+      toast.success("Email verified successfully!");
+      setTimeout(() => router.push("/dashboard"), 2000);
+    } catch (err: any) {
+      const errorMsg = err?.response?.data?.message || "";
+      // If already verified, treat as success
+      if (errorMsg.toLowerCase().includes("already verified")) {
+        setIsVerified(true);
+        toast.success("Email already verified!");
+        setTimeout(() => router.push("/properties"), 2000);
+      } else {
+        setError(errorMsg || "Verification failed");
+        setHasAttemptedVerify(false);
+      }
+    }
+    setIsLoading(false);
+  };
+
+  const handleResendCode = async () => {
+    if (!email) {
+      toast.error("Email not found. Please go back and try again.");
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      await app.post(`${base}/v1/verification/resend_verification`, { email });
+      toast.success("Verification code resent to your email!");
+      setCountdown(30);
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || "Failed to resend code");
+    }
+    setIsLoading(false);
+  };
 
   useEffect(() => {
-    if (urlCode && urlCode.length >= 4) {
-      setVerificationCode(urlCode);
-      handleAutoVerify(urlCode);
+    if (urlCode && !isVerified && !hasAttemptedVerify) {
+      const code = urlCode.replace(/\D/g, "");
+      setVerificationCode(code);
+      
+      if (code.length >= 4 && code.length <= 10) {
+        verifyCode(code);
+      }
     }
   }, [urlCode]);
 
@@ -47,52 +98,6 @@ export default function VerifyPage() {
       return () => clearTimeout(timer);
     }
   }, [countdown, isVerified]);
-
-  const handleAutoVerify = async (code: string) => {
-    if (code.length === 6) {
-      setIsLoading(true);
-      setError("");
-      try {
-        await verifyEmail(code);
-        setIsVerified(true);
-        toast.success("Email verified successfully!");
-      } catch (err: any) {
-        setError(err?.response?.data?.message || "Verification failed");
-      }
-      setIsLoading(false);
-    }
-  };
-
-  const handleVerify = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-    setError("");
-
-    if (verificationCode.length !== 6) {
-      setError("Please enter a valid 6-digit code");
-      setIsLoading(false);
-      return;
-    }
-
-    try {
-      await verifyEmail(verificationCode);
-      setIsVerified(true);
-      toast.success("Email verified successfully!");
-      
-      setTimeout(() => {
-        router.push("/dashboard");
-      }, 2000);
-    } catch (err: any) {
-      setError(err?.response?.data?.message || "Invalid verification code. Please try again.");
-    }
-
-    setIsLoading(false);
-  };
-
-  const resendCode = async () => {
-    setCountdown(30);
-    toast.success("Verification code resent to your email!");
-  };
 
   if (isVerified) {
     return (
@@ -127,14 +132,14 @@ export default function VerifyPage() {
           <CardTitle className="text-2xl">Verify Your Email</CardTitle>
           <CardDescription>
             {email ? (
-              <>We&apos;ve sent a verification code to <strong>{email}</strong></>
+              <>We&apos;ve sent a verification code to <strong>{decodeURIComponent(email)}</strong></>
             ) : (
-              <>Enter the 6-digit verification code from your email</>
+              <>Enter the verification code from your email</>
             )}
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleVerify} className="space-y-4">
+          <form onSubmit={(e) => { e.preventDefault(); verifyCode(verificationCode); }} className="space-y-4">
             {error && (
               <div className="bg-red-50 border border-red-200 rounded-lg p-3 flex items-start space-x-2">
                 <AlertCircle className="h-4 w-4 text-red-600 mt-0.5 flex-shrink-0" />
@@ -147,14 +152,14 @@ export default function VerifyPage() {
               <Input
                 id="code"
                 type="text"
-                placeholder="Enter 6-digit code"
+                placeholder="Enter verification code"
                 value={verificationCode}
                 onChange={(e) => {
-                  setVerificationCode(e.target.value.replace(/\D/g, "").slice(0, 6));
+                  setVerificationCode(e.target.value.replace(/\D/g, "").slice(0, 10));
                   setError("");
                 }}
                 className="text-center text-2xl tracking-widest h-14"
-                maxLength={6}
+                maxLength={10}
                 autoFocus
               />
             </div>
@@ -162,7 +167,7 @@ export default function VerifyPage() {
             <Button
               type="submit"
               className="w-full h-12"
-              disabled={isLoading || verificationCode.length !== 6}
+              disabled={isLoading || verificationCode.length < 4}
             >
               {isLoading ? (
                 <>
@@ -182,8 +187,8 @@ export default function VerifyPage() {
             <Button
               type="button"
               variant="outline"
-              onClick={resendCode}
-              disabled={countdown > 0}
+              onClick={handleResendCode}
+              disabled={countdown > 0 || isLoading}
               className="w-full"
             >
               {countdown > 0 ? `Resend in ${countdown}s` : "Resend Code"}

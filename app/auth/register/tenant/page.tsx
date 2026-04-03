@@ -1,7 +1,7 @@
 "use client";
 
 import type React from "react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -18,7 +18,7 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Home, User, Phone, Mail, Lock, Eye, EyeOff, Loader2 } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useAuthStore } from "@/store/authStore";
 import { toast } from "sonner";
 
@@ -39,6 +39,8 @@ type RegisterForm = z.infer<typeof registerSchema>;
 
 export default function TenantRegisterPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const { user, isAuthenticated, _hasHydrated } = useAuthStore();
   const signup = useAuthStore((state) => state.signup);
   const authLoading = useAuthStore((state) => state.isLoading);
 
@@ -47,6 +49,20 @@ export default function TenantRegisterPage() {
   const [sentCode, setSentCode] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
 
+  // Redirect if already authenticated (after hydration)
+  useEffect(() => {
+    if (!_hasHydrated) return;
+    if (isAuthenticated && user) {
+      const from = searchParams.get("from");
+      if (from === "dashboard") {
+        router.replace("/dashboard");
+      } else {
+        router.replace("/properties");
+      }
+    }
+  }, [_hasHydrated, isAuthenticated, user, router, searchParams]);
+
+  // useForm - always call unconditionally before any conditional returns
   const {
     register,
     handleSubmit,
@@ -65,6 +81,18 @@ export default function TenantRegisterPage() {
   });
 
   const isLoading = isSubmitting || authLoading;
+
+  // Show loading while hydrating
+  if (!_hasHydrated) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+      </div>
+    );
+  }
+
+  // If already authenticated, show message (but component is still functional)
+  // Note: Since useForm was already called above, hooks order is preserved
 
   const onSubmit = async (data: RegisterForm) => {
     setServerError(null);

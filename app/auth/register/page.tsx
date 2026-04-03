@@ -1,97 +1,97 @@
 "use client";
 
-import { useEffect } from "react";
-import { Home, User, Building2, Briefcase, ArrowRight } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Home, User, Building2, Briefcase, ArrowRight, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuthStore } from "@/store/authStore";
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-
-const roles = [
-  {
-    id: "tenant",
-    title: "Rent a House",
-    icon: User,
-    href: "/auth/register/tenant",
-  },
-  {
-    id: "agent",
-    title: "Become an Agent",
-    icon: Briefcase,
-    href: "/auth/register/agent",
-  },
-  {
-    id: "landlord",
-    title: "Register Your House",
-    icon: Building2,
-    href: "/auth/register/landlord",
-  },
-];
 
 export default function RegisterPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { isAuthenticated, _hasHydrated } = useAuthStore();
+  const { user, isAuthenticated, _hasHydrated } = useAuthStore();
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    if (_hasHydrated && isAuthenticated) {
-      const from = searchParams.get("from");
-      if (from === "dashboard") {
-        router.replace("/dashboard");
-      } else {
-        router.replace("/properties");
-      }
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!_hasHydrated || !mounted) return;
+    if (isAuthenticated && user) {
+      router.replace(searchParams.get("from") === "dashboard" ? "/dashboard" : "/properties");
     }
-  }, [_hasHydrated, isAuthenticated, router, searchParams]);
+  }, [_hasHydrated, isAuthenticated, user, router, searchParams, mounted]);
+
+  if (!_hasHydrated || !mounted) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-white flex items-center justify-center p-4">
-      <div className="max-w-4xl w-full">
-        <div className="text-center mb-12">
-          <div className="flex justify-center mb-6">
-            <div className="bg-black p-4 rounded-2xl">
-              <Home className="h-12 w-12 text-white" />
+    <div className="min-h-screen bg-white flex items-center justify-center p-4 md:p-8">
+      <div className="w-full max-w-md">
+        <div className="text-center mb-8">
+          <Link href="/" className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-blue-600 mb-4">
+            <Home className="h-7 w-7 text-white" />
+          </Link>
+          <h1 className="text-2xl font-bold text-gray-900">Join Agent with Me</h1>
+          <p className="text-gray-500 mt-1">What describes you best?</p>
+        </div>
+
+        <div className="space-y-3">
+          <Link href="/auth/register/tenant" className="block">
+            <div className="flex items-center p-4 rounded-xl border-2 border-gray-100 hover:border-blue-600 hover:bg-blue-50 transition-all cursor-pointer group">
+              <div className="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center mr-4">
+                <User className="h-6 w-6 text-blue-600" />
+              </div>
+              <div className="flex-1">
+                <p className="font-semibold text-gray-900">I'm looking to rent</p>
+                <p className="text-sm text-gray-500">Find your perfect rental home</p>
+              </div>
+              <ArrowRight className="h-5 w-5 text-gray-400 group-hover:text-blue-600 transition-colors" />
             </div>
-          </div>
-          <h1 className="text-4xl font-bold text-black mb-3">
-            Agent with Me
-          </h1>
-          <p className="text-xl text-gray-500">
-            Find your perfect home
+          </Link>
+
+          <Link href="/auth/register/agent" className="block">
+            <div className="flex items-center p-4 rounded-xl border-2 border-gray-100 hover:border-purple-600 hover:bg-purple-50 transition-all cursor-pointer group">
+              <div className="w-12 h-12 rounded-xl bg-purple-100 flex items-center justify-center mr-4">
+                <Briefcase className="h-6 w-6 text-purple-600" />
+              </div>
+              <div className="flex-1">
+                <p className="font-semibold text-gray-900">I'm a Real Estate Agent</p>
+                <p className="text-sm text-gray-500">List and manage properties</p>
+              </div>
+              <ArrowRight className="h-5 w-5 text-gray-400 group-hover:text-purple-600 transition-colors" />
+            </div>
+          </Link>
+
+          <Link href="/auth/register/landlord" className="block">
+            <div className="flex items-center p-4 rounded-xl border-2 border-gray-100 hover:border-green-600 hover:bg-green-50 transition-all cursor-pointer group">
+              <div className="w-12 h-12 rounded-xl bg-green-100 flex items-center justify-center mr-4">
+                <Building2 className="h-6 w-6 text-green-600" />
+              </div>
+              <div className="flex-1">
+                <p className="font-semibold text-gray-900">I have properties to rent</p>
+                <p className="text-sm text-gray-500">List your properties for tenants</p>
+              </div>
+              <ArrowRight className="h-5 w-5 text-gray-400 group-hover:text-green-600 transition-colors" />
+            </div>
+          </Link>
+        </div>
+
+        <div className="mt-8 pt-6 border-t border-gray-100 text-center">
+          <p className="text-gray-600">
+            Already have an account?{" "}
+            <Link href="/auth/login" className="text-blue-600 font-semibold hover:underline">
+              Sign in
+            </Link>
           </p>
         </div>
-
-        <div className="grid md:grid-cols-3 gap-6">
-          {roles.map((role) => {
-            const Icon = role.icon;
-            return (
-              <Link href={role.href} key={role.id}>
-                <Card className="group hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border-2 border-gray-200 hover:border-black cursor-pointer h-full">
-                  <CardContent className="p-8 text-center flex flex-col items-center">
-                    <div className="bg-gray-100 p-4 rounded-2xl mb-6 group-hover:bg-black group-hover:scale-110 transition-all">
-                      <Icon className="h-10 w-10 text-black group-hover:text-white transition-colors" />
-                    </div>
-                    <h2 className="text-2xl font-bold text-black mb-6">
-                      {role.title}
-                    </h2>
-                    <Button variant="outline" className="w-full mt-auto border-2 border-black text-black hover:bg-black hover:text-white group/btn">
-                      Continue
-                      <ArrowRight className="ml-2 h-4 w-4 group-hover/btn:translate-x-1 transition-transform" />
-                    </Button>
-                  </CardContent>
-                </Card>
-              </Link>
-            );
-          })}
-        </div>
-
-        <p className="text-center text-gray-500 text-sm mt-10">
-          Already have an account?{" "}
-          <Link href="/auth/login" className="text-black font-semibold hover:underline">
-            Sign in
-          </Link>
-        </p>
       </div>
     </div>
   );

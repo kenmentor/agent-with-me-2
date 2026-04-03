@@ -2,7 +2,7 @@
 
 import type React from "react";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -14,14 +14,16 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Home, User, Phone, Mail, Lock, Eye, EyeOff, Briefcase, MapPin } from "lucide-react";
+import { Home, User, Phone, Mail, Lock, Eye, EyeOff, Briefcase, MapPin, Loader2 } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useAuthStore } from "@/store/authStore";
 import { toast } from "sonner";
 
 export default function AgentRegisterPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const { user, isAuthenticated, _hasHydrated } = useAuthStore();
   const signup = useAuthStore((state) => state.signup);
   const isLoading = useAuthStore((state) => state.isLoading);
 
@@ -43,6 +45,26 @@ export default function AgentRegisterPage() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [sentCode, setSentCode] = useState(false);
+
+  useEffect(() => {
+    if (!_hasHydrated) return;
+    if (isAuthenticated && user) {
+      const from = searchParams.get("from");
+      if (from === "dashboard") {
+        router.replace("/dashboard");
+      } else {
+        router.replace("/properties");
+      }
+    }
+  }, [_hasHydrated, isAuthenticated, user, router, searchParams]);
+
+  if (!_hasHydrated) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+      </div>
+    );
+  }
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};

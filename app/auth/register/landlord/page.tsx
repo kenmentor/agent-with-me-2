@@ -14,7 +14,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Home, User, Phone, Mail, Lock, Eye, EyeOff, Building2, QrCode, Info } from "lucide-react";
+import { Home, User, Phone, Mail, Lock, Eye, EyeOff, Building2, QrCode, Info, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuthStore } from "@/store/authStore";
@@ -23,20 +23,9 @@ import { toast } from "sonner";
 export default function LandlordRegisterPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { user, isAuthenticated, _hasHydrated } = useAuthStore();
   const signup = useAuthStore((state) => state.signup);
   const isLoading = useAuthStore((state) => state.isLoading);
-  const { isAuthenticated, _hasHydrated } = useAuthStore();
-
-  useEffect(() => {
-    if (_hasHydrated && isAuthenticated) {
-      const from = searchParams.get("from");
-      if (from === "dashboard") {
-        router.replace("/dashboard");
-      } else {
-        router.replace("/properties");
-      }
-    }
-  }, [_hasHydrated, isAuthenticated, router, searchParams]);
 
   const [formData, setFormData] = useState({
     userName: "",
@@ -55,6 +44,26 @@ export default function LandlordRegisterPage() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [sentCode, setSentCode] = useState(false);
   const [referralError, setReferralError] = useState("");
+
+  useEffect(() => {
+    if (!_hasHydrated) return;
+    if (isAuthenticated && user) {
+      const from = searchParams.get("from");
+      if (from === "dashboard") {
+        router.replace("/dashboard");
+      } else {
+        router.replace("/properties");
+      }
+    }
+  }, [_hasHydrated, isAuthenticated, user, router, searchParams]);
+
+  if (!_hasHydrated) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+      </div>
+    );
+  }
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};

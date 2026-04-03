@@ -27,6 +27,7 @@ import {
 } from "lucide-react";
 import Header from "@/components/Header";
 import { useAuthStore } from "@/store/authStore";
+import { useAuthCheck } from "@/hooks/useAuth";
 import Req from "@/app/utility/axois";
 import { toast } from "sonner";
 
@@ -46,12 +47,11 @@ interface UserProfile {
 
 export default function AccountPage() {
   const router = useRouter();
-  const { user, isAuthenticated, _hasHydrated, setUser, isCheckingAuth } = useAuthStore();
+  const setUser = useAuthStore((state) => state.setUser);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [mounted, setMounted] = useState(false);
   const [formData, setFormData] = useState({
     userName: "",
     email: "",
@@ -61,29 +61,23 @@ export default function AccountPage() {
   });
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  const { isReady, isAuthenticated, user } = useAuthCheck({
+    requireAuth: true,
+    redirectTo: "/auth/login",
+  });
 
   useEffect(() => {
-    if (!mounted) return;
-    
-    if (_hasHydrated && !isAuthenticated) {
-      router.replace("/auth/login");
-      return;
-    }
-
-    if (_hasHydrated && user) {
+    if (isReady && user) {
       setProfile(user);
       setFormData({
-        userName: user.userName || "",
-        email: user.email || "",
-        phoneNumber: user.phoneNumber || "",
-        address: user.address || "",
-        bio: user.bio || "",
+        userName: user?.userName || "",
+        email: user?.email || "",
+        phoneNumber: user?.phoneNumber || "",
+        address: user?.address || "",
+        bio: user?.bio || "",
       });
     }
-  }, [_hasHydrated, isAuthenticated, user, router, mounted]);
+  }, [isReady, user]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -113,9 +107,9 @@ export default function AccountPage() {
     setUploading(true);
     try {
       const formData = new FormData();
-      formData.append("image", file);
+      formData.append("profileImage", file);
 
-      const res = await app.post(`${base}/v1/user/uploadProfile`, formData, {
+      const res = await app.post(`${base}/v1/user/uploadProfile/${user?._id}`, formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
@@ -136,7 +130,7 @@ export default function AccountPage() {
     toast.success("Logged out successfully");
   };
 
-  if (!mounted || !_hasHydrated) {
+  if (!isReady) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
@@ -144,20 +138,8 @@ export default function AccountPage() {
     );
   }
 
-  if (!isAuthenticated || !user) {
-    if (isAuthenticated === false) {
-      router.replace("/auth/login");
-      return null;
-    }
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
-      </div>
-    );
-  }
-
-  const avatarUrl = user.profileImage || user.avatar || user.avater;
-  const initials = user.userName?.[0]?.toUpperCase() || "?";
+  const avatarUrl = user?.profileImage || user?.avatar || user?.avater;
+  const initials = user?.userName?.[0]?.toUpperCase() || "?";
 
   return (
     <div className="min-h-screen bg-gray-50 pb-20 md:pb-0">
@@ -197,7 +179,7 @@ export default function AccountPage() {
                 <div className="flex flex-col sm:flex-row items-center gap-6">
                   <div className="relative">
                     <Avatar className="w-24 h-24 border-4 border-white shadow-lg">
-                      <AvatarImage src={avatarUrl} alt={user.userName} />
+                      <AvatarImage src={avatarUrl} alt={user?.userName} />
                       <AvatarFallback className="text-2xl bg-blue-600 text-white">
                         {initials}
                       </AvatarFallback>
@@ -222,12 +204,12 @@ export default function AccountPage() {
                     />
                   </div>
                   <div className="text-center sm:text-left">
-                    <h3 className="font-semibold text-lg">{user.userName}</h3>
-                    <p className="text-gray-500">{user.email}</p>
+                    <h3 className="font-semibold text-lg">{user?.userName}</h3>
+                    <p className="text-gray-500">{user?.email}</p>
                     <div className="flex items-center gap-2 mt-2 justify-center sm:justify-start">
                       <Shield className="w-4 h-4 text-blue-600" />
                       <span className="text-sm font-medium capitalize text-blue-600">
-                        {user.role || "User"}
+                        {user?.role || "User"}
                       </span>
                     </div>
                   </div>
