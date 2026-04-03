@@ -242,6 +242,7 @@ export default function PropertiesPage() {
 
   // Fetch user favorites on mount
   useEffect(() => {
+    console.log("Fetching favorites for user:", user?._id);
     if (isAuthenticated && user?._id) {
       app.get(`${base}/v1/favorites/${user._id}`)
         .then((res) => {
