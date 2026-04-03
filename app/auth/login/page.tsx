@@ -100,7 +100,8 @@ export default function LoginPage() {
           <p className="text-gray-500 mt-1">Sign in to continue</p>
         </div>
 
-        <Button
+        {/* TODO: Implement Google OAuth */}
+        {/* <Button
           type="button"
           variant="outline"
           className="w-full h-12 border-2 border-gray-200 hover:bg-gray-50 mb-6"
@@ -118,7 +119,7 @@ export default function LoginPage() {
             </svg>
           )}
           Continue with Google
-        </Button>
+        </Button> */}
 
         <div className="relative mb-6">
           <div className="absolute inset-0 flex items-center">

@@ -436,59 +436,74 @@ export default function PropertyDetailClient({
 
                 {/* Agent Card - Only show for agents/landlords */}
                 {property.host?.role !== "guest" && property.host?.role !== "USER" && (
-                  <Card className="border border-gray-100 shadow-lg">
+                  <Card className="border border-gray-200 shadow-lg overflow-hidden">
                     <CardContent className="p-0">
                       {/* Agent Header */}
-                      <div className="bg-gradient-to-r from-gray-900 to-gray-800 p-6 rounded-t-lg">
+                      <div className="bg-gradient-to-r from-gray-900 to-gray-800 p-5">
                         <div className="flex items-center gap-4">
-                          <div className="relative">
-                            <Avatar className="h-16 w-16 border-2 border-white">
-                              <AvatarImage src={host.profileImage || host.image} />
-                              <AvatarFallback>
-                                {host.userName?.charAt(0)?.toUpperCase()}
-                              </AvatarFallback>
-                            </Avatar>
-                            {host.adminVerified && (
-                              <Badge variant="secondary" className="ml-2 bg-green-100 text-green-700">
-                                <CheckCircle2 className="h-3 w-3 mr-1" />
-                                Verified
-                              </Badge>
-                            )}
+                          <Avatar className="h-14 w-14 border-2 border-white/30">
+                            <AvatarImage src={host.profileImage || host.image} />
+                            <AvatarFallback className="bg-white/20 text-white">
+                              {host.userName?.charAt(0)?.toUpperCase()}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2">
+                              <h3 className="font-bold text-lg text-white">{host.userName || "Unknown"}</h3>
+                              {host.adminVerified && (
+                                <CheckCircle2 className="h-4 w-4 text-green-400" />
+                              )}
+                            </div>
+                            <p className="text-sm text-gray-300">
+                              {host.role === "agent" ? "Certified Agent" : 
+                               host.role === "landlord" || host.role === "host" ? "Property Owner" : "Agent"}
+                            </p>
                           </div>
-                          <h3 className="font-bold text-lg">{host.userName || "Unknown"}</h3>
-                          <p className="text-sm text-gray-500">
-                            {host.role === "agent" ? "Certified Agent" : 
-                             host.role === "landlord" || host.role === "host" ? "Property Owner" : "Agent"}
-                          </p>
-                        </div>
-                        <div className="mt-4 space-y-3">
-                          <a
-                            href={`tel:${host.phoneNumber || ""}`}
-                            className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
-                          >
-                            <Phone className="h-5 w-5 text-gray-600" />
-                            <span className="text-sm font-medium">{host.phoneNumber || "No phone"}</span>
-                          </a>
-                          <a
-                            href={`mailto:${host.email || ""}`}
-                            className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
-                          >
-                            <Mail className="h-5 w-5 text-gray-600" />
-                            <span className="text-sm font-medium truncate">{host.email || "No email"}</span>
-                          </a>
                         </div>
                       </div>
 
+                      {/* Contact Info */}
+                      <div className="p-4 space-y-2">
+                        <a
+                          href={`tel:${host.phoneNumber || ""}`}
+                          className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+                        >
+                          <div className="h-10 w-10 bg-black rounded-full flex items-center justify-center flex-shrink-0">
+                            <Phone className="h-4 w-4 text-white" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <span className="font-semibold text-gray-900 block truncate">
+                              {host.phoneNumber || "No phone"}
+                            </span>
+                            <span className="text-xs text-gray-500">Tap to call</span>
+                          </div>
+                        </a>
+                        <a
+                          href={`mailto:${host.email || ""}`}
+                          className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+                        >
+                          <div className="h-10 w-10 bg-black rounded-full flex items-center justify-center flex-shrink-0">
+                            <Mail className="h-4 w-4 text-white" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <span className="font-semibold text-gray-900 block truncate">
+                              {host.email || "No email"}
+                            </span>
+                            <span className="text-xs text-gray-500">Tap to email</span>
+                          </div>
+                        </a>
+                      </div>
+
                       {/* Action Buttons */}
-                      <div className="p-4 pt-0 grid grid-cols-2 gap-3">
-                        <Link href={`/chat/${host?._id || "unknown"}/${property._id}`} className="col-span-2">
+                      <div className="p-4 pt-0 space-y-2">
+                        <Link href={`/chat/${host?._id || "unknown"}/${property._id}`} className="block">
                           <Button className="w-full bg-black hover:bg-gray-800 h-11">
-                            <MessageCircle className="h-5 w-5 mr-2" />
+                            <MessageCircle className="h-4 w-4 mr-2" />
                             Chat with Agent
                           </Button>
                         </Link>
                         {host.adminVerified && (
-                          <Link href={`/payments/pay/${property._id}`} className="col-span-2">
+                          <Link href={`/payments/pay/${property._id}`} className="block">
                             <Button variant="outline" className="w-full h-11 border-gray-300">
                               <Calendar className="h-4 w-4 mr-2" />
                               Schedule Tour
