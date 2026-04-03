@@ -1,0 +1,8 @@
+what i can do :
+search with user name to see user:
+if povided the user id or agent referal code can directly chat with them 
+keep chat history 
+
+step:
+get directed from the chat with agent btn 
+id in url agent it fetch chat can commence 

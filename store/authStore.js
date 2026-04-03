@@ -85,7 +85,10 @@ export const useAuthStore = create(
             `${base}/v1/verification/verify_email`,
             { code }
           );
+          // Fetch user data after verification
+          const userResponse = await app.get(`${base}/v1/auth/me`);
           set({
+            user: userResponse.data.data,
             isAuthenticated: true,
             error: null,
             isLoading: false,

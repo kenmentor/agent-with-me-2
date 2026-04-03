@@ -1,0 +1,7 @@
+add houses (for house that are not verifed )
+page.tsx:
+a button pannel
+nice grid (special) to show the only verifed house 
+a toggle to switch between scroll mode(tiktok feed style with like share and comment but coment icon send a mesage to the agent in the messanger) and normal grid (default)
+clean avater at the to and header 
+with link to viltile relative page 

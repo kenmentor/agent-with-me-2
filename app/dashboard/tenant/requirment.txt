@@ -1,0 +1,4 @@
+steps:
+list of house tore
+house liked
+payment history 

@@ -1,0 +1,6 @@
+steps:
+list of house they manage 
+list of tenant tour to attend 
+expected payout
+EDIT HOUSE INFORMATION LIKE -> PRICE PICTURE ETC TERMS AND CONDITIONS
+payment history 

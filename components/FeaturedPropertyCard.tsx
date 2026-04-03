@@ -46,25 +46,42 @@ import Link from "next/link";
 import Header from "@/components/Header";
 import Image from "next/image";
 
+import api, { baseURL } from "@/lib/api";
+import { useAuthStore } from "@/store/authStore";
+import { toast } from "sonner";
+
 interface FeaturedPropertyCardProps {
   property: Property;
   favorites: number[];
+  onToggleFavorite?: (id: number) => void;
 }
 
 const FeaturedPropertyCard: React.FC<FeaturedPropertyCardProps> = ({
   property,
   favorites,
+  onToggleFavorite,
 }) => {
-  function toggleFavorite(id: number): void {
-    // This function should add/remove the property id from favorites.
-    // Since favorites is passed as a prop, you would typically lift state up.
-    // For demo, we'll just log the action.
-    if (favorites.includes(id)) {
-      console.log(`Removing property ${id} from favorites`);
-    } else {
-      console.log(`Adding property ${id} to favorites`);
+  const { user, isAuthenticated } = useAuthStore();
+  const [isLiked, setIsLiked] = useState(favorites.includes(property.id));
+
+  async function toggleFavorite(id: number): Promise<void> {
+    if (!isAuthenticated || !user?._id) {
+      toast.error("Please login to save properties");
+      return;
     }
-    // In a real app, you'd call a handler passed via props to update favorites.
+
+    try {
+      await api.post(`${baseURL}/v1/favorites/toggle`, {
+        userId: user._id,
+        houseId: id,
+      });
+      
+      setIsLiked(!isLiked);
+      onToggleFavorite?.(id);
+    } catch (error) {
+      console.error("Error toggling favorite:", error);
+      toast.error("Failed to update favorite");
+    }
   }
 
   return (

@@ -1,0 +1,4 @@
+normal signup 
+fill in detail (with a stage rank and can continue later)
+then comfirm and wait for verification 
+afterward redirect to the home page

@@ -4,7 +4,9 @@ import Image from "next/image";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   Bed,
   Bath,
@@ -19,11 +21,13 @@ import {
   ChevronRight,
   BanIcon,
   X,
+  CheckCircle2,
+  MessageCircle,
+  Shield,
 } from "lucide-react";
 import { useState } from "react";
 import AutoPlayVideo from "@/components/AutoplayVideo";
 import Share from "@/components/Share";
-import { useRouter } from "next/router";
 
 interface Property {
   _id: string;
@@ -50,8 +54,10 @@ interface Property {
     userName: string;
     phoneNumber: string;
     email: string;
-    image: string;
+    image?: string;
+    profileImage?: string;
     adminVerified: boolean;
+    role?: string;
   };
 }
 
@@ -60,22 +66,23 @@ export default function PropertyDetailClient({
 }: {
   property: Property;
 }) {
-  // Initialize selected image to thumbnail or first gallery image
   const [selectedImage, setSelectedImage] = useState<string>(
     property.thumbnail || property.images?.[0]?.url || "/placeholder.svg"
   );
   const [imageLoading, setImageLoading] = useState(true);
   const [IsShare, setIsShare] = useState(false);
+  const [activeTab, setActiveTab] = useState("description");
+console.log(property)
   return (
     <>
       {IsShare && (
-        <div className=" fixed top-0 bottom-0 bg-black/60  right-0 left-0 backdrop-blur-md  flex-col z-10 flex justify-start items-center p-6 ">
-          <div className="p-8">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-50 flex items-center justify-center p-4">
+          <div className="absolute top-4 right-4">
             <button
-              className="text-white bg-black p-3 rounded-full top-0 right-0  "
+              className="p-2 bg-white/10 hover:bg-white/20 rounded-full text-white transition-colors"
               onClick={() => setIsShare(false)}
             >
-              <X />
+              <X className="h-5 w-5" />
             </button>
           </div>
           <Share
@@ -91,232 +98,378 @@ export default function PropertyDetailClient({
           />
         </div>
       )}
-      <div className="container mx-auto px-4 py-8 pb-[100px]">
-        {/* Breadcrumb */}
 
-        <div className="mb-6 flex items-center gap-2 text-sm text-muted-foreground">
-          <Link
-            href="/"
-            className="flex items-center gap-1 hover:text-foreground"
-          >
-            <Home className="h-4 w-4" />
-            Home
-          </Link>
-          <ChevronRight className="h-4 w-4" />
-          <Link href="/properties" className="hover:text-foreground">
-            Properties
-          </Link>
-          <ChevronRight className="h-4 w-4" />
-          <span className="text-foreground">{property.title}</span>
-        </div>
-
-        {/* Title & Status */}
-        <div className="mb-8 grid gap-6 lg:grid-cols-[2fr_1fr]">
-          <div>
-            <h1 className="mb-2 text-3xl font-bold">{property.title}</h1>
-            <div className="mb-4 flex items-center gap-2">
-              <MapPin className="h-4 w-4 text-muted-foreground" />
-              <span>{property.address}</span>
-              <Badge
-                className={
-                  property.status === "Available"
-                    ? "bg-green-100 text-green-800"
-                    : property.status === "Pending"
-                    ? "bg-yellow-100 text-yellow-800"
-                    : "bg-red-100 text-red-800"
-                }
-                variant="outline"
-              >
-                {property.status}
-              </Badge>
-            </div>
-            <div className="mb-6 flex flex-wrap items-center gap-4 text-muted-foreground">
-              <div className="flex items-center gap-1">
-                <Bed className="h-5 w-5" />
-                <span>{property.bedrooms} Bedrooms</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <Bath className="h-5 w-5" />
-                <span>{property.bathrooms} Bathrooms</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <Square className="h-5 w-5" />
-                <span>{property.squareFeet} sq ft</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <Calendar className="h-5 w-5" />
-                <span>Built in {property.yearBuilt}</span>
-              </div>
-            </div>
+      <div className="min-h-screen bg-gray-50/50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          {/* Breadcrumb */}
+          <div className="mb-6 flex items-center gap-2 text-sm text-gray-500">
+            <Link href="/" className="hover:text-gray-900 flex items-center gap-1">
+              <Home className="h-4 w-4" />
+              Home
+            </Link>
+            <ChevronRight className="h-4 w-4" />
+            <Link href="/properties" className="hover:text-gray-900">
+              Properties
+            </Link>
+            <ChevronRight className="h-4 w-4" />
+            <span className="text-gray-900 truncate max-w-[200px]">
+              {property.title}
+            </span>
           </div>
 
-          {/* Price & Actions */}
-          <div className="flex flex-col items-end justify-center">
-            <div className="text-3xl font-bold">₦{property.price}</div>
-            <div className="mt-4 flex gap-2">
-              {!property.host.adminVerified && (
-                <Link href={`/payments/pay/${property._id}`}>
-                  <Button size="lg">Book Now</Button>
-                </Link>
-              )}
-              <Button size="lg" variant="outline">
-                <Heart className="mr-2 h-4 w-4" />
-                Save
-              </Button>
-              <Button
-                size="icon"
-                variant="outline"
-                onClick={() => setIsShare(true)}
-              >
-                <Share2 className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-        </div>
+          {/* Main Content Grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* Left Column - Images & Details */}
+            <div className="lg:col-span-2 space-y-6">
+              {/* Image Gallery */}
+              <div className="space-y-4">
+                {/* Main Image */}
+                <div className="relative aspect-[16/9] overflow-hidden rounded-2xl bg-gray-100">
+                  {imageLoading && (
+                    <div className="absolute inset-0 bg-gray-200 animate-pulse" />
+                  )}
+                  <Image
+                    src={selectedImage}
+                    alt={property.title}
+                    fill
+                    className={`object-cover transition-all duration-500 ${
+                      imageLoading ? "opacity-0 scale-105" : "opacity-100 scale-100"
+                    }`}
+                    onLoad={() => setImageLoading(false)}
+                    priority
+                  />
+                  {/* Image Counter */}
+                  <div className="absolute bottom-4 left-4 bg-black/60 text-white px-3 py-1 rounded-full text-sm">
+                    {property.images?.length || 1} photos
+                  </div>
+                </div>
 
-        {/* Image Gallery */}
-        <div className="mb-8 grid grid-cols-4 gap-4 relative">
-          <div className="col-span-4 aspect-video overflow-hidden rounded-lg lg:col-span-2 lg:row-span-2 relative">
-            {imageLoading && (
-              <div className="absolute inset-0 bg-gray-200 animate-pulse rounded-lg" />
-            )}
-            <Image
-              src={selectedImage}
-              alt={property.title}
-              width={800}
-              height={600}
-              className={`h-full w-full object-cover transition-opacity duration-300 ${
-                imageLoading ? "opacity-0" : "opacity-100"
-              }`}
-              onLoadingComplete={() => setImageLoading(false)}
-            />
-          </div>
-
-          {property.images?.map((image, index) => (
-            <div
-              key={index}
-              className="col-span-2 aspect-video overflow-hidden rounded-lg sm:col-span-1 cursor-pointer"
-            >
-              <Image
-                src={image.url || "/placeholder.svg"}
-                alt={`${property.title} ${index + 1}`}
-                onClick={() => {
-                  setSelectedImage(image.url || "/placeholder.svg");
-                  setImageLoading(true);
-                }}
-                width={400}
-                height={300}
-                className="h-full w-full object-cover"
-              />
-            </div>
-          ))}
-        </div>
-
-        {/* Tabs & Video */}
-        <div className="mb-8 grid gap-8 lg:grid-cols-[2fr_1fr]">
-          <div>
-            <Tabs defaultValue="description">
-              <TabsList className="mb-4 grid w-full grid-cols-3">
-                <TabsTrigger value="description">Description</TabsTrigger>
-                <TabsTrigger value="features">Features</TabsTrigger>
-                <TabsTrigger value="location">Location</TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="description" className="space-y-4">
-                <h2 className="text-2xl font-semibold">Property Description</h2>
-                <p className="leading-relaxed">{property.description}</p>
-              </TabsContent>
-
-              <TabsContent value="features">
-                <h2 className="mb-4 text-2xl font-semibold">
-                  Property Features
-                </h2>
-                <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-                  {property.amenities?.map((feature, index) => (
-                    <div key={index} className="flex items-center gap-2">
-                      <div className="h-2 w-2 rounded-full bg-primary"></div>
-                      <span>{feature}</span>
-                    </div>
+                {/* Thumbnail Grid */}
+                <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
+                  {property.images?.slice(0, 6).map((image, index) => (
+                    <button
+                      key={index}
+                      onClick={() => {
+                        setSelectedImage(image.url);
+                        setImageLoading(true);
+                      }}
+                      className={`relative flex-shrink-0 w-20 h-20 rounded-xl overflow-hidden transition-all duration-200 ${
+                        selectedImage === image.url
+                          ? "ring-2 ring-black ring-offset-2"
+                          : "opacity-70 hover:opacity-100"
+                      }`}
+                    >
+                      <Image
+                        src={image.url || "/placeholder.svg"}
+                        alt={`${property.title} ${index + 1}`}
+                        fill
+                        className="object-cover"
+                      />
+                    </button>
                   ))}
+                  {property.images?.length > 6 && (
+                    <div className="flex-shrink-0 w-20 h-20 rounded-xl bg-gray-100 flex items-center justify-center text-gray-500 text-sm">
+                      +{property.images.length - 6}
+                    </div>
+                  )}
                 </div>
-              </TabsContent>
+              </div>
 
-              <TabsContent value="location">
-                <h2 className="mb-4 text-2xl font-semibold">Location</h2>
-                <div className="aspect-video overflow-hidden rounded-lg bg-muted flex items-center justify-center">
-                  <p className="text-muted-foreground">
-                    Map would be displayed here
-                  </p>
-                </div>
-              </TabsContent>
-            </Tabs>
-          </div>
+              {/* Property Info Card */}
+              <Card className="border-0 shadow-lg">
+                <CardContent className="p-6 space-y-6">
+                  {/* Title & Location */}
+                  <div className="space-y-3">
+                    <div className="flex items-start justify-between gap-4">
+                      <div>
+                        <h1 className="text-2xl lg:text-3xl font-bold text-gray-900">
+                          {property.title}
+                        </h1>
+                        <div className="flex items-center gap-2 mt-2 text-gray-600">
+                          <MapPin className="h-4 w-4 flex-shrink-0" />
+                          <span className="text-sm">{property.address}</span>
+                        </div>
+                      </div>
+                      <Badge
+                        className={`px-3 py-1 text-sm font-medium ${
+                          property.status === "Available"
+                            ? "bg-green-100 text-green-700"
+                            : "bg-red-100 text-red-700"
+                        }`}
+                      >
+                        {property.status}
+                      </Badge>
+                    </div>
+                  </div>
 
-          <div>
-            <h2 className="mb-4 text-2xl font-semibold">Video Tour</h2>
-            <div className="aspect-video overflow-hidden rounded-lg bg-muted">
-              <AutoPlayVideo src={property.video} />
+                  {/* Property Features */}
+                  <div className="flex flex-wrap gap-4 py-4 border-y border-gray-100">
+                    <div className="flex items-center gap-2 bg-gray-50 px-4 py-2 rounded-full">
+                      <Bed className="h-5 w-5 text-gray-600" />
+                      <span className="font-medium">{property.bedrooms}</span>
+                      <span className="text-gray-500 text-sm">Beds</span>
+                    </div>
+                    <div className="flex items-center gap-2 bg-gray-50 px-4 py-2 rounded-full">
+                      <Bath className="h-5 w-5 text-gray-600" />
+                      <span className="font-medium">{property.bathrooms}</span>
+                      <span className="text-gray-500 text-sm">Baths</span>
+                    </div>
+                    <div className="flex items-center gap-2 bg-gray-50 px-4 py-2 rounded-full">
+                      <Square className="h-5 w-5 text-gray-600" />
+                      <span className="font-medium">{property.squareFeet}</span>
+                      <span className="text-gray-500 text-sm">sqft</span>
+                    </div>
+                    <div className="flex items-center gap-2 bg-gray-50 px-4 py-2 rounded-full">
+                      <Calendar className="h-5 w-5 text-gray-600" />
+                      <span className="font-medium">{property.yearBuilt}</span>
+                      <span className="text-gray-500 text-sm">Built</span>
+                    </div>
+                  </div>
+
+                  {/* Tabs */}
+                  <Tabs value={activeTab} onValueChange={setActiveTab}>
+                    <TabsList className="w-full grid grid-cols-3 bg-gray-100 p-1 rounded-xl">
+                      <TabsTrigger
+                        value="description"
+                        className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm"
+                      >
+                        Description
+                      </TabsTrigger>
+                      <TabsTrigger
+                        value="features"
+                        className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm"
+                      >
+                        Features
+                      </TabsTrigger>
+                      <TabsTrigger
+                        value="location"
+                        className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm"
+                      >
+                        Location
+                      </TabsTrigger>
+                    </TabsList>
+
+                    <div className="mt-6">
+                      <TabsContent value="description" className="space-y-4">
+                        <h3 className="text-lg font-semibold">About this property</h3>
+                        <p className="text-gray-600 leading-relaxed whitespace-pre-line">
+                          {property.description}
+                        </p>
+                        <div className="flex flex-wrap gap-2 pt-4">
+                          <span className="px-3 py-1 bg-gray-100 rounded-full text-sm text-gray-600">
+                            {property.type}
+                          </span>
+                          <span className="px-3 py-1 bg-gray-100 rounded-full text-sm text-gray-600">
+                            {property.category}
+                          </span>
+                          {property.furnishing && (
+                            <span className="px-3 py-1 bg-gray-100 rounded-full text-sm text-gray-600">
+                              {property.furnishing}
+                            </span>
+                          )}
+                        </div>
+                      </TabsContent>
+
+                      <TabsContent value="features">
+                        <h3 className="text-lg font-semibold mb-4">Amenities & Features</h3>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                          {property.amenities?.map((feature, index) => (
+                            <div
+                              key={index}
+                              className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl"
+                            >
+                              <CheckCircle2 className="h-5 w-5 text-green-500 flex-shrink-0" />
+                              <span className="text-sm text-gray-700">{feature}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </TabsContent>
+
+                      <TabsContent value="location">
+                        <h3 className="text-lg font-semibold mb-4">Property Location</h3>
+                        <div className="aspect-video bg-gray-100 rounded-xl flex items-center justify-center">
+                          <div className="text-center text-gray-500">
+                            <MapPin className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                            <p>{property.address}</p>
+                            <p className="text-sm">{property.state}, {property.lga}</p>
+                          </div>
+                        </div>
+                      </TabsContent>
+                    </div>
+                  </Tabs>
+                </CardContent>
+              </Card>
+
+              {/* Video Tour */}
+              {property.video && (
+                <Card className="border-0 shadow-lg">
+                  <CardContent className="p-6">
+                    <h3 className="text-lg font-semibold mb-4">Video Tour</h3>
+                    <div className="aspect-video overflow-hidden rounded-xl bg-gray-900">
+                      <AutoPlayVideo src={property.video} />
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
             </div>
-          </div>
-        </div>
 
-        {/* Agent Info */}
-        <div className="mb-5">
-          {property.host.adminVerified ? (
-            <Link className="!w-full" href={`/payments/pay/${property._id}`}>
-              <Button size="lg">Book Now</Button>
-            </Link>
-          ) : (
-            <div className="flex items-start space-x-3 p-4 bg-red-50 border border-red-200 rounded-lg">
-              <BanIcon className="h-5 w-5 text-red-600 mt-0.5" />
-              <div className="text-sm">
-                <p className="font-medium text-red-800">Secure Payment</p>
-                <p className="text-red-700">
-                  This agent is not verified by admin, booking is disabled. Make
-                  sure you verify them before making any payment.
-                </p>
+            {/* Right Column - Sticky Sidebar */}
+            <div className="lg:col-span-1">
+              <div className="sticky top-24 space-y-6">
+                {/* Price Card */}
+                <Card className="border-0 shadow-lg overflow-hidden">
+                  <div className="bg-black text-white p-6">
+                    <p className="text-sm text-gray-400 mb-1">Price</p>
+                    <p className="text-3xl font-bold">₦{property.price.toLocaleString()}</p>
+                    {property.category && (
+                      <p className="text-sm text-gray-400 mt-1">per {property.category.toLowerCase()}</p>
+                    )}
+                  </div>
+                  <CardContent className="p-6 space-y-4">
+                    {/* Action Buttons */}
+                    <div className="space-y-3">
+                      {property?.host?.adminVerified ? (
+                        <Link href={`/payments/pay/${property._id}`} className="block">
+                          <Button size="lg" className="w-full h-12 text-base">
+                            <Calendar className="h-5 w-5 mr-2" />
+                            Book Now
+                          </Button>
+                        </Link>
+                      ) : (
+                        <div className="flex items-start gap-3 p-4 bg-red-50 border border-red-100 rounded-xl">
+                          <BanIcon className="h-5 w-5 text-red-500 flex-shrink-0 mt-0.5" />
+                          <div className="text-sm">
+                            <p className="font-medium text-red-800">Unverified Agent</p>
+                            <p className="text-red-600 text-xs mt-1">
+                              This agent is not verified. Proceed with caution.
+                            </p>
+                          </div>
+                        </div>
+                      )}
+                      <div className="flex gap-2">
+                        <Button variant="outline" className="flex-1 h-11">
+                          <Heart className="h-5 w-5 mr-2" />
+                          Save
+                        </Button>
+                        <Button
+                          variant="outline"
+                          className="flex-1 h-11"
+                          onClick={() => setIsShare(true)}
+                        >
+                          <Share2 className="h-5 w-5" />
+                        </Button>
+                      </div>
+                    </div>
+
+                    {/* Divider */}
+                    <div className="relative">
+                      <div className="absolute inset-0 flex items-center">
+                        <div className="w-full border-t" />
+                      </div>
+                      <div className="relative flex justify-center text-xs uppercase">
+                        <span className="bg-white px-2 text-gray-500">Or</span>
+                      </div>
+                    </div>
+
+                    {/* Chat Button */}
+                    <Link href={`/chat/${property.host._id}/${property._id}`}>
+                      <Button
+                        variant="outline"
+                        className="w-full h-11 border-2 border-black hover:bg-black hover:text-white"
+                      >
+                        <MessageCircle className="h-5 w-5 mr-2" />
+                        Chat with Agent
+                      </Button>
+                    </Link>
+                  </CardContent>
+                </Card>
+
+                {/* Agent Card - Only show for agents/landlords */}
+                {property.host?.role !== "guest" && property.host?.role !== "USER" && (
+                  <Card className="border border-gray-100 shadow-lg">
+                    <CardContent className="p-0">
+                      {/* Agent Header */}
+                      <div className="bg-gradient-to-r from-gray-900 to-gray-800 p-6 rounded-t-lg">
+                        <div className="flex items-center gap-4">
+                          <div className="relative">
+                            <Avatar className="h-16 w-16 border-2 border-white">
+                              <AvatarImage src={property.host.profileImage || property.host.image} />
+                              <AvatarFallback className="bg-white/20 text-white text-xl">
+                                {property.host.userName?.charAt(0)?.toUpperCase()}
+                              </AvatarFallback>
+                            </Avatar>
+                            {property.host.adminVerified && (
+                              <div className="absolute -bottom-1 -right-1 bg-green-500 rounded-full p-1.5 border-2 border-white">
+                                <Shield className="h-3 w-3 text-white" />
+                              </div>
+                            )}
+                          </div>
+                          <div className="text-white">
+                            <h3 className="font-bold text-lg">{property.host.userName}</h3>
+                            <p className="text-white/70 text-sm flex items-center gap-1">
+                              <Badge variant="secondary" className="text-xs bg-white/20 text-white border-0">
+                                {property.host.role === "agent" ? "Certified Agent" : 
+                                 property.host.role === "landlord" || property.host.role === "host" ? "Property Owner" : "Agent"}
+                              </Badge>
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Contact Info */}
+                      <div className="p-4 space-y-3">
+                        <a
+                          href={`tel:${property.host.phoneNumber}`}
+                          className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors"
+                        >
+                          <div className="h-10 w-10 bg-black rounded-full flex items-center justify-center">
+                            <Phone className="h-5 w-5 text-white" />
+                          </div>
+                          <div>
+                            <span className="font-semibold text-gray-900 block">
+                              {property.host.phoneNumber}
+                            </span>
+                            <span className="text-xs text-gray-500">Click to call</span>
+                          </div>
+                        </a>
+                        <a
+                          href={`mailto:${property.host.email}`}
+                          className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors"
+                        >
+                          <div className="h-10 w-10 bg-black rounded-full flex items-center justify-center">
+                            <Mail className="h-5 w-5 text-white" />
+                          </div>
+                          <div className="overflow-hidden">
+                            <span className="font-semibold text-gray-900 block truncate">
+                              {property.host.email}
+                            </span>
+                            <span className="text-xs text-gray-500">Click to email</span>
+                          </div>
+                        </a>
+                      </div>
+
+                      {/* Action Buttons */}
+                      <div className="p-4 pt-0 grid grid-cols-2 gap-3">
+                        <Link href={`/chat/${property.host._id}/${property._id}`} className="col-span-2">
+                          <Button className="w-full bg-black hover:bg-gray-800 h-11">
+                            <MessageCircle className="h-5 w-5 mr-2" />
+                            Chat with Agent
+                          </Button>
+                        </Link>
+                        {property.host.adminVerified && (
+                          <Link href={`/payments/pay/${property._id}`} className="col-span-2">
+                            <Button variant="outline" className="w-full h-11 border-gray-300">
+                              <Calendar className="h-4 w-4 mr-2" />
+                              Schedule Tour
+                            </Button>
+                          </Link>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
               </div>
             </div>
-          )}
-        </div>
-
-        <div className="rounded-lg border bg-card p-6 shadow-sm">
-          <div className="mb-4 flex items-center gap-4">
-            <div className="relative h-16 w-16 overflow-hidden rounded-full">
-              <Image
-                src={property.host.image || "/placeholder.svg"}
-                alt={property.host.userName}
-                fill
-                className="object-cover"
-              />
-            </div>
-            <div>
-              <h3 className="font-semibold">{property.host.userName}</h3>
-              <p className="text-sm text-muted-foreground">
-                {property.host.userName}
-              </p>
-            </div>
-          </div>
-
-          <div className="mb-6 space-y-2">
-            <div className="flex items-center gap-2">
-              <Phone className="h-4 w-4 text-muted-foreground" />
-              <span>{property.host.phoneNumber}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Mail className="h-4 w-4 text-muted-foreground" />
-              <span>{property.host.email}</span>
-            </div>
-            <Link href={`/chat/${property.host._id}/${property._id}`}>
-              <Button
-                size="sm"
-                variant="outline"
-                className="flex-1 w-full bg-transparent"
-              >
-                <Calendar className="h-4 w-4 mr-1" />
-                Chat with agent
-              </Button>
-            </Link>
           </div>
         </div>
       </div>

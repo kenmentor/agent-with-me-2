@@ -1,55 +1,7 @@
 "use client";
-interface ResourceType {
-  header: string;
-  views: number;
-  description: string;
-
-  thumbnail: string;
-  location: string;
-  gallery: { src: string; alt: string }[];
-  price: number;
-  electricity: number;
-  waterSuply: boolean;
-  _id: string;
-  host: string;
-  title: string;
-  bedrooms: number;
-  bathrooms: number;
-  area: string;
-  type: string;
-  category: string;
-  furnished: boolean;
-  rating: number;
-  verified: boolean;
-
-  landlord: string;
-}
-
-interface keyword {
-  min: string;
-  max: string;
-  type: string;
-  searchWord: string;
-  limit: number;
-  lga?: string;
-  state?: string;
-  landmark?: string;
-  category?: string;
-  id?: string;
-}
-
-interface HouseMainComponent {
-  keyword?: keyword;
-  bardge?: number;
-  page: boolean;
-  userId?: string;
-}
-
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import {
   Select,
   SelectContent,
@@ -57,18 +9,24 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Search, Spline } from "lucide-react";
+import { Search, LayoutGrid, AlignVerticalJustifyCenter, Loader2 } from "lucide-react";
 
 import Header from "@/components/Header";
 import PropertyCard from "../../components/PropertyCard";
+import PropertyFeed from "@/components/PropertyFeed";
 import Req from "@/app/utility/axois";
 import { priceRanges, propertyType, statesAndLGAs } from "../data";
-import { Slider } from "@/components/ui/slider";
 import NoResults from "../../components/NoResults";
 import { Spinner } from "@/components/ui/spinner";
+import { toast } from "sonner";
 import PropertySkeleton from "@/components/PropertySkeleton";
+import { useDebounce } from "@/lib/useDebounce";
+import { useAuthStore } from "@/store/authStore";
+
 export default function PropertiesPage() {
   const { base, app } = Req;
+  const { user, isAuthenticated } = useAuthStore();
+
   const [searchQuery, setSearchQuery] = useState({
     keyword: "",
     type: "",
@@ -79,98 +37,226 @@ export default function PropertiesPage() {
     state: "",
     landmark: "",
     limit: "50",
-    priceRange: [0, 0],
+    priceRange: [0, 0] as [number, number],
   });
 
+  // Debounced keyword for search
+  const debouncedKeyword = useDebounce(searchQuery.keyword, 300);
+  
+  const [viewMode, setViewMode] = useState<"grid" | "feed">("grid");
+  const [data, setData] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
   const [favorites, setFavorites] = useState<string[]>([]);
-  const [error, setError] = useState<boolean>(false);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [data, setData] = useState<ResourceType[]>([]);
+  const [suggestions, setSuggestions] = useState<{text: string; type: string}[]>([]);
+  const [suggestionsLoading, setSuggestionsLoading] = useState(false);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [selectedState, setSelectedState] = useState("all");
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
 
-  function buildHouseUrl(base: string, searchQuery: any) {
+  // Load view mode from localStorage
+  useEffect(() => {
+    const saved = localStorage.getItem("propertyViewMode");
+    if (saved === "grid" || saved === "feed") {
+      setViewMode(saved);
+    }
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem("propertyViewMode", viewMode);
+  }, [viewMode]);
+
+  function buildHouseUrl(base: string, searchQuery: any, keyword: string) {
     const params: Record<string, string> = {};
 
-    // Helper to add only valid filters
     const addParam = (key: string, value: any) => {
-      if (
-        value !== undefined &&
-        value !== null &&
-        value !== "" &&
-        value !== "all"
-      ) {
+      if (value !== undefined && value !== null && value !== "" && value !== "all") {
         params[key] = String(value);
       }
     };
 
-    // Price range
     if (Array.isArray(searchQuery?.priceRange)) {
       if (searchQuery.priceRange[0]) addParam("min", searchQuery.priceRange[0]);
       if (searchQuery.priceRange[1]) addParam("max", searchQuery.priceRange[1]);
     }
 
-    // Filters
     addParam("type", searchQuery?.type);
     addParam("category", searchQuery?.category);
-    addParam("searchWord", searchQuery?.keyword);
+    if (keyword) addParam("searchWord", keyword);
     addParam("limit", searchQuery?.limit || "50");
     addParam("lga", searchQuery?.lga);
     addParam("state", searchQuery?.state);
     addParam("landmark", searchQuery?.landmark);
 
-    // Build query string safely
     const queryString = new URLSearchParams(params).toString();
     return `${base}/v1/house${queryString ? `?${queryString}` : ""}`;
   }
 
-  useEffect(() => {
-    //https://agent-with-me-backend.onrender.com
+  // Fetch suggestions for autocomplete
+  const fetchSuggestions = useCallback(async (query: string) => {
+    if (!query || query.length < 2) {
+      setSuggestions([]);
+      return;
+    }
+    
+    setSuggestionsLoading(true);
+    try {
+      const res = await app.get(`${base}/v1/house?searchWord=${encodeURIComponent(query)}&limit=3`);
+      const properties = res.data?.data || [];
+      
+      const newSuggestions: {text: string; type: string}[] = [];
+      const addedTexts = new Set<string>();
+      
+      properties.forEach((p: any) => {
+        if (p.title && !addedTexts.has(p.title)) {
+          newSuggestions.push({ text: p.title, type: 'title' });
+          addedTexts.add(p.title);
+        }
+        if (p.location && !addedTexts.has(p.location)) {
+          newSuggestions.push({ text: p.location, type: 'location' });
+          addedTexts.add(p.location);
+        }
+        if (p.address && !addedTexts.has(p.address)) {
+          newSuggestions.push({ text: p.address, type: 'address' });
+          addedTexts.add(p.address);
+        }
+      });
+      
+      setSuggestions(newSuggestions.slice(0, 6));
+    } catch (error) {
+      console.error("Error fetching suggestions:", error);
+    } finally {
+      setSuggestionsLoading(false);
+    }
+  }, [app, base]);
 
-    const finalUrl = buildHouseUrl(base, searchQuery);
-    console.log(finalUrl);
+  // Handle search input change with suggestions
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setSearchQuery((prev) => ({ ...prev, keyword: value }));
+    setShowSuggestions(true);
+    fetchSuggestions(value);
+  };
+
+  // Handle suggestion click
+  const handleSuggestionClick = (text: string) => {
+    setSearchQuery((prev) => ({ ...prev, keyword: text }));
+    setShowSuggestions(false);
+    setSuggestions([]);
+  };
+
+  useEffect(() => {
+    // Reset and fetch first page when filters change
+    setPage(1);
+    setHasMore(true);
+    setData([]);
+    
+    const finalUrl = buildHouseUrl(base, searchQuery, debouncedKeyword) + `&page=1`;
+    console.log("Fetching:", finalUrl);
 
     const fetchData = async () => {
       try {
         setLoading(true);
         setError(false);
-        console.log(await app.get(finalUrl));
+        console.log("Search keyword:", debouncedKeyword);
         const res = (await app.get(finalUrl)).data;
-        const result = await res.data;
-        console.log(result);
-        console.log(searchQuery?.keyword);
-        setData(result);
+        console.log("Results:", res.data?.length);
+        setData(res.data || []);
+        setHasMore(res.data?.length >= 20);
       } catch (err) {
-        console.error(err);
+        console.error("Fetch error:", err);
         setError(true);
       } finally {
         setLoading(false);
       }
     };
-    console.log("gfgg");
 
     fetchData();
-  }, [searchQuery]);
+  }, [debouncedKeyword, searchQuery.type, searchQuery.category, searchQuery.lga, searchQuery.state, searchQuery.landmark, searchQuery.priceRange, app, base]);
 
-  const toggleFavorite = (propertyId: string) => {
-    setFavorites((prev) =>
-      prev.includes(propertyId)
-        ? prev.filter((id) => id !== propertyId)
-        : [...prev, propertyId]
-    );
+  // Load more function
+  const loadMore = async () => {
+    if (loadingMore || !hasMore) return;
+    
+    const nextPage = page + 1;
+    const finalUrl = buildHouseUrl(base, searchQuery, debouncedKeyword) + `&page=${nextPage}`;
+    console.log("Loading more:", finalUrl);
+    
+    setLoadingMore(true);
+    try {
+      const res = (await app.get(finalUrl)).data;
+      const newData = res.data || [];
+      if (newData.length > 0) {
+        setData(prev => [...prev, ...newData]);
+        setPage(nextPage);
+        setHasMore(newData.length >= 20);
+      } else {
+        setHasMore(false);
+      }
+    } catch (err) {
+      console.error("Load more error:", err);
+    } finally {
+      setLoadingMore(false);
+    }
   };
-  const formatPrice = (value: number) =>
-    value >= 1000000
-      ? `₦${(value / 1000000).toFixed(1)}M`
-      : `₦${value.toLocaleString()}`;
 
-  const [selectedState, setSelectedState] = useState<string>("all");
+  // Infinite scroll handler
+  useEffect(() => {
+    const handleScroll = () => {
+      if (
+        window.innerHeight + document.documentElement.scrollTop
+        >= document.documentElement.offsetHeight - 500
+      ) {
+        loadMore();
+      }
+    };
+
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, [page, hasMore, loadingMore, debouncedKeyword, searchQuery]);
+
+  const toggleFavorite = async (propertyId: string) => {
+    if (!isAuthenticated || !user?._id) {
+      toast.error("Please login to save properties");
+      return;
+    }
+
+    try {
+      await app.post(`${base}/v1/favorites/toggle`, {
+        userId: user._id,
+        houseId: propertyId,
+      });
+      
+      setFavorites((prev) =>
+        prev.includes(propertyId)
+          ? prev.filter((id) => id !== propertyId)
+          : [...prev, propertyId]
+      );
+    } catch (error) {
+      console.error("Error toggling favorite:", error);
+      toast.error("Failed to update favorite");
+    }
+  };
+
+  // Fetch user favorites on mount
+  useEffect(() => {
+    if (isAuthenticated && user?._id) {
+      app.get(`${base}/v1/favorites/${user._id}`)
+        .then((res) => {
+          const favIds = res.data?.data?.map((fav: any) => fav.houseId?._id || fav.houseId) || [];
+          setFavorites(favIds);
+        })
+        .catch(console.error);
+    }
+  }, [isAuthenticated, user?._id, app, base]);
 
   return (
-    <div className="min-h-screen bg-gray-50 ">
-      {/* Header */}
+    <div className="min-h-screen bg-gray-50">
       <Header color="black" />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pt-[120px] md:pt-[100px] ">
-        {/* Search */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pt-[120px] md:pt-[100px]">
         <div className="bg-white rounded-lg shadow-sm p-6 mb-8">
           <div className="flex flex-col lg:flex-row gap-4">
             <div className="flex-1">
@@ -180,14 +266,28 @@ export default function PropertiesPage() {
                   placeholder="Search by location, property type, or area..."
                   value={searchQuery.keyword}
                   name="keyword"
-                  onChange={(e) =>
-                    setSearchQuery((prev) => ({
-                      ...prev,
-                      [e.target.name]: e.target.value,
-                    }))
-                  }
+                  onChange={handleSearchChange}
+                  onFocus={() => setShowSuggestions(true)}
+                  onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
                   className="pl-10"
                 />
+                {suggestionsLoading && (
+                  <Loader2 className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 animate-spin text-gray-400" />
+                )}
+                {showSuggestions && suggestions.length > 0 && (
+                  <div className="absolute z-50 w-full mt-1 bg-white border rounded-md shadow-lg max-h-60 overflow-auto">
+                    {suggestions.map((suggestion, index) => (
+                      <button
+                        key={index}
+                        className="w-full text-left px-4 py-2 hover:bg-gray-100 flex items-center justify-between"
+                        onClick={() => handleSuggestionClick(suggestion.text)}
+                      >
+                        <span>{suggestion.text}</span>
+                        <span className="text-xs text-gray-400 capitalize">{suggestion.type}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
 
@@ -211,9 +311,6 @@ export default function PropertiesPage() {
                 </SelectContent>
               </Select>
 
-              {/* ✅ Budget */}
-
-              {/* ✅ State */}
               <Select
                 name="state"
                 onValueChange={(value) => {
@@ -238,7 +335,6 @@ export default function PropertiesPage() {
                 </SelectContent>
               </Select>
 
-              {/* ✅ LGA (depends on selected state) */}
               <Select
                 name="lga"
                 onValueChange={(value) =>
@@ -262,70 +358,92 @@ export default function PropertiesPage() {
 
               <Select
                 onValueChange={(value: string) => {
-                  console.log(value);
                   let range = value.split("-");
                   setSearchQuery((prev) => ({
                     ...prev,
                     min: Number(range[0]),
                     max: Number(range[1]),
                   }));
-                  console.log(searchQuery.max, searchQuery.min);
                 }}
               >
                 <SelectTrigger className="w-auto">
                   <SelectValue placeholder="Budget" />
                 </SelectTrigger>
-                <SelectContent>budget</SelectContent>
                 <SelectContent>
-                  {priceRanges.map((range) => {
-                    return (
-                      <SelectItem
-                        value={`${range.min}-${range.max}`}
-                        key={range.label}
-                      >
-                        {range.label}
-                      </SelectItem>
-                    );
-                  })}
+                  {priceRanges.map((range) => (
+                    <SelectItem
+                      value={`${range.min}-${range.max}`}
+                      key={range.label}
+                    >
+                      {range.label}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
           </div>
         </div>
 
-        {/* Results */}
         <div className="flex justify-between items-center mb-6">
           <div>
             <h1 className="text-2xl font-bold">Properties for You</h1>
             <p className="text-gray-600">{data?.length} properties found</p>
           </div>
+          <div className="flex gap-2">
+            <Button
+              variant={viewMode === "grid" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setViewMode("grid")}
+            >
+              <LayoutGrid className="h-4 w-4 mr-2" />
+              Grid
+            </Button>
+            <Button
+              variant={viewMode === "feed" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setViewMode("feed")}
+            >
+              <AlignVerticalJustifyCenter className="h-4 w-4 mr-2" />
+              Feed
+            </Button>
+          </div>
         </div>
 
-        {/* Property Grid */}
-        {loading && (
-          <div className="flex justify-center items-center mb-4">
-            <Spinner className="size-6 text-gray-400 animate-spin" />
-          </div>
-        )}
-
-        {loading ? (
-          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-            {[...Array(6)].map((_, i) => (
-              <PropertySkeleton key={i} />
-            ))}
-          </div>
-        ) : data.length === 0 ? (
-          <NoResults />
+        {viewMode === "feed" ? (
+          <PropertyFeed
+            properties={data as any}
+            onLike={toggleFavorite}
+            onClose={() => setViewMode("grid")}
+          />
         ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-            {data.map((property) => (
-              <PropertyCard
-                key={property._id}
-                property={property}
-                favorites={favorites}
-              />
-            ))}
-          </div>
+          <>
+            {loading && (
+              <div className="flex justify-center items-center mb-4">
+                <Spinner className="size-6 text-gray-400 animate-spin" />
+              </div>
+            )}
+
+            {loading ? (
+              <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+                {[...Array(6)].map((_, i) => (
+                  <PropertySkeleton key={i} />
+                ))}
+              </div>
+            ) : data.length === 0 ? (
+              <NoResults />
+            ) : (
+              <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6 pb-[100px]">
+                {data.map((property) => (
+                  <PropertyCard
+                    key={property._id}
+                    property={property as any}
+                    favorites={favorites}
+                    // onToggleFavorite={toggleFavorite}
+                  />
+                ))}
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>

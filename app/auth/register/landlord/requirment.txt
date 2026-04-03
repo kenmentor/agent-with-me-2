@@ -1,0 +1,6 @@
+steps:
+normal signup 
+fill in personal  details 
+fill in house details 
+type in agent referal code (for you to be associate with an agent)
+comfirm (message:we would come to verify your house and take picture of it within 3 days )

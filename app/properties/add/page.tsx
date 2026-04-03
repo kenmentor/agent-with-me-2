@@ -116,10 +116,11 @@ import { validateProperty } from "@/app/utility/validateform";
 import getPlaceValue from "@/app/utility/placVealue";
 import Share from "@/components/Share";
 export default function AddPropertyPage() {
-  const { base } = Req;
+  const { base, app } = Req;
   const user = useAuthStore((state) => state.user);
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const [currentStep, setCurrentStep] = useState(1);
   const [selected, setSelected] = useState<number | null>(null);
   const [copied, setCopied] = useState(false);
@@ -154,6 +155,32 @@ export default function AddPropertyPage() {
   });
 
   const [selectedState, setSelectedState] = useState<string>("all");
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const validateStep = (step: number): boolean => {
+    const newErrors: Record<string, string> = {};
+
+    if (step === 1) {
+      if (!formData.title.trim()) newErrors.title = "Title is required";
+      if (!formData.description.trim()) newErrors.description = "Description is required";
+      if (!formData.type) newErrors.type = "Property type is required";
+      if (!formData.category) newErrors.category = "Category is required";
+      if (!formData.price) newErrors.price = "Price is required";
+    } else if (step === 2) {
+      if (!formData.state) newErrors.state = "State is required";
+      if (!formData.lga) newErrors.lga = "LGA is required";
+      if (!formData.address.trim()) newErrors.address = "Address is required";
+    } else if (step === 3) {
+      if (!formData.bedrooms) newErrors.bedrooms = "Bedrooms is required";
+      if (!formData.bathrooms) newErrors.bathrooms = "Bathrooms is required";
+      if (!formData.furnishing) newErrors.furnishing = "Furnishing status is required";
+    } else if (step === 4) {
+      if (formData.images.length === 0) newErrors.images = "At least one photo is required";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   const handleAmenityChange = (amenityId: string, checked: boolean) => {
     if (checked) {
@@ -170,6 +197,10 @@ export default function AddPropertyPage() {
   };
   const handleSubmit = async (e: { preventDefault: () => void }) => {
     e.preventDefault();
+    if (!validateStep(4)) {
+      toast.error("Please fill in all required fields");
+      return;
+    }
     if (!formData.thumbnail)
       setFormData((prev) => ({ ...prev, thumbnail: prev.images[0] }));
     try {
@@ -185,47 +216,75 @@ export default function AddPropertyPage() {
       data.append("state", formData.state);
       data.append("description", formData.description);
       data.append("category", formData.category);
-      data.append("price", formData.price.toString()); // 👈 string but numeric value
+      data.append("price", formData.price.toString());
 
       data.append("type", formData.type);
       data.append("address", formData.address);
       data.append("bedroom", formData.bedrooms);
       data.append("bathroom", formData.bathrooms);
+      data.append("furnishing", formData.furnishing);
+      data.append("lga", formData.lga);
+      data.append("location", `${formData.address}, ${formData.lga}, ${formData.state}`);
 
-      data.append("host", user?._id || "");
+      // Note: host is now set from authentication token on backend
       formData.amenities.forEach((amenity) => {
         data.append("amenities[]", amenity);
       });
 
       data.append("maxgeust", "1");
-      // data.append("thumbnail", formData.images[0]); // 👈 default since schema requires it
 
-      // Use gallery instead of files
       formData.images.forEach((file) => {
         data.append("files", file);
       });
-      data.append("video", formData.video as Blob);
-      console.log(data.getAll("files"));
-      console.log();
-      if (currentStep === 4) {
-        const res = await fetch(`${base}/v1/house`, {
-          method: "POST",
-          body: data,
-        });
-
-        const result = await res.json();
-        if (!res.ok) throw new Error(result.message || "Upload failed");
-        toast.success("Property listed successfully!");
-        console.log(result);
-        setProperty(result.data);
-        nextStep();
+      if (formData.video) {
+        data.append("video", formData.video);
       }
-    } catch (err) {
-      console.error(err);
+      
+      console.log("Submitting property with images:", formData.images.length);
+      
+      if (currentStep === 4) {
+        setUploadProgress(0);
+        
+        try {
+          const res = await app.post(`${base}/v1/house`, data, {
+            headers: { "Content-Type": "multipart/form-data" },
+            onUploadProgress: (progressEvent: any) => {
+              const percent = Math.round((progressEvent.loaded * 100) / (progressEvent.total || 1));
+              setUploadProgress(Math.min(percent, 95));
+            },
+          });
 
-      toast.error((err as Error).message);
+          setUploadProgress(100);
+          const result = res.data;
+          
+          console.log("Upload response:", result);
+          
+          if (!result.ok) {
+            throw new Error(result.message || "Upload failed");
+          }
+          
+          toast.success("Property listed successfully!");
+          setProperty(result.data);
+          
+          // Redirect to property page
+          setTimeout(() => {
+            router.push(`/properties/${result.data._id}`);
+          }, 1500);
+        } catch (err: any) {
+          console.error("Upload error:", err);
+          console.error("Error response:", err.response?.data);
+          toast.error(err.response?.data?.message || err.message || "Upload failed");
+        } finally {
+          setIsLoading(false);
+          setTimeout(() => setUploadProgress(0), 1000);
+        }
+      }
+    } catch (err: any) {
+      console.error(err);
+      toast.error(err.response?.data?.message || err.message || "Upload failed");
     } finally {
       setIsLoading(false);
+      setTimeout(() => setUploadProgress(0), 1000);
     }
   };
   const handleVideoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -271,7 +330,9 @@ export default function AddPropertyPage() {
   };
 
   const nextStep = () => {
-    if (currentStep < 6) setCurrentStep(currentStep + 1);
+    if (validateStep(currentStep)) {
+      if (currentStep < 4) setCurrentStep(currentStep + 1);
+    }
   };
 
   const prevStep = () => {
@@ -410,7 +471,7 @@ export default function AddPropertyPage() {
                         setFormData({ ...formData, type: value })
                       }
                     >
-                      <SelectTrigger>
+                      <SelectTrigger className={errors.type ? "border-red-500" : ""}>
                         <SelectValue placeholder="What do you want to do?" />
                       </SelectTrigger>
                       <SelectContent>
@@ -418,6 +479,7 @@ export default function AddPropertyPage() {
                         <SelectItem value="sale">Sell</SelectItem>
                       </SelectContent>
                     </Select>
+                    {errors.type && <p className="text-sm text-red-500">{errors.type}</p>}
                   </div>
 
                   <div className="space-y-2">
@@ -428,7 +490,7 @@ export default function AddPropertyPage() {
                         setFormData({ ...formData, category: value })
                       }
                     >
-                      <SelectTrigger>
+                      <SelectTrigger className={errors.category ? "border-red-500" : ""}>
                         <SelectValue placeholder="Select property type" />
                       </SelectTrigger>
                       <SelectContent>
@@ -439,6 +501,7 @@ export default function AddPropertyPage() {
                         ))}
                       </SelectContent>
                     </Select>
+                    {errors.category && <p className="text-sm text-red-500">{errors.category}</p>}
                   </div>
                 </div>
 
@@ -452,7 +515,9 @@ export default function AddPropertyPage() {
                       setFormData({ ...formData, title: e.target.value })
                     }
                     required
+                    className={errors.title ? "border-red-500" : ""}
                   />
+                  {errors.title && <p className="text-sm text-red-500">{errors.title}</p>}
                   <p className="text-xs text-gray-500">
                     Make it descriptive and attractive
                   </p>
@@ -469,7 +534,9 @@ export default function AddPropertyPage() {
                     }
                     rows={4}
                     required
+                    className={errors.description ? "border-red-500" : ""}
                   />
+                  {errors.description && <p className="text-sm text-red-500">{errors.description}</p>}
                   <p className="text-xs text-gray-500">Minimum 50 characters</p>
                 </div>
 
@@ -491,10 +558,11 @@ export default function AddPropertyPage() {
                       onChange={(e) =>
                         setFormData({ ...formData, price: e.target.value })
                       }
-                      className="pl-10"
+                      className={`pl-10 ${errors.price ? "border-red-500" : ""}`}
                       required
                     />
                   </div>
+                  {errors.price && <p className="text-sm text-red-500">{errors.price}</p>}
                   <p className="text-xs text-gray-500">
                     {formData.type === "rent"
                       ? "Enter monthly rent amount"
@@ -516,29 +584,32 @@ export default function AddPropertyPage() {
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <Label htmlFor="lga">state *</Label>
-                  <Select
-                    name="state"
-                    onValueChange={(value) => {
-                      setSelectedState(value);
-                      setFormData((prev) => ({
-                        ...prev,
-                        state: value,
-                        lga: "all",
-                      }));
-                    }}
-                  >
-                    <SelectTrigger className="w-40 w-full">
-                      <SelectValue placeholder="State" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {Object.keys(statesAndLGAs).map((state) => (
-                        <SelectItem key={state} value={state}>
-                          {state}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <div className="space-y-2">
+                    <Label htmlFor="lga">State *</Label>
+                    <Select
+                      name="state"
+                      onValueChange={(value) => {
+                        setSelectedState(value);
+                        setFormData((prev) => ({
+                          ...prev,
+                          state: value,
+                          lga: "all",
+                        }));
+                      }}
+                    >
+                      <SelectTrigger className={`w-40 w-full ${errors.state ? "border-red-500" : ""}`}>
+                        <SelectValue placeholder="State" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Object.keys(statesAndLGAs).map((state) => (
+                          <SelectItem key={state} value={state}>
+                            {state}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {errors.state && <p className="text-sm text-red-500">{errors.state}</p>}
+                  </div>
                   {/* ✅ LGA (depends on selected state) */}
                   <div className="space-y-2 ">
                     <Label htmlFor="lga">LGA *</Label>
@@ -549,7 +620,7 @@ export default function AddPropertyPage() {
                       }
                       disabled={selectedState === "all"}
                     >
-                      <SelectTrigger className=" w-full">
+                      <SelectTrigger className={`w-full ${errors.lga ? "border-red-500" : ""}`}>
                         <SelectValue placeholder="LGA" />
                       </SelectTrigger>
                       <SelectContent>
@@ -562,6 +633,7 @@ export default function AddPropertyPage() {
                           ))}
                       </SelectContent>
                     </Select>{" "}
+                    {errors.lga && <p className="text-sm text-red-500">{errors.lga}</p>}
                   </div>
                 </div>
                 <div className="space-y-2">
@@ -575,7 +647,9 @@ export default function AddPropertyPage() {
                     }
                     rows={3}
                     required
+                    className={errors.address ? "border-red-500" : ""}
                   />
+                  {errors.address && <p className="text-sm text-red-500">{errors.address}</p>}
                 </div>
               </CardContent>
             </Card>
@@ -602,7 +676,7 @@ export default function AddPropertyPage() {
                           setFormData({ ...formData, bedrooms: value })
                         }
                       >
-                        <SelectTrigger className="pl-10">
+                        <SelectTrigger className={`pl-10 ${errors.bedrooms ? "border-red-500" : ""}`}>
                           <SelectValue placeholder="Select" />
                         </SelectTrigger>
                         <SelectContent>
@@ -614,6 +688,7 @@ export default function AddPropertyPage() {
                         </SelectContent>
                       </Select>
                     </div>
+                    {errors.bedrooms && <p className="text-sm text-red-500">{errors.bedrooms}</p>}
                   </div>
 
                   <div className="space-y-2">
@@ -626,7 +701,7 @@ export default function AddPropertyPage() {
                           setFormData({ ...formData, bathrooms: value })
                         }
                       >
-                        <SelectTrigger className="pl-10">
+                        <SelectTrigger className={`pl-10 ${errors.bathrooms ? "border-red-500" : ""}`}>
                           <SelectValue placeholder="Select" />
                         </SelectTrigger>
                         <SelectContent>
@@ -638,6 +713,7 @@ export default function AddPropertyPage() {
                         </SelectContent>
                       </Select>
                     </div>
+                    {errors.bathrooms && <p className="text-sm text-red-500">{errors.bathrooms}</p>}
                   </div>
                 </div>
 
@@ -650,7 +726,7 @@ export default function AddPropertyPage() {
                         setFormData({ ...formData, furnishing: value })
                       }
                     >
-                      <SelectTrigger>
+                      <SelectTrigger className={errors.furnishing ? "border-red-500" : ""}>
                         <SelectValue placeholder="Select furnishing status" />
                       </SelectTrigger>
                       <SelectContent>
@@ -663,6 +739,7 @@ export default function AddPropertyPage() {
                         </SelectItem>
                       </SelectContent>
                     </Select>
+                    {errors.furnishing && <p className="text-sm text-red-500">{errors.furnishing}</p>}
                   </div>
                 </div>
 
@@ -714,7 +791,11 @@ export default function AddPropertyPage() {
                     {/* Upload Area */}
                     <Label
                       htmlFor="image-upload"
-                      className="block cursor-pointer border-2 border-dashed border-gray-300 rounded-lg p-6 text-center transition-all hover:border-gray-400 hover:bg-gray-50"
+                      className={`block cursor-pointer border-2 border-dashed rounded-lg p-6 text-center transition-all ${
+                        errors.images 
+                          ? "border-red-500 bg-red-50" 
+                          : "border-gray-300 hover:border-gray-400 hover:bg-gray-50"
+                      }`}
                     >
                       <Camera className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                       <p className="text-gray-700 mb-2 font-medium">
@@ -743,6 +824,7 @@ export default function AddPropertyPage() {
                         className="hidden"
                       />
                     </Label>
+                    {errors.images && <p className="text-sm text-red-500 text-center">{errors.images}</p>}
                   </div>
                 </CardContent>
               </Card>
@@ -901,10 +983,27 @@ export default function AddPropertyPage() {
                       disabled={isLoading}
                       type="button"
                       onClick={handleSubmit}
+                      className="relative"
                     >
-                      {isLoading
-                        ? "Publishing formData..."
-                        : "Publish Property "}
+                      {isLoading ? (
+                        <span className="flex items-center gap-2">
+                          {uploadProgress > 0 ? (
+                            <div className="flex items-center gap-2">
+                              <div className="w-20 h-2 bg-gray-200 rounded-full overflow-hidden">
+                                <div 
+                                  className="h-full bg-green-500 transition-all duration-300" 
+                                  style={{ width: `${uploadProgress}%` }}
+                                />
+                              </div>
+                              <span>{uploadProgress}%</span>
+                            </div>
+                          ) : (
+                            "Publishing..."
+                          )}
+                        </span>
+                      ) : (
+                        "Publish Property"
+                      )}
                     </Button>
                   )}
                 </div>

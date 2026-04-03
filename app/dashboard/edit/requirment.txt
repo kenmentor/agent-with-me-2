@@ -1,0 +1,1 @@
+edit property with id only authorised users (landlord , agent )

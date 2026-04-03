@@ -1,0 +1,5 @@
+steps:
+list of his houese 
+house status 
+EDIT HOUSE INFORMATION LIKE -> PRICE PICTURE ETC TERMS AND CONDITIONS
+payment history 

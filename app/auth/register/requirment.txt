@@ -1,0 +1,5 @@
+steps:
+qestions what do you want to do :
+rent a house 
+become our agent 
+register your property 
