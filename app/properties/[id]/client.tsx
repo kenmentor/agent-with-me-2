@@ -25,9 +25,15 @@ import {
   MessageCircle,
   Shield,
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import AutoPlayVideo from "@/components/AutoplayVideo";
 import Share from "@/components/Share";
+import Req from "@/app/utility/axois";
+import { useAuthStore } from "@/store/authStore";
+import { trackPropertyInteraction } from "@/hooks/usePageTracking";
+import { toast } from "sonner";
+
+const { app, base } = Req;
 
 interface Property {
   _id: string;
@@ -66,13 +72,49 @@ export default function PropertyDetailClient({
 }: {
   property: Property;
 }) {
+  if (!property || !property._id) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p>Property not found</p>
+      </div>
+    );
+  }
+
+  const host = property.host || {};
   const [selectedImage, setSelectedImage] = useState<string>(
     property.thumbnail || property.images?.[0]?.url || "/placeholder.svg"
   );
   const [imageLoading, setImageLoading] = useState(true);
   const [IsShare, setIsShare] = useState(false);
   const [activeTab, setActiveTab] = useState("description");
-console.log(property)
+  const [isLiked, setIsLiked] = useState(false);
+  const [isLiking, setIsLiking] = useState(false);
+  const { user, isAuthenticated } = useAuthStore();
+
+  const handleLike = async () => {
+    if (!isAuthenticated || !user?._id) {
+      toast.error("Please login to save properties");
+      return;
+    }
+
+    setIsLiking(true);
+    try {
+      await app.post(`${base}/v1/favorites/toggle`, {
+        userId: user._id,
+        houseId: property._id,
+      });
+      const newLikedState = !isLiked;
+      setIsLiked(newLikedState);
+      trackPropertyInteraction(property._id, newLikedState ? "like" : "unlike");
+      toast.success(newLikedState ? "Property saved!" : "Property removed from saved");
+    } catch (error) {
+      console.error("Error toggling favorite:", error);
+      toast.error("Failed to update favorite");
+    }
+    setIsLiking(false);
+  };
+
+  console.log(property)
   return (
     <>
       {IsShare && (
@@ -347,14 +389,22 @@ console.log(property)
                         </div>
                       )}
                       <div className="flex gap-2">
-                        <Button variant="outline" className="flex-1 h-11">
-                          <Heart className="h-5 w-5 mr-2" />
-                          Save
+                        <Button 
+                          variant="outline" 
+                          className={`flex-1 h-11 ${isLiked ? 'border-red-500 text-red-500 hover:bg-red-50' : ''}`}
+                          onClick={handleLike}
+                          disabled={isLiking}
+                        >
+                          <Heart className={`h-5 w-5 mr-2 ${isLiked ? 'fill-current' : ''}`} />
+                          {isLiked ? "Saved" : "Save"}
                         </Button>
                         <Button
                           variant="outline"
                           className="flex-1 h-11"
-                          onClick={() => setIsShare(true)}
+                          onClick={() => {
+                            setIsShare(true);
+                            trackPropertyInteraction(property._id, "share");
+                          }}
                         >
                           <Share2 className="h-5 w-5" />
                         </Button>
@@ -372,7 +422,7 @@ console.log(property)
                     </div>
 
                     {/* Chat Button */}
-                    <Link href={`/chat/${property.host._id}/${property._id}`}>
+                    <Link href={`/chat/${property.host?._id || "unknown"}/${property._id}`}>
                       <Button
                         variant="outline"
                         className="w-full h-11 border-2 border-black hover:bg-black hover:text-white"
@@ -393,70 +443,51 @@ console.log(property)
                         <div className="flex items-center gap-4">
                           <div className="relative">
                             <Avatar className="h-16 w-16 border-2 border-white">
-                              <AvatarImage src={property.host.profileImage || property.host.image} />
-                              <AvatarFallback className="bg-white/20 text-white text-xl">
-                                {property.host.userName?.charAt(0)?.toUpperCase()}
+                              <AvatarImage src={host.profileImage || host.image} />
+                              <AvatarFallback>
+                                {host.userName?.charAt(0)?.toUpperCase()}
                               </AvatarFallback>
                             </Avatar>
-                            {property.host.adminVerified && (
-                              <div className="absolute -bottom-1 -right-1 bg-green-500 rounded-full p-1.5 border-2 border-white">
-                                <Shield className="h-3 w-3 text-white" />
-                              </div>
+                            {host.adminVerified && (
+                              <Badge variant="secondary" className="ml-2 bg-green-100 text-green-700">
+                                <CheckCircle2 className="h-3 w-3 mr-1" />
+                                Verified
+                              </Badge>
                             )}
                           </div>
-                          <div className="text-white">
-                            <h3 className="font-bold text-lg">{property.host.userName}</h3>
-                            <p className="text-white/70 text-sm flex items-center gap-1">
-                              <Badge variant="secondary" className="text-xs bg-white/20 text-white border-0">
-                                {property.host.role === "agent" ? "Certified Agent" : 
-                                 property.host.role === "landlord" || property.host.role === "host" ? "Property Owner" : "Agent"}
-                              </Badge>
-                            </p>
-                          </div>
+                          <h3 className="font-bold text-lg">{host.userName || "Unknown"}</h3>
+                          <p className="text-sm text-gray-500">
+                            {host.role === "agent" ? "Certified Agent" : 
+                             host.role === "landlord" || host.role === "host" ? "Property Owner" : "Agent"}
+                          </p>
                         </div>
-                      </div>
-
-                      {/* Contact Info */}
-                      <div className="p-4 space-y-3">
-                        <a
-                          href={`tel:${property.host.phoneNumber}`}
-                          className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors"
-                        >
-                          <div className="h-10 w-10 bg-black rounded-full flex items-center justify-center">
-                            <Phone className="h-5 w-5 text-white" />
-                          </div>
-                          <div>
-                            <span className="font-semibold text-gray-900 block">
-                              {property.host.phoneNumber}
-                            </span>
-                            <span className="text-xs text-gray-500">Click to call</span>
-                          </div>
-                        </a>
-                        <a
-                          href={`mailto:${property.host.email}`}
-                          className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors"
-                        >
-                          <div className="h-10 w-10 bg-black rounded-full flex items-center justify-center">
-                            <Mail className="h-5 w-5 text-white" />
-                          </div>
-                          <div className="overflow-hidden">
-                            <span className="font-semibold text-gray-900 block truncate">
-                              {property.host.email}
-                            </span>
-                            <span className="text-xs text-gray-500">Click to email</span>
-                          </div>
-                        </a>
+                        <div className="mt-4 space-y-3">
+                          <a
+                            href={`tel:${host.phoneNumber || ""}`}
+                            className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+                          >
+                            <Phone className="h-5 w-5 text-gray-600" />
+                            <span className="text-sm font-medium">{host.phoneNumber || "No phone"}</span>
+                          </a>
+                          <a
+                            href={`mailto:${host.email || ""}`}
+                            className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+                          >
+                            <Mail className="h-5 w-5 text-gray-600" />
+                            <span className="text-sm font-medium truncate">{host.email || "No email"}</span>
+                          </a>
+                        </div>
                       </div>
 
                       {/* Action Buttons */}
                       <div className="p-4 pt-0 grid grid-cols-2 gap-3">
-                        <Link href={`/chat/${property.host._id}/${property._id}`} className="col-span-2">
+                        <Link href={`/chat/${host?._id || "unknown"}/${property._id}`} className="col-span-2">
                           <Button className="w-full bg-black hover:bg-gray-800 h-11">
                             <MessageCircle className="h-5 w-5 mr-2" />
                             Chat with Agent
                           </Button>
                         </Link>
-                        {property.host.adminVerified && (
+                        {host.adminVerified && (
                           <Link href={`/payments/pay/${property._id}`} className="col-span-2">
                             <Button variant="outline" className="w-full h-11 border-gray-300">
                               <Calendar className="h-4 w-4 mr-2" />

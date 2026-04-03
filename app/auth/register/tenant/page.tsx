@@ -20,6 +20,7 @@ import { Home, User, Phone, Mail, Lock, Eye, EyeOff, Loader2 } from "lucide-reac
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuthStore } from "@/store/authStore";
+import { trackSignup } from "@/store/analyticsStore";
 import { toast } from "sonner";
 
 const registerSchema = z.object({
@@ -97,7 +98,7 @@ export default function TenantRegisterPage() {
   const onSubmit = async (data: RegisterForm) => {
     setServerError(null);
     try {
-      await signup({
+      const result = await signup({
         userName: data.userName,
         email: data.email,
         password: data.password,
@@ -107,6 +108,7 @@ export default function TenantRegisterPage() {
         role: "guest",
         agreeToTerms: data.agreeToTerms,
       });
+      trackSignup(result?._id || null, "email");
       setSentCode(true);
       toast.success("Verification code sent to your email!");
     } catch (error: any) {

@@ -12,6 +12,7 @@ import { Home, Mail, Lock, Eye, EyeOff, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuthStore } from "@/store/authStore";
+import { trackLogin } from "@/store/analyticsStore";
 import { baseURL } from "@/lib/api";
 
 const loginSchema = z.object({
@@ -62,6 +63,10 @@ export default function LoginPage() {
     setServerError(null);
     try {
       await login(data);
+      const user = useAuthStore.getState().user;
+      if (user?._id) {
+        trackLogin(user._id, "email");
+      }
       router.replace(searchParams.get("from") === "dashboard" ? "/dashboard" : "/properties");
     } catch (err: any) {
       const errorMessage = err?.response?.data?.message || err?.message || "Login failed";
@@ -76,6 +81,7 @@ export default function LoginPage() {
   const handleGoogleLogin = async () => {
     setIsGoogleLoading(true);
     try {
+      trackLogin(null, "google");
       window.location.href = `${baseURL}/v1/auth/google`;
     } catch (err) {
       console.error("Google login error:", err);

@@ -18,6 +18,7 @@ import { Home, User, Phone, Mail, Lock, Eye, EyeOff, Building2, QrCode, Info, Lo
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuthStore } from "@/store/authStore";
+import { trackSignup } from "@/store/analyticsStore";
 import { toast } from "sonner";
 
 export default function LandlordRegisterPage() {
@@ -96,7 +97,8 @@ export default function LandlordRegisterPage() {
     if (!validateForm()) return;
 
     try {
-      await signup(formData);
+      const result = await signup(formData);
+      trackSignup(result?._id || null, "email");
       setSentCode(true);
       toast.success("Verification code sent to your email!");
     } catch (error) {

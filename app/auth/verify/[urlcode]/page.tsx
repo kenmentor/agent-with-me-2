@@ -16,6 +16,7 @@ import { Label } from "@/components/ui/label";
 import { CheckCircle, Mail, AlertCircle, ArrowLeft, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useAuthStore } from "@/store/authStore";
+import { trackVerification } from "@/store/analyticsStore";
 import Req from "@/app/utility/axois";
 import { toast } from "sonner";
 
@@ -46,6 +47,8 @@ export default function VerifyPage() {
     setError("");
     try {
       await verifyEmail(code);
+      const user = useAuthStore.getState().user;
+      trackVerification(user?._id || null, true);
       setIsVerified(true);
       toast.success("Email verified successfully!");
       setTimeout(() => router.push("/dashboard"), 2000);
@@ -53,10 +56,12 @@ export default function VerifyPage() {
       const errorMsg = err?.response?.data?.message || "";
       // If already verified, treat as success
       if (errorMsg.toLowerCase().includes("already verified")) {
+        trackVerification(null, true);
         setIsVerified(true);
         toast.success("Email already verified!");
         setTimeout(() => router.push("/properties"), 2000);
       } else {
+        trackVerification(null, false);
         setError(errorMsg || "Verification failed");
         setHasAttemptedVerify(false);
       }

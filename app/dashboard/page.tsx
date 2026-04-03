@@ -25,7 +25,9 @@ export default function DashboardPage() {
     setRedirecting(true);
     const role = user.role?.toLowerCase();
     
-    if (role === "agent") {
+    if (role === "admin") {
+      router.replace("/dashboard/analytics");
+    } else if (role === "agent") {
       router.replace("/dashboard/agent");
     } else if (role === "host" || role === "landlord") {
       router.replace("/dashboard/landlord");

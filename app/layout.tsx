@@ -6,6 +6,7 @@ import "./globals.css";
 import { Toaster } from "sonner";
 import InstallAppPrompt from "../components/InstallAppPrompt";
 import Nav from "@/components/Nav";
+import AnalyticsTracker from "@/components/AnalyticsTracker";
 
 export const metadata: Metadata = {
   title: "Agentwithme",
@@ -34,6 +35,7 @@ html {
         {children}
         <InstallAppPrompt />
         <Analytics />
+        <AnalyticsTracker />
         <Toaster richColors position="top-right" />
         <Nav />
       </body>
