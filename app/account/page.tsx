@@ -1,0 +1,443 @@
+"use client";
+
+import { useState, useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
+import Image from "next/image";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  User,
+  Mail,
+  Phone,
+  MapPin,
+  Building2,
+  Shield,
+  Camera,
+  Save,
+  Loader2,
+  Bell,
+  Lock,
+  CreditCard,
+  HelpCircle,
+  LogOut,
+} from "lucide-react";
+import Header from "@/components/Header";
+import { useAuthStore } from "@/store/authStore";
+import Req from "@/app/utility/axois";
+import { toast } from "sonner";
+
+const { app, base } = Req;
+
+interface UserProfile {
+  _id: string;
+  userName: string;
+  email: string;
+  phoneNumber?: string;
+  role?: string;
+  avatar?: string;
+  profileImage?: string;
+  address?: string;
+  bio?: string;
+}
+
+export default function AccountPage() {
+  const router = useRouter();
+  const { user, isAuthenticated, _hasHydrated, setUser } = useAuthStore();
+  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [formData, setFormData] = useState({
+    userName: "",
+    email: "",
+    phoneNumber: "",
+    address: "",
+    bio: "",
+  });
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (_hasHydrated && !isAuthenticated) {
+      router.push("/auth/login");
+      return;
+    }
+
+    if (user) {
+      setProfile(user);
+      setFormData({
+        userName: user.userName || "",
+        email: user.email || "",
+        phoneNumber: user.phoneNumber || "",
+        address: user.address || "",
+        bio: user.bio || "",
+      });
+    }
+  }, [_hasHydrated, isAuthenticated, user, router]);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleProfileUpdate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSaving(true);
+    try {
+      const res = await app.put(`${base}/v1/user/update`, formData);
+      if (res.data?.ok) {
+        setUser(res.data.data);
+        toast.success("Profile updated successfully");
+      }
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message || "Failed to update profile");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append("image", file);
+
+      const res = await app.post(`${base}/v1/user/uploadProfile`, formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+
+      if (res.data?.ok) {
+        setUser(res.data.data);
+        toast.success("Profile image updated");
+      }
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message || "Failed to upload image");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleLogout = () => {
+    useAuthStore.getState().logout();
+    router.push("/");
+    toast.success("Logged out successfully");
+  };
+
+  if (!_hasHydrated || !user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+      </div>
+    );
+  }
+
+  const avatarUrl = user.profileImage || user.avatar || user.avater;
+  const initials = user.userName?.[0]?.toUpperCase() || "?";
+
+  return (
+    <div className="min-h-screen bg-gray-50 pb-20 md:pb-0">
+      <Header />
+
+      <main className="pt-20 px-4 max-w-4xl mx-auto">
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold text-gray-900">Account Settings</h1>
+          <p className="text-gray-500">Manage your profile and preferences</p>
+        </div>
+
+        <Tabs defaultValue="profile" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-3 lg:w-auto lg:inline-flex">
+            <TabsTrigger value="profile" className="gap-2">
+              <User className="w-4 h-4" />
+              Profile
+            </TabsTrigger>
+            <TabsTrigger value="security" className="gap-2">
+              <Lock className="w-4 h-4" />
+              Security
+            </TabsTrigger>
+            <TabsTrigger value="preferences" className="gap-2">
+              <Bell className="w-4 h-4" />
+              Preferences
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="profile">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <User className="w-5 h-5" />
+                  Profile Information
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="flex flex-col sm:flex-row items-center gap-6">
+                  <div className="relative">
+                    <Avatar className="w-24 h-24 border-4 border-white shadow-lg">
+                      <AvatarImage src={avatarUrl} alt={user.userName} />
+                      <AvatarFallback className="text-2xl bg-blue-600 text-white">
+                        {initials}
+                      </AvatarFallback>
+                    </Avatar>
+                    <button
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={uploading}
+                      className="absolute bottom-0 right-0 bg-blue-600 text-white p-2 rounded-full shadow-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+                    >
+                      {uploading ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Camera className="w-4 h-4" />
+                      )}
+                    </button>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                      className="hidden"
+                    />
+                  </div>
+                  <div className="text-center sm:text-left">
+                    <h3 className="font-semibold text-lg">{user.userName}</h3>
+                    <p className="text-gray-500">{user.email}</p>
+                    <div className="flex items-center gap-2 mt-2 justify-center sm:justify-start">
+                      <Shield className="w-4 h-4 text-blue-600" />
+                      <span className="text-sm font-medium capitalize text-blue-600">
+                        {user.role || "User"}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <form onSubmit={handleProfileUpdate} className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="userName">Username</Label>
+                      <div className="relative">
+                        <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                        <Input
+                          id="userName"
+                          name="userName"
+                          value={formData.userName}
+                          onChange={handleInputChange}
+                          className="pl-10"
+                          placeholder="Your username"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="email">Email</Label>
+                      <div className="relative">
+                        <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                        <Input
+                          id="email"
+                          name="email"
+                          type="email"
+                          value={formData.email}
+                          onChange={handleInputChange}
+                          className="pl-10"
+                          placeholder="your@email.com"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="phoneNumber">Phone Number</Label>
+                      <div className="relative">
+                        <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                        <Input
+                          id="phoneNumber"
+                          name="phoneNumber"
+                          type="tel"
+                          value={formData.phoneNumber}
+                          onChange={handleInputChange}
+                          className="pl-10"
+                          placeholder="+1234567890"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="address">Address</Label>
+                      <div className="relative">
+                        <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                        <Input
+                          id="address"
+                          name="address"
+                          value={formData.address}
+                          onChange={handleInputChange}
+                          className="pl-10"
+                          placeholder="Your address"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-2 md:col-span-2">
+                      <Label htmlFor="bio">Bio</Label>
+                      <textarea
+                        id="bio"
+                        name="bio"
+                        value={formData.bio}
+                        onChange={handleInputChange}
+                        rows={3}
+                        className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                        placeholder="Tell us about yourself..."
+                      />
+                    </div>
+                  </div>
+
+                  <Button type="submit" disabled={saving} className="gap-2">
+                    {saving ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Save className="w-4 h-4" />
+                    )}
+                    Save Changes
+                  </Button>
+                </form>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="security">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Lock className="w-5 h-5" />
+                  Security Settings
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="flex items-center justify-between p-4 border rounded-lg">
+                  <div className="flex items-center gap-4">
+                    <div className="p-3 bg-blue-100 rounded-lg">
+                      <Lock className="w-5 h-5 text-blue-600" />
+                    </div>
+                    <div>
+                      <h4 className="font-medium">Password</h4>
+                      <p className="text-sm text-gray-500">Last changed 3 months ago</p>
+                    </div>
+                  </div>
+                  <Button variant="outline" size="sm">
+                    Change
+                  </Button>
+                </div>
+
+                <div className="flex items-center justify-between p-4 border rounded-lg">
+                  <div className="flex items-center gap-4">
+                    <div className="p-3 bg-green-100 rounded-lg">
+                      <Shield className="w-5 h-5 text-green-600" />
+                    </div>
+                    <div>
+                      <h4 className="font-medium">Two-Factor Authentication</h4>
+                      <p className="text-sm text-gray-500">Add an extra layer of security</p>
+                    </div>
+                  </div>
+                  <Button variant="outline" size="sm">
+                    Enable
+                  </Button>
+                </div>
+
+                <div className="flex items-center justify-between p-4 border rounded-lg">
+                  <div className="flex items-center gap-4">
+                    <div className="p-3 bg-purple-100 rounded-lg">
+                      <LogOut className="w-5 h-5 text-purple-600" />
+                    </div>
+                    <div>
+                      <h4 className="font-medium">Active Sessions</h4>
+                      <p className="text-sm text-gray-500">Manage your logged in devices</p>
+                    </div>
+                  </div>
+                  <Button variant="outline" size="sm">
+                    View
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="preferences">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Bell className="w-5 h-5" />
+                  Notification Preferences
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="flex items-center justify-between p-4 border rounded-lg">
+                  <div className="flex items-center gap-4">
+                    <Bell className="w-5 h-5 text-gray-400" />
+                    <div>
+                      <h4 className="font-medium">Push Notifications</h4>
+                      <p className="text-sm text-gray-500">Receive notifications on your device</p>
+                    </div>
+                  </div>
+                  <Button variant="outline" size="sm">
+                    Configure
+                  </Button>
+                </div>
+
+                <div className="flex items-center justify-between p-4 border rounded-lg">
+                  <div className="flex items-center gap-4">
+                    <Mail className="w-5 h-5 text-gray-400" />
+                    <div>
+                      <h4 className="font-medium">Email Notifications</h4>
+                      <p className="text-sm text-gray-500">Receive updates via email</p>
+                    </div>
+                  </div>
+                  <Button variant="outline" size="sm">
+                    Configure
+                  </Button>
+                </div>
+
+                <div className="flex items-center justify-between p-4 border rounded-lg">
+                  <div className="flex items-center gap-4">
+                    <CreditCard className="w-5 h-5 text-gray-400" />
+                    <div>
+                      <h4 className="font-medium">Payment Alerts</h4>
+                      <p className="text-sm text-gray-500">Get notified about payments</p>
+                    </div>
+                  </div>
+                  <Button variant="outline" size="sm">
+                    Configure
+                  </Button>
+                </div>
+
+                <div className="flex items-center justify-between p-4 border rounded-lg">
+                  <div className="flex items-center gap-4">
+                    <HelpCircle className="w-5 h-5 text-gray-400" />
+                    <div>
+                      <h4 className="font-medium">Help & Support</h4>
+                      <p className="text-sm text-gray-500">Get help with your account</p>
+                    </div>
+                  </div>
+                  <Button variant="outline" size="sm">
+                    Contact
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+
+        <div className="mt-8 p-4 bg-white border rounded-lg">
+          <Button
+            variant="destructive"
+            onClick={handleLogout}
+            className="w-full gap-2"
+          >
+            <LogOut className="w-4 h-4" />
+            Log Out
+          </Button>
+        </div>
+      </main>
+    </div>
+  );
+}

@@ -89,7 +89,7 @@ export default function Header({ color }: { color?: string }) {
 
   const isActive = (href: string) => pathname === href || pathname.startsWith(href + "/");
 
-  const hideBottomTabs = pathname.startsWith("/chat/") || pathname === "/user" || pathname.startsWith("/messages");
+  const hideBottomTabs = pathname.startsWith("/chat/") || pathname === "/user" || pathname.startsWith("/messages") || pathname === "/account";
 
   const userAvatar = user?.avater;
   const initials = user?.userName?.[0]?.toUpperCase() || "?";
