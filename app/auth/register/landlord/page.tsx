@@ -2,7 +2,7 @@
 
 import type React from "react";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -16,14 +16,27 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Home, User, Phone, Mail, Lock, Eye, EyeOff, Building2, QrCode, Info } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useAuthStore } from "@/store/authStore";
 import { toast } from "sonner";
 
 export default function LandlordRegisterPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const signup = useAuthStore((state) => state.signup);
   const isLoading = useAuthStore((state) => state.isLoading);
+  const { isAuthenticated, _hasHydrated } = useAuthStore();
+
+  useEffect(() => {
+    if (_hasHydrated && isAuthenticated) {
+      const from = searchParams.get("from");
+      if (from === "dashboard") {
+        router.replace("/dashboard");
+      } else {
+        router.replace("/properties");
+      }
+    }
+  }, [_hasHydrated, isAuthenticated, router, searchParams]);
 
   const [formData, setFormData] = useState({
     userName: "",

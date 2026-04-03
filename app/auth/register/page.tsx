@@ -1,7 +1,10 @@
 "use client";
 
+import { useEffect } from "react";
 import { Home, User, Building2, Briefcase, ArrowRight } from "lucide-react";
 import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useAuthStore } from "@/store/authStore";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
@@ -27,6 +30,21 @@ const roles = [
 ];
 
 export default function RegisterPage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const { isAuthenticated, _hasHydrated } = useAuthStore();
+
+  useEffect(() => {
+    if (_hasHydrated && isAuthenticated) {
+      const from = searchParams.get("from");
+      if (from === "dashboard") {
+        router.replace("/dashboard");
+      } else {
+        router.replace("/properties");
+      }
+    }
+  }, [_hasHydrated, isAuthenticated, router, searchParams]);
+
   return (
     <div className="min-h-screen bg-white flex items-center justify-center p-4">
       <div className="max-w-4xl w-full">

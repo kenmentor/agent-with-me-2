@@ -46,11 +46,12 @@ interface UserProfile {
 
 export default function AccountPage() {
   const router = useRouter();
-  const { user, isAuthenticated, _hasHydrated, setUser } = useAuthStore();
+  const { user, isAuthenticated, _hasHydrated, setUser, isCheckingAuth } = useAuthStore();
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [mounted, setMounted] = useState(false);
   const [formData, setFormData] = useState({
     userName: "",
     email: "",
@@ -61,12 +62,18 @@ export default function AccountPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!mounted) return;
+    
     if (_hasHydrated && !isAuthenticated) {
-      router.push("/auth/login");
+      router.replace("/auth/login");
       return;
     }
 
-    if (user) {
+    if (_hasHydrated && user) {
       setProfile(user);
       setFormData({
         userName: user.userName || "",
@@ -76,7 +83,7 @@ export default function AccountPage() {
         bio: user.bio || "",
       });
     }
-  }, [_hasHydrated, isAuthenticated, user, router]);
+  }, [_hasHydrated, isAuthenticated, user, router, mounted]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -125,11 +132,23 @@ export default function AccountPage() {
 
   const handleLogout = () => {
     useAuthStore.getState().logout();
-    router.push("/");
+    router.replace("/");
     toast.success("Logged out successfully");
   };
 
-  if (!_hasHydrated || !user) {
+  if (!mounted || !_hasHydrated) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+      </div>
+    );
+  }
+
+  if (!isAuthenticated || !user) {
+    if (isAuthenticated === false) {
+      router.replace("/auth/login");
+      return null;
+    }
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <Loader2 className="h-8 w-8 animate-spin text-blue-600" />

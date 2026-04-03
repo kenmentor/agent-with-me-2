@@ -33,9 +33,14 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (_hasHydrated && isAuthenticated) {
-      router.push("/dashboard");
+      const from = searchParams.get("from");
+      if (from === "dashboard") {
+        router.replace("/dashboard");
+      } else {
+        router.replace("/properties");
+      }
     }
-  }, [_hasHydrated, isAuthenticated, router]);
+  }, [_hasHydrated, isAuthenticated, router, searchParams]);
   
   const [showPassword, setShowPassword] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
@@ -53,10 +58,20 @@ export default function LoginPage() {
     setServerError(null);
     try {
       await login(data);
-      const redirect = searchParams.get("redirect") || "/dashboard";
-      router.push(redirect);
+      const from = searchParams.get("from");
+      if (from === "dashboard") {
+        router.replace("/dashboard");
+      } else {
+        router.replace("/properties");
+      }
     } catch (err: any) {
-      setServerError(err?.response?.data?.message || "Login failed. Please check your credentials.");
+      const errorMessage = err?.response?.data?.message || err?.message || "Login failed. Please check your credentials.";
+      setServerError(errorMessage);
+      
+      // If email not verified, redirect to verification page
+      if (errorMessage.toLowerCase().includes("verify")) {
+        router.push(`/auth/verify?email=${encodeURIComponent(data.email)}`);
+      }
     }
   };
 

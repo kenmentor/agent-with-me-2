@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/authStore";
 import { Loader2 } from "lucide-react";
@@ -8,31 +8,33 @@ import { Loader2 } from "lucide-react";
 export default function DashboardPage() {
   const router = useRouter();
   const { user, isAuthenticated, _hasHydrated } = useAuthStore();
+  const [redirecting, setRedirecting] = useState(false);
 
   useEffect(() => {
-    if (!_hasHydrated) return;
+    if (!_hasHydrated || redirecting) return;
     
     // If not authenticated or no user data, redirect to login
     if (!isAuthenticated || !user) {
-      router.push("/auth/login");
+      router.replace("/auth/login");
       return;
     }
 
-    // If user exists but has no role, wait (could be loading)
+    // If user exists but has no role, wait - but don't stay stuck
     if (!user.role) {
       return;
     }
-    
+
+    setRedirecting(true);
     const role = user.role?.toLowerCase();
     
     if (role === "agent") {
-      router.push("/dashboard/agent");
+      router.replace("/dashboard/agent");
     } else if (role === "host" || role === "landlord") {
-      router.push("/dashboard/landlord");
+      router.replace("/dashboard/landlord");
     } else {
-      router.push("/dashboard/tenant");
+      router.replace("/dashboard/tenant");
     }
-  }, [_hasHydrated, isAuthenticated, user, router]);
+  }, [_hasHydrated, isAuthenticated, user, router, redirecting]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
