@@ -185,7 +185,7 @@ export default function Header({ color }: { color?: string }) {
                         className="w-full h-full object-cover"
                       />
                     ) : (
-                      <span className="text-sm font-medium">{initials}</span>
+                      <span className="text-sm font-medium text-white">{initials}</span>
                     )}
                   </div>
                 </Button>

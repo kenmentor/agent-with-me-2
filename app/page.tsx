@@ -93,7 +93,7 @@ export default function HomePage() {
               <Button
                 size="lg"
                 variant="outline"
-                className="w-auto sm:w-auto bg-white"
+                className="w-auto sm:w-auto bg-white text-black border-white hover:bg-gray-100"
               >
                 List Your Property
               </Button>
@@ -174,9 +174,9 @@ export default function HomePage() {
       <section className="py-16 px-4 bg-gray-50">
         <div className="max-w-6xl mx-auto">
           <div className="flex justify-between items-center mb-8">
-            <h2 className="text-3xl font-bold">Featured Properties</h2>
+            <h2 className="text-3xl font-bold text-gray-900">Featured Properties</h2>
             <Link href="/properties">
-              <Button variant="outline">View All Properties</Button>
+              <Button variant="outline" className="border-gray-300 text-gray-700 hover:bg-gray-100">View All Properties</Button>
             </Link>
           </div>
 
