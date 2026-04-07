@@ -139,13 +139,10 @@ export default function TenantRegisterPage() {
             </div>
             <Button
               className="w-full bg-green-600 hover:bg-green-700"
-              onClick={() => {
-                window.open("https://mail.google.com", "_blank");
-                router.push(`/auth/verify/`);
-              }}
+              onClick={() => window.open("https://mail.google.com", "_blank")}
             >
               <Mail className="h-4 w-4 mr-2" />
-              Open Gmail & Verify
+              Open Gmail
             </Button>
             <Button
               variant="outline"

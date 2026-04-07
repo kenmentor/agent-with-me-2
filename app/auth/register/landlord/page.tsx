@@ -131,13 +131,10 @@ export default function LandlordRegisterPage() {
             </div>
             <Button
               className="w-full bg-black hover:bg-gray-800"
-              onClick={() => {
-                window.open("https://mail.google.com", "_blank");
-                router.push(`/auth/verify/${Date.now()}?email=${encodeURIComponent(formData.email)}`);
-              }}
+              onClick={() => window.open("https://mail.google.com", "_blank")}
             >
               <Mail className="h-4 w-4 mr-2" />
-              Open Gmail & Verify
+              Open Gmail
             </Button>
             <Button
               variant="outline"

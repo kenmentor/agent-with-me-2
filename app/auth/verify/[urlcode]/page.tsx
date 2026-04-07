@@ -112,10 +112,6 @@ function VerifyContent() {
     if (urlCode && !isVerified && !hasAttemptedVerify) {
       const code = urlCode.replace(/\D/g, "");
       setVerificationCode(code);
-      
-      if (code.length >= 4 && code.length <= 10) {
-        verifyCode(code);
-      }
     }
   }, [urlCode]);
 
