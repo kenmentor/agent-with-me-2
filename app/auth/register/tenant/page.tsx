@@ -141,7 +141,7 @@ export default function TenantRegisterPage() {
               className="w-full bg-green-600 hover:bg-green-700"
               onClick={() => {
                 window.open("https://mail.google.com", "_blank");
-                router.push(`/auth/verify/${Date.now()}?email=${encodeURIComponent(registeredEmail)}`);
+                router.push(`/auth/verify/`);
               }}
             >
               <Mail className="h-4 w-4 mr-2" />
