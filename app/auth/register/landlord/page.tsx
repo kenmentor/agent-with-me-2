@@ -129,6 +129,10 @@ export default function LandlordRegisterPage() {
                 <li>Add your property details</li>
               </ol>
             </div>
+            <div className="bg-yellow-50 border border-yellow-200 p-4 rounded-xl text-sm text-yellow-800">
+              <p className="font-medium">Don&apos;t see the email?</p>
+              <p>Check your <strong>spam/junk</strong> folder. If still not found, it may take a few minutes to arrive.</p>
+            </div>
             <Button
               className="w-full bg-black hover:bg-gray-800"
               onClick={() => window.open("https://mail.google.com", "_blank")}

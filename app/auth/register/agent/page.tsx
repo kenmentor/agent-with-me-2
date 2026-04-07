@@ -120,6 +120,18 @@ export default function AgentRegisterPage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
+            <div className="bg-gray-100 p-4 rounded-lg text-sm">
+              <p className="font-medium mb-2">Next steps:</p>
+              <ol className="list-decimal list-inside space-y-1">
+                <li>Check your email for the verification code</li>
+                <li>Enter the code on the verification page</li>
+                <li>Start listing properties!</li>
+              </ol>
+            </div>
+            <div className="bg-yellow-50 border border-yellow-200 p-4 rounded-xl text-sm text-yellow-800">
+              <p className="font-medium">Don&apos;t see the email?</p>
+              <p>Check your <strong>spam/junk</strong> folder. If still not found, it may take a few minutes to arrive.</p>
+            </div>
             <Button
               className="w-full"
               onClick={() => window.open("https://mail.google.com", "_blank")}
