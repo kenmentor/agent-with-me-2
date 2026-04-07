@@ -10,10 +10,36 @@ import {
   User,
 } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
+import { useState, useEffect, useRef } from "react";
 
 export default function BottomNav() {
   const pathname = usePathname();
   const user = useAuthStore((state) => state.user);
+  const [isVisible, setIsVisible] = useState(true);
+  const lastScrollY = useRef(0);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+      
+      if (currentScrollY <= 0) {
+        setIsVisible(true);
+        lastScrollY.current = currentScrollY;
+        return;
+      }
+      
+      if (currentScrollY > lastScrollY.current && !isVisible) {
+        setIsVisible(true);
+      } else if (currentScrollY < lastScrollY.current && isVisible) {
+        setIsVisible(false);
+      }
+      
+      lastScrollY.current = currentScrollY;
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, [isVisible]);
 
   const NAV_ITEMS = [
     { name: "Explore", href: "/properties", icon: Building2 },
@@ -30,7 +56,7 @@ export default function BottomNav() {
   if (!shouldShow) return null;
 
   return (
-    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-[100] bg-black/95 backdrop-blur-lg border-t border-white/10">
+    <nav className={`md:hidden fixed bottom-0 left-0 right-0 z-[100] bg-black/95 backdrop-blur-lg border-t border-white/10 transition-transform duration-300 ${isVisible ? 'translate-y-0' : 'translate-y-full'}`}>
       <div className="flex items-center justify-around py-1.5">
         {NAV_ITEMS.filter(Boolean).map((item: any) => {
           const isActive =
