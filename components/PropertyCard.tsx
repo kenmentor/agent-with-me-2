@@ -161,12 +161,7 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property, favorites }) => {
           </div>
         </div>
         <div className="flex space-x-2">
-          <a href={`properties/${property._id}`} className="w-full">
-            <Button size="sm" className="flex-1 w-full">
-              <Book className="h-4 w-4 mr-1" />
-              View Details
-            </Button>
-          </a>
+         
           <a href={`/chat/${property.host}/`} className="w-full">
             <Button
               size="sm"
@@ -175,6 +170,12 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property, favorites }) => {
             >
               <Calendar className="h-4 w-4 mr-1" />
               Chat with agent
+            </Button>
+          </a>
+           <a href={`properties/${property._id}`} className="w-full">
+            <Button size="sm" className="flex-1 w-full">
+              <Book className="h-4 w-4 mr-1" />
+              View Details
             </Button>
           </a>
         </div>
