@@ -9,29 +9,7 @@ export function openEmailClient() {
   const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
   
   if (isMobile) {
-    // On mobile, try to open native email app
-    const emailApps = [
-      'mailto:', // Fallback - opens default email app
-      'googlemail://',
-      'ms-outlook://',
-      'io.mymail://',
-    ];
-    
-    // Try each app, fall back to mailto if all fail
-    for (const app of emailApps) {
-      try {
-        const iframe = document.createElement('iframe');
-        iframe.style.display = 'none';
-        iframe.src = app;
-        document.body.appendChild(iframe);
-        setTimeout(() => document.body.removeChild(iframe), 1000);
-        return; // If it doesn't throw, it worked
-      } catch (e) {
-        continue;
-      }
-    }
-    
-    // Fallback to mailto
+    // On mobile, open default email app (just opens inbox, no message)
     window.location.href = 'mailto:';
   } else {
     // On desktop, open Gmail
