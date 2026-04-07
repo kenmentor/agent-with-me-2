@@ -20,6 +20,7 @@ import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/authStore";
 import { trackSignup } from "@/store/analyticsStore";
 import { toast } from "sonner";
+import { openEmailClient } from "@/lib/utils";
 
 export default function AgentRegisterPage() {
   const router = useRouter();
@@ -134,10 +135,10 @@ export default function AgentRegisterPage() {
             </div>
             <Button
               className="w-full"
-              onClick={() => window.open("https://mail.google.com", "_blank")}
+              onClick={() => openEmailClient()}
             >
               <Mail className="h-4 w-4 mr-2" />
-              Open Gmail
+              Open Email App
             </Button>
             <Button
               variant="outline"

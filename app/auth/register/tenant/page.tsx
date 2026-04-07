@@ -22,6 +22,7 @@ import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/authStore";
 import { trackSignup } from "@/store/analyticsStore";
 import { toast } from "sonner";
+import { openEmailClient } from "@/lib/utils";
 
 const registerSchema = z.object({
   userName: z.string().min(2, "Name must be at least 2 characters"),
@@ -143,10 +144,10 @@ export default function TenantRegisterPage() {
             </div>
             <Button
               className="w-full bg-green-600 hover:bg-green-700"
-              onClick={() => window.open("https://mail.google.com", "_blank")}
+              onClick={() => openEmailClient()}
             >
               <Mail className="h-4 w-4 mr-2" />
-              Open Gmail
+              Open Email App
             </Button>
             <Button
               variant="outline"
