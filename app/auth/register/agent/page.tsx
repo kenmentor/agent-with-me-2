@@ -16,14 +16,13 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Home, User, Phone, Mail, Lock, Eye, EyeOff, Briefcase, MapPin, Loader2 } from "lucide-react";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/authStore";
 import { trackSignup } from "@/store/analyticsStore";
 import { toast } from "sonner";
 
 export default function AgentRegisterPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const { user, isAuthenticated, _hasHydrated } = useAuthStore();
   const signup = useAuthStore((state) => state.signup);
   const isLoading = useAuthStore((state) => state.isLoading);
@@ -50,14 +49,9 @@ export default function AgentRegisterPage() {
   useEffect(() => {
     if (!_hasHydrated) return;
     if (isAuthenticated && user) {
-      const from = searchParams.get("from");
-      if (from === "dashboard") {
-        router.replace("/dashboard");
-      } else {
-        router.replace("/properties");
-      }
+      router.replace("/properties");
     }
-  }, [_hasHydrated, isAuthenticated, user, router, searchParams]);
+  }, [_hasHydrated, isAuthenticated, user, router]);
 
   if (!_hasHydrated) {
     return (
@@ -128,10 +122,13 @@ export default function AgentRegisterPage() {
           <CardContent className="space-y-4">
             <Button
               className="w-full"
-              onClick={() => window.open("https://mail.google.com", "_blank")}
+              onClick={() => {
+                window.open("https://mail.google.com", "_blank");
+                router.push(`/auth/verify/${Date.now()}?email=${encodeURIComponent(formData.email)}`);
+              }}
             >
               <Mail className="h-4 w-4 mr-2" />
-              Open Gmail
+              Open Gmail & Verify
             </Button>
             <Button
               variant="outline"

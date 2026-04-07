@@ -6,7 +6,16 @@ import "./globals.css";
 import { Toaster } from "sonner";
 import InstallAppPrompt from "../components/InstallAppPrompt";
 import Nav from "@/components/Nav";
-import AnalyticsTracker from "@/components/AnalyticsTracker";
+import AnalyticsTracker from "../components/AnalyticsTracker";
+import { Suspense } from "react";
+
+function ToasterWrapper() {
+  return <Toaster richColors position="top-right" />;
+}
+
+function AnalyticsTrackerWrapper() {
+  return <AnalyticsTracker />;
+}
 
 export const metadata: Metadata = {
   title: "Agentwithme",
@@ -35,8 +44,12 @@ html {
         {children}
         <InstallAppPrompt />
         <Analytics />
-        <AnalyticsTracker />
-        <Toaster richColors position="top-right" />
+        <Suspense fallback={null}>
+          <AnalyticsTrackerWrapper />
+        </Suspense>
+        <Suspense fallback={null}>
+          <ToasterWrapper />
+        </Suspense>
         <Nav />
       </body>
     </html>

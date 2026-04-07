@@ -23,7 +23,7 @@ interface property {
   };
   amenities: string[];
 }
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -68,7 +68,19 @@ import PaystackPop from "@paystack/inline-js";
 import PayRentSkeleton from "@/components/PayRentSkeleton";
 import FeatureInProgressOverlay from "@/components/UnderConstruction";
 
+function PayRentLoading() {
+  return <PayRentSkeleton />;
+}
+
 export default function PayRentPage() {
+  return (
+    <Suspense fallback={<PayRentLoading />}>
+      <PayRentContent />
+    </Suspense>
+  );
+}
+
+function PayRentContent() {
   const { houseId } = useParams();
   const router = useRouter();
 

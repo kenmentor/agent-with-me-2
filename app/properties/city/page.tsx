@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, Suspense } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import { Button } from "@/components/ui/button";
@@ -25,6 +25,17 @@ import { toast } from "sonner";
 import "leaflet/dist/leaflet.css";
 
 const { base, app } = Req;
+
+function CityPropertiesLoading() {
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <Header color="black" />
+      <div className="flex items-center justify-center h-[calc(100vh-60px)] pt-[60px]">
+        <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+      </div>
+    </div>
+  );
+}
 
 interface Property {
   _id: string;
@@ -59,6 +70,14 @@ const Popup = dynamic(
 );
 
 export default function CityPropertiesPage() {
+  return (
+    <Suspense fallback={<CityPropertiesLoading />}>
+      <CityPropertiesContent />
+    </Suspense>
+  );
+}
+
+function CityPropertiesContent() {
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
   const [loading, setLoading] = useState(true);

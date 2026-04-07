@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState, Suspense } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -36,9 +36,25 @@ import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/authStore";
 import Req from "@/app/utility/axois";
 
-type Payment = any; // keep 'any' for now — replace with proper type if available
+type Payment = any;
+
+function PaymentHistoryLoading() {
+  return (
+    <div className="min-h-screen flex items-center justify-center">
+      <div className="text-gray-600">Loading...</div>
+    </div>
+  );
+}
 
 export default function PaymentHistoryPage() {
+  return (
+    <Suspense fallback={<PaymentHistoryLoading />}>
+      <PaymentHistoryContent />
+    </Suspense>
+  );
+}
+
+function PaymentHistoryContent() {
   const router = useRouter();
   const { base, app } = Req;
 

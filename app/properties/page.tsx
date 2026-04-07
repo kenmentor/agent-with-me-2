@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, Suspense } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -23,7 +23,26 @@ import PropertySkeleton from "@/components/PropertySkeleton";
 import { useDebounce } from "@/lib/useDebounce";
 import { useAuthStore } from "@/store/authStore";
 
+function PropertiesLoading() {
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <Header color="black" />
+      <div className="flex items-center justify-center h-[calc(100vh-100px)]">
+        <Spinner className="size-8 animate-spin" />
+      </div>
+    </div>
+  );
+}
+
 export default function PropertiesPage() {
+  return (
+    <Suspense fallback={<PropertiesLoading />}>
+      <PropertiesContent />
+    </Suspense>
+  );
+}
+
+function PropertiesContent() {
   const { base, app } = Req;
   const { user, isAuthenticated } = useAuthStore();
 

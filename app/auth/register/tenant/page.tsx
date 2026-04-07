@@ -18,7 +18,7 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Home, User, Phone, Mail, Lock, Eye, EyeOff, Loader2 } from "lucide-react";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/authStore";
 import { trackSignup } from "@/store/analyticsStore";
 import { toast } from "sonner";
@@ -40,7 +40,6 @@ type RegisterForm = z.infer<typeof registerSchema>;
 
 export default function TenantRegisterPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const { user, isAuthenticated, _hasHydrated } = useAuthStore();
   const signup = useAuthStore((state) => state.signup);
   const authLoading = useAuthStore((state) => state.isLoading);
@@ -49,19 +48,15 @@ export default function TenantRegisterPage() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [sentCode, setSentCode] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
+  const [registeredEmail, setRegisteredEmail] = useState("");
 
   // Redirect if already authenticated (after hydration)
   useEffect(() => {
     if (!_hasHydrated) return;
     if (isAuthenticated && user) {
-      const from = searchParams.get("from");
-      if (from === "dashboard") {
-        router.replace("/dashboard");
-      } else {
-        router.replace("/properties");
-      }
+      router.replace("/properties");
     }
-  }, [_hasHydrated, isAuthenticated, user, router, searchParams]);
+  }, [_hasHydrated, isAuthenticated, user, router]);
 
   // useForm - always call unconditionally before any conditional returns
   const {
@@ -109,6 +104,7 @@ export default function TenantRegisterPage() {
         agreeToTerms: data.agreeToTerms,
       });
       trackSignup(result?._id || null, "email");
+      setRegisteredEmail(data.email);
       setSentCode(true);
       toast.success("Verification code sent to your email!");
     } catch (error: any) {
@@ -143,10 +139,13 @@ export default function TenantRegisterPage() {
             </div>
             <Button
               className="w-full bg-green-600 hover:bg-green-700"
-              onClick={() => window.open("https://mail.google.com", "_blank")}
+              onClick={() => {
+                window.open("https://mail.google.com", "_blank");
+                router.push(`/auth/verify/${Date.now()}?email=${encodeURIComponent(registeredEmail)}`);
+              }}
             >
               <Mail className="h-4 w-4 mr-2" />
-              Open Gmail
+              Open Gmail & Verify
             </Button>
             <Button
               variant="outline"
