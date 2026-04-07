@@ -74,7 +74,6 @@ export const useAuthStore = create(
 
       setUser: (user) => {
         set({ user, isAuthenticated: true, isLoading: false });
-        toast.success("Profile uploaded");
       },
 
       // VERIFY EMAIL

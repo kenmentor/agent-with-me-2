@@ -89,12 +89,19 @@ export default function AccountPage() {
     setSaving(true);
     try {
       const res = await app.put(`${base}/v1/user/update`, formData);
-      if (res.data?.ok) {
-        setUser(res.data.data);
+      if (res.data?.ok || res.data?.success) {
+        const updatedUser = res.data?.data || res.data?.user || res.data;
+        if (updatedUser) {
+          setUser(updatedUser);
+          setProfile(updatedUser);
+        }
         toast.success("Profile updated successfully");
+      } else {
+        toast.error(res.data?.message || "Failed to update profile");
       }
     } catch (error: any) {
-      toast.error(error?.response?.data?.message || "Failed to update profile");
+      const message = error?.response?.data?.message || error?.message || "Failed to update profile";
+      toast.error(message);
     } finally {
       setSaving(false);
     }
@@ -104,21 +111,32 @@ export default function AccountPage() {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    if (!user?._id) {
+      toast.error("User not found. Please login again.");
+      return;
+    }
+
     setUploading(true);
     try {
-      const formData = new FormData();
-      formData.append("profileImage", file);
+      const uploadFormData = new FormData();
+      uploadFormData.append("profileImage", file);
 
-      const res = await app.post(`${base}/v1/user/uploadProfile/${user?._id}`, formData, {
+      const res = await app.post(`${base}/v1/user/uploadProfile/${user._id}`, uploadFormData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
-      if (res.data?.ok) {
-        setUser(res.data.data);
+      if (res.data?.ok || res.data?.success) {
+        const updatedUser = res.data?.data || res.data?.user || res.data;
+        if (updatedUser) {
+          setUser(updatedUser);
+        }
         toast.success("Profile image updated");
+      } else {
+        toast.error(res.data?.message || "Failed to upload image");
       }
     } catch (error: any) {
-      toast.error(error?.response?.data?.message || "Failed to upload image");
+      const message = error?.response?.data?.message || error?.message || "Failed to upload image";
+      toast.error(message);
     } finally {
       setUploading(false);
     }

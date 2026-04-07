@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useCallback, useRef, useMemo } from "react";
+import { useState, useCallback, useRef, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Heart, MessageCircle, Share2, CheckCircle2, Bed, Bath, Square, MapPin, LayoutGrid, Images, Search, X, SlidersHorizontal, ChevronDown, Filter } from "lucide-react";
+import { Heart, MessageCircle, Share2, CheckCircle2, Bed, Bath, Square, MapPin, LayoutGrid, Images, Search, X, SlidersHorizontal, ChevronDown, Filter, ChevronLeft, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -66,7 +66,9 @@ export default function PropertyFeed({ properties, onLike, onClose }: PropertyFe
   const [likedProperties, setLikedProperties] = useState<Set<string>>(new Set());
   const [currentIndex, setCurrentIndex] = useState(0);
   const [showFilters, setShowFilters] = useState(false);
+  const [currentImageIndex, setCurrentImageIndex] = useState<Record<string, number>>({});
   const containerRef = useRef<HTMLDivElement>(null);
+  const touchStartX = useRef<number>(0);
   const { user, isAuthenticated } = useAuthStore();
   
   const [filters, setFilters] = useState<FeedFilters>({
@@ -452,22 +454,70 @@ export default function PropertyFeed({ properties, onLike, onClose }: PropertyFe
           const images = property.gallery?.length
             ? [property.thumbnail, ...property.gallery.map(g => g.src)]
             : [property.thumbnail];
+          
+          const currentImgIdx = currentImageIndex[property._id] || 0;
+
+          const handleTouchStart = (e: React.TouchEvent) => {
+            touchStartX.current = e.touches[0].clientX;
+          };
+
+          const handleTouchEnd = (e: React.TouchEvent) => {
+            const touchEndX = e.changedTouches[0].clientX;
+            const diff = touchStartX.current - touchEndX;
+            
+            if (Math.abs(diff) > 50) {
+              if (diff > 0 && currentImgIdx < images.length - 1) {
+                setCurrentImageIndex(prev => ({ ...prev, [property._id]: currentImgIdx + 1 }));
+              } else if (diff < 0 && currentImgIdx > 0) {
+                setCurrentImageIndex(prev => ({ ...prev, [property._id]: currentImgIdx - 1 }));
+              }
+            }
+          };
 
           return (
             <div
               key={property._id}
               className="h-screen w-screen snap-center snap-always relative flex-shrink-0"
               onClick={() => handleCardClick(property._id)}
+              onTouchStart={handleTouchStart}
+              onTouchEnd={handleTouchEnd}
             >
-              {/* Property Image - Full Screen */}
+              {/* Property Image - Full Screen with fit */}
               <div className="absolute inset-0">
                 <img
-                  src={images[0] || "/placeholder.jpg"}
-                  alt={property.title}
-                  className="w-full h-full object-cover"
+                  src={images[currentImgIdx] || "/placeholder.jpg"}
+                  alt={`${property.title} - Image ${currentImgIdx + 1}`}
+                  className="w-full h-full object-contain"
+                  style={{ backgroundColor: '#1a1a1a' }}
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/30 to-transparent" />
               </div>
+
+              {/* Previous Image Button */}
+              {images.length > 1 && currentImgIdx > 0 && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setCurrentImageIndex(prev => ({ ...prev, [property._id]: currentImgIdx - 1 }));
+                  }}
+                  className="absolute left-2 top-1/2 -translate-y-1/2 z-40 w-10 h-10 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center hover:bg-black/60 transition-colors"
+                >
+                  <ChevronLeft className="w-5 h-5 text-white" />
+                </button>
+              )}
+
+              {/* Next Image Button */}
+              {images.length > 1 && currentImgIdx < images.length - 1 && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setCurrentImageIndex(prev => ({ ...prev, [property._id]: currentImgIdx + 1 }));
+                  }}
+                  className="absolute right-14 top-1/2 -translate-y-1/2 z-40 w-10 h-10 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center hover:bg-black/60 transition-colors"
+                >
+                  <ChevronRight className="w-5 h-5 text-white" />
+                </button>
+              )}
 
               {/* Verified Badge */}
               {property.verified && (
@@ -479,11 +529,10 @@ export default function PropertyFeed({ properties, onLike, onClose }: PropertyFe
                 </div>
               )}
 
-              {/* Gallery Counter */}
+              {/* Image Dots Indicator */}
               {images.length > 1 && (
                 <div className="absolute top-20 right-4 z-30 bg-black/40 backdrop-blur-md rounded-full px-3 py-1.5 flex items-center gap-1.5">
-                  <Images className="w-4 h-4 text-white" />
-                  <span className="text-white text-xs font-medium">{images.length}</span>
+                  <span className="text-white text-xs font-medium">{currentImgIdx + 1}/{images.length}</span>
                 </div>
               )}
 
@@ -570,8 +619,11 @@ export default function PropertyFeed({ properties, onLike, onClose }: PropertyFe
                   <span className="text-white/60 text-sm">/year</span>
                 </div>
 
-                {/* Tap hint */}
-                <p className="text-white/40 text-xs mt-4">Tap to see full details</p>
+                {/* Swipe hint for multi-image */}
+                {images.length > 1 && (
+                  <p className="text-white/40 text-xs mt-2">Swipe left for more images</p>
+                )}
+                <p className="text-white/40 text-xs mt-1">Tap to see full details</p>
               </div>
             </div>
           );

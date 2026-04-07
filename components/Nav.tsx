@@ -28,10 +28,11 @@ export default function BottomNav() {
         return;
       }
       
-      if (currentScrollY > lastScrollY.current && !isVisible) {
-        setIsVisible(true);
-      } else if (currentScrollY < lastScrollY.current && isVisible) {
+      // Scroll down = hide, Scroll up = show
+      if (currentScrollY > lastScrollY.current && isVisible) {
         setIsVisible(false);
+      } else if (currentScrollY < lastScrollY.current && !isVisible) {
+        setIsVisible(true);
       }
       
       lastScrollY.current = currentScrollY;
@@ -44,12 +45,12 @@ export default function BottomNav() {
   const NAV_ITEMS = [
     { name: "Explore", href: "/properties", icon: Building2 },
     { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-    ...(user && user.role !== "guest" ? [{ name: "Add", href: "/properties/add", icon: PlusCircle }] : []),
+    ...(user && (user.role === "agent" || user.role === "host" || user.role === "landlord") ? [{ name: "Add", href: "/properties/add", icon: PlusCircle }] : []),
     { name: "Chat", href: "/chat", icon: MessageCircle },
     { name: "Account", href: "/account", icon: User },
   ];
 
-  const SHOW_ON_PAGES = ["/properties", "/dashboard", "/chat", "/payments", "/account"];
+  const SHOW_ON_PAGES = ["/properties", "/dashboard", "/chat", "/payments", "/account", "/user"];
 
   const shouldShow = SHOW_ON_PAGES.some((path) => pathname.startsWith(path));
 
