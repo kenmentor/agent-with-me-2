@@ -30,42 +30,13 @@ import AutoPlayVideo from "@/components/AutoplayVideo";
 import Share from "@/components/Share";
 import Req from "@/app/utility/axois";
 import { useAuthStore } from "@/store/authStore";
-import { trackPropertyInteraction } from "@/hooks/usePageTracking";
+import { trackPropertyInteraction, trackPropertyView } from "@/hooks/usePageTracking";
 import { toast } from "sonner";
+import { formatCurrency, formatPhoneNumber } from "@/lib/utils";
+import { Property } from "@/lib/types";
+import BackNav from "@/components/BackNav";
 
 const { app, base } = Req;
-
-interface Property {
-  _id: string;
-  title: string;
-  type: string;
-  address: string;
-  price: number;
-  bedrooms: number;
-  bathrooms: number;
-  squareFeet: number;
-  yearBuilt: number;
-  status: string;
-  video: string;
-  description: string;
-  category?: string;
-  state?: string;
-  lga?: string;
-  furnishing?: string;
-  amenities: string[];
-  images: { url: string; type: string }[];
-  thumbnail?: string;
-  host: {
-    _id: string;
-    userName: string;
-    phoneNumber: string;
-    email: string;
-    image?: string;
-    profileImage?: string;
-    adminVerified: boolean;
-    role?: string;
-  };
-}
 
 export default function PropertyDetailClient({
   property,
@@ -79,6 +50,10 @@ export default function PropertyDetailClient({
       </div>
     );
   }
+
+  useEffect(() => {
+    trackPropertyView(property._id, property.type, property.price);
+  }, [property._id, property.type, property.price]);
 
   const host = property.host || {};
   const [selectedImage, setSelectedImage] = useState<string>(
@@ -99,17 +74,18 @@ export default function PropertyDetailClient({
 
     setIsLiking(true);
     try {
-      await app.post(`${base}/v1/favorites/toggle`, {
+      const response = await app.post(`${base}/v1/favorites/toggle`, {
         userId: user._id,
         houseId: property._id,
       });
+      console.log("Favorite toggle response:", response.data);
       const newLikedState = !isLiked;
       setIsLiked(newLikedState);
       trackPropertyInteraction(property._id, newLikedState ? "like" : "unlike");
       toast.success(newLikedState ? "Property saved!" : "Property removed from saved");
-    } catch (error) {
-      console.error("Error toggling favorite:", error);
-      toast.error("Failed to update favorite");
+    } catch (error: any) {
+      console.error("Error toggling favorite:", error.response?.data || error.message);
+      toast.error(error.response?.data?.message || "Failed to update favorite");
     }
     setIsLiking(false);
   };
@@ -140,6 +116,11 @@ export default function PropertyDetailClient({
           />
         </div>
       )}
+
+      <BackNav 
+        title={property.title?.slice(0, 25) + (property.title?.length > 25 ? "..." : "")}
+        showQuickLinks={true}
+      />
 
       <div className="min-h-screen bg-gray-50/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
@@ -362,7 +343,7 @@ export default function PropertyDetailClient({
                 <Card className="border-0 shadow-lg overflow-hidden">
                   <div className="bg-black text-white p-6">
                     <p className="text-sm text-gray-400 mb-1">Price</p>
-                    <p className="text-3xl font-bold">₦{property.price.toLocaleString()}</p>
+                    <p className="text-3xl font-bold">{formatCurrency(property.price)}</p>
                     {property.category && (
                       <p className="text-sm text-gray-400 mt-1">per {property.category.toLowerCase()}</p>
                     )}
@@ -442,9 +423,9 @@ export default function PropertyDetailClient({
                       <div className="bg-gradient-to-r from-gray-900 to-gray-800 p-5">
                         <div className="flex items-center gap-4">
                           <Avatar className="h-14 w-14 border-2 border-white/30">
-                            <AvatarImage src={host.profileImage || host.image} />
+                            <AvatarImage src={host?.profileImage || host?.image} />
                             <AvatarFallback className="bg-white/20 text-white">
-                              {host.userName?.charAt(0)?.toUpperCase()}
+                              {host?.userName?.charAt(0)?.toUpperCase()}
                             </AvatarFallback>
                           </Avatar>
                           <div className="flex-1">
@@ -465,7 +446,7 @@ export default function PropertyDetailClient({
                       {/* Contact Info */}
                       <div className="p-4 space-y-2">
                         <a
-                          href={`tel:${host.phoneNumber || ""}`}
+                          href={`tel:${formatPhoneNumber(host.phoneNumber)}`}
                           className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
                         >
                           <div className="h-10 w-10 bg-black rounded-full flex items-center justify-center flex-shrink-0">
@@ -473,7 +454,7 @@ export default function PropertyDetailClient({
                           </div>
                           <div className="flex-1 min-w-0">
                             <span className="font-semibold text-gray-900 block truncate">
-                              {host.phoneNumber || "No phone"}
+                              {formatPhoneNumber(host.phoneNumber) || "No phone"}
                             </span>
                             <span className="text-xs text-gray-500">Tap to call</span>
                           </div>

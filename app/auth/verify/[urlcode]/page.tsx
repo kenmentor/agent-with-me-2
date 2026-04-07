@@ -51,7 +51,7 @@ export default function VerifyPage() {
       trackVerification(user?._id || null, true);
       setIsVerified(true);
       toast.success("Email verified successfully!");
-      setTimeout(() => router.push("/dashboard"), 2000);
+      setTimeout(() => router.push("/properties"), 2000);
     } catch (err: any) {
       const errorMsg = err?.response?.data?.message || "";
       // If already verified, treat as success

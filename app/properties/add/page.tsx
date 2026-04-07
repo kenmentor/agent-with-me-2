@@ -1,4 +1,5 @@
 "use client";
+import BackNav from "@/components/BackNav";
 export interface Property {
   // Basic Info
 

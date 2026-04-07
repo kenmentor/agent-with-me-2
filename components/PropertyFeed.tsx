@@ -157,6 +157,8 @@ export default function PropertyFeed({ properties, onLike, onClose }: PropertyFe
       return;
     }
 
+    console.log("Like request:", { userId: user._id, houseId: id });
+
     try {
       const res = await api.post(`${baseURL}/v1/favorites/toggle`, {
         userId: user._id,
@@ -179,9 +181,8 @@ export default function PropertyFeed({ properties, onLike, onClose }: PropertyFe
       });
       onLike?.(id);
     } catch (error: any) {
-      console.error("Error toggling like:", error);
-      console.error("Error response:", error.response?.data);
-      toast.error(error.response?.data?.message || "Failed to update like");
+      console.error("Error toggling like:", error.response?.data || error.message);
+      toast.error(error.response?.data?.message || error.response?.data?.error || "Failed to update like");
     }
   }, [isAuthenticated, user?._id, onLike]);
 

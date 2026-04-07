@@ -13,6 +13,10 @@ export const useAnalyticsStore = create((set, get) => ({
   propertyAnalytics: null,
   userEngagement: null,
   conversionFunnel: null,
+  sessionAnalytics: null,
+  retentionAnalytics: null,
+  realTimeAnalytics: null,
+  userBehaviorMetrics: null,
   isLoading: false,
   error: null,
 
@@ -123,6 +127,52 @@ export const useAnalyticsStore = create((set, get) => ({
       return res.data.data;
     } catch (error) {
       console.error("Error fetching conversion funnel:", error);
+    }
+  },
+
+  fetchSessionAnalytics: async (days = 30) => {
+    try {
+      const res = await app.get(`${base}/v1/analytics/session-analytics`, {
+        params: { days },
+      });
+      set({ sessionAnalytics: res.data.data });
+      return res.data.data;
+    } catch (error) {
+      console.error("Error fetching session analytics:", error);
+    }
+  },
+
+  fetchRetentionAnalytics: async (days = 30) => {
+    try {
+      const res = await app.get(`${base}/v1/analytics/retention-analytics`, {
+        params: { days },
+      });
+      set({ retentionAnalytics: res.data.data });
+      return res.data.data;
+    } catch (error) {
+      console.error("Error fetching retention analytics:", error);
+    }
+  },
+
+  fetchRealTimeAnalytics: async () => {
+    try {
+      const res = await app.get(`${base}/v1/analytics/real-time`);
+      set({ realTimeAnalytics: res.data.data });
+      return res.data.data;
+    } catch (error) {
+      console.error("Error fetching real-time analytics:", error);
+    }
+  },
+
+  fetchUserBehaviorMetrics: async (days = 30) => {
+    try {
+      const res = await app.get(`${base}/v1/analytics/user-behavior`, {
+        params: { days },
+      });
+      set({ userBehaviorMetrics: res.data.data });
+      return res.data.data;
+    } catch (error) {
+      console.error("Error fetching user behavior metrics:", error);
     }
   },
 

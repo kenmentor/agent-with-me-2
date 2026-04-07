@@ -13,6 +13,7 @@ import { useAuthStore } from "@/store/authStore";
 import Req from "@/app/utility/axois";
 import { initializeSocket, disconnectSocket, onEvent, offEvent } from "@/app/utility/socket";
 import { ChatListSkeleton } from "@/components/ui/skeleton";
+import FeatureInProgressOverlay from "@/components/UnderConstruction";
 
 const { base, app } = Req;
 
@@ -229,6 +230,9 @@ export default function ChatListPage() {
           </div>
         )}
       </div>
+      <FeatureInProgressOverlay>
+        <div className="hidden">Placeholder</div>
+      </FeatureInProgressOverlay>
     </div>
   );
 }

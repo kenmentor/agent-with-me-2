@@ -45,10 +45,10 @@ import {
 import Link from "next/link";
 import Header from "@/components/Header";
 import Image from "next/image";
-
 import api, { baseURL } from "@/lib/api";
 import { useAuthStore } from "@/store/authStore";
 import { toast } from "sonner";
+import { formatCurrency } from "@/lib/utils";
 
 interface FeaturedPropertyCardProps {
   property: Property;
@@ -129,7 +129,7 @@ const FeaturedPropertyCard: React.FC<FeaturedPropertyCardProps> = ({
           {property.location}
         </p>
         <div className="flex items-center justify-between mb-3">
-          <p className="text-2xl font-bold text-blue-600">{property.price}</p>
+          <p className="text-2xl font-bold text-blue-600">{formatCurrency(property.price)}</p>
           <div className="flex items-center space-x-1"></div>
         </div>
 

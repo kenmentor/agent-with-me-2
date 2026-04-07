@@ -1,4 +1,5 @@
 "use client";
+import { formatCurrency } from "@/lib/utils";
 interface Property {
   _id: string;
   title: string;
@@ -117,7 +118,7 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property, favorites }) => {
         </p>
         <div className="flex items-center justify-between mb-3">
           <p className="text-2xl font-bold text-blue-600">
-            {"₦"} {property.price.toLocaleString()}
+            {formatCurrency(property.price)}
           </p>
           <div className="flex items-center space-x-1">
             {property.rating && (
@@ -128,7 +129,7 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property, favorites }) => {
             )}
           </div>
         </div>
-        {"₦"} {Math.floor(property.price / 12).toLocaleString()} /month
+        {formatCurrency(Math.floor(property.price / 12))} /month
         <div className="flex items-center space-x-4 text-sm text-gray-600 mb-3">
           <span className="flex items-center">
             <Bed className="h-4 w-4 mr-1" />

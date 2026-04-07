@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/authStore";
 import { useAnalyticsStore } from "@/store/analyticsStore";
-import { Loader2, TrendingUp, Users, Eye, Heart, Activity, ArrowUp, ArrowDown } from "lucide-react";
+import { Loader2, TrendingUp, TrendingDown, Users, Eye, Heart, Activity, ArrowUp, ArrowDown, Clock } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
@@ -31,8 +31,11 @@ export default function AnalyticsPage() {
     overview, isLoading, fetchOverview, fetchTopProperties, fetchJourneys, 
     fetchPageVisits, fetchUserRegistration, fetchPageTimeline,
     fetchPropertyAnalytics, fetchUserEngagement, fetchConversionFunnel,
+    fetchSessionAnalytics, fetchRetentionAnalytics, fetchRealTimeAnalytics,
+    fetchUserBehaviorMetrics,
     topProperties, journeys, pageVisits, userRegistration, pageTimeline,
-    propertyAnalytics, userEngagement, conversionFunnel
+    propertyAnalytics, userEngagement, conversionFunnel,
+    sessionAnalytics, retentionAnalytics, realTimeAnalytics, userBehaviorMetrics
   } = useAnalyticsStore();
   const [period, setPeriod] = useState("30");
 
@@ -60,12 +63,18 @@ export default function AnalyticsPage() {
       fetchPropertyAnalytics(parseInt(period)),
       fetchUserEngagement(parseInt(period)),
       fetchConversionFunnel(parseInt(period)),
+      fetchSessionAnalytics(parseInt(period)),
+      fetchRetentionAnalytics(parseInt(period)),
+      fetchRealTimeAnalytics(),
+      fetchUserBehaviorMetrics(parseInt(period)),
     ]);
   };
 
   useEffect(() => {
     if (_hasHydrated && isAuthenticated && user?.role === "admin") {
       loadData();
+      const interval = setInterval(fetchRealTimeAnalytics, 30000);
+      return () => clearInterval(interval);
     }
   }, [period]);
 
@@ -105,6 +114,29 @@ export default function AnalyticsPage() {
       icon: Heart,
       color: "text-red-600",
       bgColor: "bg-red-100",
+    },
+    {
+      title: "Active Now",
+      value: realTimeAnalytics?.activeUsersNow || 0,
+      icon: Activity,
+      color: "text-green-600",
+      bgColor: "bg-green-100",
+    },
+    {
+      title: "Bounce Rate",
+      value: `${sessionAnalytics?.bounceRate || 0}%`,
+      icon: TrendingDown,
+      color: "text-orange-600",
+      bgColor: "bg-orange-100",
+    },
+    {
+      title: "Avg Session",
+      value: sessionAnalytics?.avgSessionDuration 
+        ? `${Math.round(sessionAnalytics.avgSessionDuration / 60)}m` 
+        : "0m",
+      icon: Clock,
+      color: "text-indigo-600",
+      bgColor: "bg-indigo-100",
     },
   ];
 
@@ -533,6 +565,236 @@ export default function AnalyticsPage() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Session Analytics */}
+        <Card className="border-0 shadow-sm mt-6">
+          <CardHeader>
+            <CardTitle className="text-lg">Session Analytics</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+              <div className="text-center p-4 bg-blue-50 rounded-lg">
+                <p className="text-2xl font-bold text-blue-700">{sessionAnalytics?.totalSessions || 0}</p>
+                <p className="text-sm text-blue-600">Total Sessions</p>
+              </div>
+              <div className="text-center p-4 bg-green-50 rounded-lg">
+                <p className="text-2xl font-bold text-green-700">{sessionAnalytics?.bounceRate || 0}%</p>
+                <p className="text-sm text-green-600">Bounce Rate</p>
+              </div>
+              <div className="text-center p-4 bg-purple-50 rounded-lg">
+                <p className="text-2xl font-bold text-purple-700">{sessionAnalytics?.avgPagesPerSession || 0}</p>
+                <p className="text-sm text-purple-600">Pages/Session</p>
+              </div>
+              <div className="text-center p-4 bg-orange-50 rounded-lg">
+                <p className="text-2xl font-bold text-orange-700">
+                  {sessionAnalytics?.avgSessionDuration ? `${Math.floor(sessionAnalytics.avgSessionDuration / 60)}m ${sessionAnalytics.avgSessionDuration % 60}s` : "0s"}
+                </p>
+                <p className="text-sm text-orange-600">Avg Duration</p>
+              </div>
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-6">
+              <div>
+                <p className="text-sm font-medium text-gray-700 mb-3">Session Duration</p>
+                <ResponsiveContainer width="100%" height={200}>
+                  <BarChart data={sessionAnalytics?.sessionsByDuration || []}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                    <XAxis dataKey="range" tick={{ fontSize: 11 }} />
+                    <YAxis tick={{ fontSize: 12 }} />
+                    <Tooltip />
+                    <Bar dataKey="count" fill="#3B82F6" name="Sessions" />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-gray-700 mb-3">Page Depth</p>
+                <ResponsiveContainer width="100%" height={200}>
+                  <BarChart data={sessionAnalytics?.pageDepthDistribution || []}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                    <XAxis dataKey="label" tick={{ fontSize: 11 }} />
+                    <YAxis tick={{ fontSize: 12 }} />
+                    <Tooltip />
+                    <Bar dataKey="count" fill="#10B981" name="Sessions" />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+            {sessionAnalytics?.exitPages?.length > 0 && (
+              <div className="mt-6">
+                <p className="text-sm font-medium text-gray-700 mb-3">Top Exit Pages</p>
+                <div className="space-y-2">
+                  {sessionAnalytics.exitPages.slice(0, 5).map((page: any, index: any) => (
+                    <div key={index} className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
+                      <span className="text-sm text-gray-600 truncate max-w-md">{page._id || page.page || "Unknown"}</span>
+                      <span className="text-sm font-medium text-red-600">{page.count} exits</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Retention Analytics */}
+        <Card className="border-0 shadow-sm mt-6">
+          <CardHeader>
+            <CardTitle className="text-lg">Retention & Growth</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+              <div className="text-center p-4 bg-blue-50 rounded-lg">
+                <p className="text-2xl font-bold text-blue-700">{retentionAnalytics?.totalUsers || 0}</p>
+                <p className="text-sm text-blue-600">Total Users</p>
+              </div>
+              <div className="text-center p-4 bg-green-50 rounded-lg">
+                <p className="text-2xl font-bold text-green-700">{retentionAnalytics?.monthlyActiveUsers || 0}</p>
+                <p className="text-sm text-green-600">Monthly Active</p>
+              </div>
+              <div className="text-center p-4 bg-purple-50 rounded-lg">
+                <p className="text-2xl font-bold text-purple-700">{retentionAnalytics?.dauMauRatio || 0}%</p>
+                <p className="text-sm text-purple-600">DAU/MAU Ratio</p>
+              </div>
+              <div className="text-center p-4 bg-orange-50 rounded-lg">
+                <p className="text-2xl font-bold text-orange-700">{retentionAnalytics?.day1RetentionRate || 0}%</p>
+                <p className="text-sm text-orange-600">Day 1 Retention</p>
+              </div>
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-6">
+              <div>
+                <p className="text-sm font-medium text-gray-700 mb-3">Daily Active Users</p>
+                <ResponsiveContainer width="100%" height={200}>
+                  <LineChart data={retentionAnalytics?.dailyActiveUsers || []}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                    <XAxis dataKey="date" tick={{ fontSize: 11 }} tickFormatter={(v) => v?.slice(5) || ""} />
+                    <YAxis tick={{ fontSize: 12 }} />
+                    <Tooltip />
+                    <Line type="monotone" dataKey="dau" stroke="#3B82F6" strokeWidth={2} name="Active Users" />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-gray-700 mb-3">New Users</p>
+                <ResponsiveContainer width="100%" height={200}>
+                  <LineChart data={retentionAnalytics?.newUsersByDay || []}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                    <XAxis dataKey="_id" tick={{ fontSize: 11 }} tickFormatter={(v) => v?.slice(5) || ""} />
+                    <YAxis tick={{ fontSize: 12 }} />
+                    <Tooltip />
+                    <Line type="monotone" dataKey="count" stroke="#10B981" strokeWidth={2} name="New Users" />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Real-Time Analytics */}
+        <Card className="border-0 shadow-sm mt-6">
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center gap-2">
+              <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+              Real-Time Activity
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-3 gap-4 mb-6">
+              <div className="text-center p-4 bg-green-50 rounded-lg">
+                <p className="text-3xl font-bold text-green-700">{realTimeAnalytics?.activeUsersNow || 0}</p>
+                <p className="text-sm text-green-600">Users Active Now</p>
+              </div>
+              <div className="text-center p-4 bg-blue-50 rounded-lg">
+                <p className="text-3xl font-bold text-blue-700">{realTimeAnalytics?.lastHourPageViews || 0}</p>
+                <p className="text-sm text-blue-600">Page Views (1hr)</p>
+              </div>
+              <div className="text-center p-4 bg-purple-50 rounded-lg">
+                <p className="text-3xl font-bold text-purple-700">{realTimeAnalytics?.lastHourPropertyViews || 0}</p>
+                <p className="text-sm text-purple-600">Property Views (1hr)</p>
+              </div>
+            </div>
+
+            {realTimeAnalytics?.recentEvents?.length > 0 && (
+              <div>
+                <p className="text-sm font-medium text-gray-700 mb-3">Recent Events</p>
+                <div className="space-y-2 max-h-64 overflow-y-auto">
+                  {realTimeAnalytics.recentEvents.slice(0, 15).map((event: any, index: any) => (
+                    <div key={index} className="flex items-center justify-between p-2 bg-gray-50 rounded-lg text-xs">
+                      <div className="flex items-center gap-2">
+                        <span className={`px-2 py-1 rounded ${
+                          event.type === "page_view" ? "bg-blue-100 text-blue-700" :
+                          event.type === "property_view" ? "bg-green-100 text-green-700" :
+                          event.type === "property_interaction" ? "bg-red-100 text-red-700" :
+                          "bg-gray-100 text-gray-700"
+                        }`}>
+                          {event.type}
+                        </span>
+                        <span className="text-gray-600">{event.page || event.action || "-"}</span>
+                      </div>
+                      <span className="text-gray-400">
+                        {new Date(event.timestamp).toLocaleTimeString()}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* User Behavior */}
+        {userBehaviorMetrics && (
+          <Card className="border-0 shadow-sm mt-6">
+            <CardHeader>
+              <CardTitle className="text-lg">User Behavior</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {userBehaviorMetrics.dropOffPoints?.length > 0 && (
+                <div className="mb-6">
+                  <p className="text-sm font-medium text-gray-700 mb-3">Top Drop-off Points</p>
+                  <div className="space-y-2">
+                    {userBehaviorMetrics.dropOffPoints.slice(0, 5).map((point: any, index: any) => (
+                      <div key={index} className="flex items-center justify-between p-3 bg-red-50 rounded-lg">
+                        <span className="text-sm text-gray-700">{point._id || point.page || "Unknown"}</span>
+                        <span className="text-sm font-bold text-red-600">{point.exitCount} exits</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {userBehaviorMetrics.formEvents?.length > 0 && (
+                <div>
+                  <p className="text-sm font-medium text-gray-700 mb-3">Form Performance</p>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-b">
+                          <th className="text-left py-2">Form</th>
+                          <th className="text-right py-2">Starts</th>
+                          <th className="text-right py-2">Submits</th>
+                          <th className="text-right py-2">Completion</th>
+                          <th className="text-right py-2">Abandon Rate</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {userBehaviorMetrics.formEvents.map((form: any, index: any) => (
+                          <tr key={index} className="border-b">
+                            <td className="py-2">{form.formName || "Unknown"}</td>
+                            <td className="text-right">{form.starts || 0}</td>
+                            <td className="text-right">{form.submits || 0}</td>
+                            <td className="text-right">{form.completionRate || 0}%</td>
+                            <td className="text-right text-red-600">{form.abandonmentRate || 0}%</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
       </div>
     </div>
   );
