@@ -93,8 +93,8 @@ export default function LandlordRegisterPage() {
     try {
       const result = await signup(formData);
       trackSignup(result?._id || null, "email");
-      setSentCode(true);
       toast.success("Verification code sent to your email!");
+      router.push(`/auth/verify?email=${encodeURIComponent(formData.email)}`);
     } catch (error) {
       toast.error("Registration failed. Please try again.");
     }
@@ -104,54 +104,6 @@ export default function LandlordRegisterPage() {
     setFormData({ ...formData, agentReferralCode: value.toUpperCase() });
     setReferralError("");
   };
-
-  if (sentCode) {
-    return (
-      <div className="min-h-screen bg-white flex items-center justify-center p-4">
-        <Card className="w-full max-w-md border-2 border-gray-200">
-          <CardHeader className="text-center">
-            <div className="flex justify-center mb-4">
-              <div className="bg-black p-4 rounded-xl">
-                <Mail className="h-10 w-10 text-white" />
-              </div>
-            </div>
-            <CardTitle className="text-2xl">Check Your Email</CardTitle>
-            <CardDescription className="text-gray-500">
-              We&apos;ve sent a verification code to {formData.email}
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="bg-gray-100 p-4 rounded-lg text-sm">
-              <p className="font-medium mb-2">Next steps:</p>
-              <ol className="list-decimal list-inside space-y-1">
-                <li>Check your email for the verification code</li>
-                <li>Enter the code on the verification page</li>
-                <li>Add your property details</li>
-              </ol>
-            </div>
-            <div className="bg-yellow-50 border border-yellow-200 p-4 rounded-xl text-sm text-yellow-800">
-              <p className="font-medium">Don&apos;t see the email?</p>
-              <p>Check your <strong>spam/junk</strong> folder. If still not found, it may take a few minutes to arrive.</p>
-            </div>
-            <Button
-              className="w-full bg-black hover:bg-gray-800"
-              onClick={() => openEmailClient()}
-            >
-              <Mail className="h-4 w-4 mr-2" />
-              Open Email App
-            </Button>
-            <Button
-              variant="outline"
-              className="w-full border-gray-300"
-              onClick={() => router.push("/auth/login")}
-            >
-              Back to Login
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-white flex items-center justify-center p-4">

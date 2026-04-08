@@ -113,10 +113,6 @@ export default function ChatConversationPage() {
     }
 
     fetchMessages(userId);
-
-    return () => {
-      disconnectSocket();
-    };
   }, [_hasHydrated, isAuthenticated, router]);
 
   const fetchMessages = async (userId: string) => {
@@ -203,16 +199,15 @@ export default function ChatConversationPage() {
       }
     };
 
+    // Set initial connection status
+    setSocketConnected(isSocketConnected());
+
     onEvent("connect", handleConnect);
     onEvent("disconnect", handleDisconnect);
     onEvent("new_message", handleNewMessage);
     onEvent("typing", handleTyping);
     onEvent("message_sent", handleMessageSent);
     onEvent("messages_read", handleMessagesRead);
-
-    if (isSocketConnected()) {
-      setSocketConnected(true);
-    }
 
     return () => {
       offEvent("connect", handleConnect);

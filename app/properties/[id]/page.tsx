@@ -93,24 +93,26 @@ function PropertyNotFound() {
 
 export default async function PropertyDetailPage({ params }: PageProps) {
   const { id } = await params;
+
   try {
     const res = await api.get(`/v1/house/detail/${id}`);
-    const property = res.data.data;
+    const property = res.data?.data;
     
     if (!property) {
+      console.log("Property not found for ID:", id);
       return <PropertyNotFound />;
     }
 
     // Increment view count (fire and forget)
-    api.put(`/v1/house`, { id }).catch(console.error);
+    api.put(`/v1/house`, { id }).catch(() => {});
 
     return (
       <ErrorBoundary fallback={<PropertyDetailSkeleton />}>
         <PropertyDetailClient property={property} />
       </ErrorBoundary>
     );
-  } catch (error) {
-    console.error("Error loading property:", error);
+  } catch (error: any) {
+    console.error("Error loading property:", error?.response?.data || error?.message);
     return <PropertyNotFound />;
   }
 }

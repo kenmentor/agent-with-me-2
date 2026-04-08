@@ -5,6 +5,7 @@ const SOCKET_URL = process.env.NEXT_PUBLIC_ENV === "production"
   : process.env.NEXT_PUBLIC_API_URL || "http://localhost:5036";
 
 let socket: Socket | null = null;
+let connectionCallbacks: ((connected: boolean) => void)[] = [];
 
 export const initializeSocket = (token: string): Socket => {
   if (socket?.connected) {
@@ -26,19 +27,14 @@ export const initializeSocket = (token: string): Socket => {
   });
 
   socket.on("connect", () => {
-    console.log("Socket connected");
+    connectionCallbacks.forEach(cb => cb(true));
   });
 
   socket.on("disconnect", () => {
+    connectionCallbacks.forEach(cb => cb(false));
   });
 
   socket.on("connect_error", () => {
-  });
-
-  socket.on("reconnect_attempt", () => {
-  });
-
-  socket.on("reconnect_failed", () => {
   });
 
   return socket!;
@@ -47,6 +43,17 @@ export const initializeSocket = (token: string): Socket => {
 export const getSocket = (): Socket | null => socket;
 
 export const isSocketConnected = (): boolean => socket?.connected ?? false;
+
+export const onConnectionChange = (callback: (connected: boolean) => void): void => {
+  connectionCallbacks.push(callback);
+  if (socket?.connected) {
+    callback(true);
+  }
+};
+
+export const offConnectionChange = (callback: (connected: boolean) => void): void => {
+  connectionCallbacks = connectionCallbacks.filter(cb => cb !== callback);
+};
 
 export const disconnectSocket = (): void => {
   if (socket) {
