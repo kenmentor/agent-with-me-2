@@ -47,9 +47,7 @@ export default function TenantRegisterPage() {
 
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [sentCode, setSentCode] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
-  const [registeredEmail, setRegisteredEmail] = useState("");
 
   // Redirect if already authenticated (after hydration)
   useEffect(() => {
@@ -105,62 +103,14 @@ export default function TenantRegisterPage() {
         agreeToTerms: data.agreeToTerms,
       });
       trackSignup(result?._id || null, "email");
-      setRegisteredEmail(data.email);
-      setSentCode(true);
       toast.success("Verification code sent to your email!");
+      // Redirect to verification page with email
+      router.push(`/auth/verify?email=${encodeURIComponent(data.email)}`);
     } catch (error: any) {
       setServerError(error?.response?.data?.message || "Registration failed. Please try again.");
       toast.error("Registration failed");
     }
   };
-
-  if (sentCode) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-        <Card className="w-full max-w-md border-0 shadow-xl">
-          <CardHeader className="text-center">
-            <div className="flex justify-center mb-4">
-              <div className="bg-green-100 p-4 rounded-full">
-                <User className="h-10 w-10 text-green-600" />
-              </div>
-            </div>
-            <CardTitle className="text-2xl">Check Your Email</CardTitle>
-            <CardDescription className="text-gray-500">
-              We&apos;ve sent a verification code to your email
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="bg-green-50 p-4 rounded-xl text-sm text-green-800">
-              <p className="font-medium mb-2">What&apos;s next:</p>
-              <ol className="list-decimal list-inside space-y-1">
-                <li>Check your email for the verification code</li>
-                <li>Enter the code to verify your account</li>
-                <li>Start browsing properties!</li>
-              </ol>
-            </div>
-            <div className="bg-yellow-50 border border-yellow-200 p-4 rounded-xl text-sm text-yellow-800">
-              <p className="font-medium">Don&apos;t see the email?</p>
-              <p>Check your <strong>spam/junk</strong> folder. If still not found, it may take a few minutes to arrive.</p>
-            </div>
-            <Button
-              className="w-full bg-green-600 hover:bg-green-700"
-              onClick={() => openEmailClient()}
-            >
-              <Mail className="h-4 w-4 mr-2" />
-              Open Email App
-            </Button>
-            <Button
-              variant="outline"
-              className="w-full"
-              onClick={() => router.push("/auth/login")}
-            >
-              Back to Login
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-indigo-100 flex items-center justify-center p-4">

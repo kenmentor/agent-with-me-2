@@ -43,7 +43,6 @@ export default function LandlordRegisterPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [sentCode, setSentCode] = useState(false);
   const [referralError, setReferralError] = useState("");
 
   useEffect(() => {

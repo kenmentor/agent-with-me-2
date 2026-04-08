@@ -76,7 +76,6 @@ function VerifyContent() {
       setTimeout(() => router.push("/properties"), 2000);
     } catch (err: any) {
       const errorMsg = err?.response?.data?.message || "";
-      // If already verified, treat as success
       if (errorMsg.toLowerCase().includes("already verified")) {
         trackVerification(null, true);
         setIsVerified(true);
@@ -84,7 +83,7 @@ function VerifyContent() {
         setTimeout(() => router.push("/properties"), 2000);
       } else {
         trackVerification(null, false);
-        setError(errorMsg || "Verification failed");
+        setError(errorMsg || "Verification failed. Please check your code and try again.");
         setHasAttemptedVerify(false);
       }
     }
@@ -93,7 +92,8 @@ function VerifyContent() {
 
   const handleResendCode = async () => {
     if (!email) {
-      toast.error("Email not found. Please go back and try again.");
+      toast.error("Email not found. Please register again.");
+      router.push("/auth/register/tenant");
       return;
     }
 
@@ -112,6 +112,9 @@ function VerifyContent() {
     if (urlCode && !isVerified && !hasAttemptedVerify) {
       const code = urlCode.replace(/\D/g, "");
       setVerificationCode(code);
+      if (code.length >= 4) {
+        verifyCode(code);
+      }
     }
   }, [urlCode]);
 
@@ -220,11 +223,11 @@ function VerifyContent() {
 
           <div className="mt-6 pt-4 border-t">
             <Link
-              href="/auth/login"
+              href="/auth/register/tenant"
               className="flex items-center justify-center text-sm text-gray-600 hover:text-blue-600"
             >
               <ArrowLeft className="h-4 w-4 mr-1" />
-              Back to Login
+              Register Again
             </Link>
           </div>
         </CardContent>
