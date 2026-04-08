@@ -11,30 +11,42 @@ export const initializeSocket = (token: string): Socket => {
     return socket;
   }
 
+  if (socket) {
+    socket.disconnect();
+  }
+
   socket = io(`${SOCKET_URL}/chat`, {
     auth: { token },
     transports: ["websocket", "polling"],
     reconnection: true,
-    reconnectionAttempts: 5,
-    reconnectionDelay: 1000,
+    reconnectionAttempts: Infinity,
+    reconnectionDelay: 2000,
+    reconnectionDelayMax: 10000,
+    timeout: 10000,
   });
 
   socket.on("connect", () => {
-    console.log("✅ Socket connected:", socket?.id);
+    console.log("Socket connected");
   });
 
-  socket.on("disconnect", (reason) => {
-    console.log("❌ Socket disconnected:", reason);
+  socket.on("disconnect", () => {
   });
 
-  socket.on("connect_error", (error) => {
-    console.error("Socket connection error:", error.message);
+  socket.on("connect_error", () => {
   });
 
-  return socket;
+  socket.on("reconnect_attempt", () => {
+  });
+
+  socket.on("reconnect_failed", () => {
+  });
+
+  return socket!;
 };
 
 export const getSocket = (): Socket | null => socket;
+
+export const isSocketConnected = (): boolean => socket?.connected ?? false;
 
 export const disconnectSocket = (): void => {
   if (socket) {
@@ -43,9 +55,13 @@ export const disconnectSocket = (): void => {
   }
 };
 
-export const emitEvent = (event: string, data: any): void => {
+export const emitEvent = (event: string, data?: any, callback?: (response: any) => void): void => {
   if (socket?.connected) {
-    socket.emit(event, data);
+    if (callback) {
+      socket.emit(event, data, callback);
+    } else {
+      socket.emit(event, data);
+    }
   }
 };
 
@@ -63,4 +79,33 @@ export const offEvent = (event: string, callback?: (data: any) => void): void =>
       socket.off(event);
     }
   }
+};
+
+export const joinConversation = (conversationId: string, callback?: (response: any) => void): void => {
+  emitEvent("join_conversation", { conversationId }, callback);
+};
+
+export const leaveConversation = (conversationId: string, callback?: (response: any) => void): void => {
+  emitEvent("leave_conversation", { conversationId }, callback);
+};
+
+export const sendMessage = (
+  receiverId: string,
+  content: string,
+  conversationId?: string,
+  callback?: (response: any) => void
+): void => {
+  emitEvent("send_message", { receiverId, content, conversationId }, callback);
+};
+
+export const startTyping = (conversationId: string, receiverId: string): void => {
+  emitEvent("typing_start", { conversationId, receiverId });
+};
+
+export const stopTyping = (conversationId: string, receiverId: string): void => {
+  emitEvent("typing_stop", { conversationId, receiverId });
+};
+
+export const markMessagesRead = (conversationId: string, callback?: (response: any) => void): void => {
+  emitEvent("mark_read", { conversationId }, callback);
 };

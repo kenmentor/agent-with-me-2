@@ -50,9 +50,13 @@ export default function BottomNav() {
     { name: "Account", href: "/account", icon: User },
   ];
 
-  const SHOW_ON_PAGES = ["/properties", "/dashboard", "/chat", "/payments", "/account", "/user"];
+  // Hide on chat pages (both list and individual chat)
+  const HIDE_ON_PATHS = ["/chat"];
+  const shouldHide = HIDE_ON_PATHS.some((path) => pathname.startsWith(path));
+  
+  const SHOW_ON_PAGES = ["/properties", "/dashboard", "/payments", "/account", "/user"];
 
-  const shouldShow = SHOW_ON_PAGES.some((path) => pathname.startsWith(path));
+  const shouldShow = SHOW_ON_PAGES.some((path) => pathname.startsWith(path)) && !shouldHide;
 
   if (!shouldShow) return null;
 

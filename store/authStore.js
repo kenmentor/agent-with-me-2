@@ -7,16 +7,34 @@ const { app, base } = Req;
 
 export const useAuthStore = create(
   persist(
-    (set) => ({
+    (set, get) => ({
       user: null,
       isAuthenticated: false,
       error: null,
       isLoading: false,
       isCheckingAuth: true,
-      _hasHydrated: false, // 👈 new
+      _hasHydrated: false,
 
-      // 👇 helper to mark hydration complete
-      setHasHydrated: (state) => set({ _hasHydrated: state }),
+      // Helper to get user ID
+      getUserId: () => {
+        const user = get().user;
+        if (!user) {
+          console.log("❌ getUserId: user is null");
+          return null;
+        }
+        const id = user._id || user._doc?._id || user.id;
+        console.log("👤 getUserId:", id);
+        return id;
+      },
+
+      // Helper to mark hydration complete
+      setHasHydrated: (state) => {
+        // Normalize user data if it has MongoDB document structure
+        if (state.user && state.user._doc) {
+          state.user = state.user._doc;
+        }
+        set({ _hasHydrated: true });
+      },
 
       // SIGNUP
       signup: async (object) => {
@@ -58,8 +76,25 @@ export const useAuthStore = create(
         try {
           const response = await app.post(`${base}/v1/auth/login`, object);
           const data = response.data;
+          console.log("📦 Login response:", data);
+          
+          // Extract token from data.data.token (backend returns {data: {..., token}})
+          const token = data?.data?.token;
+          console.log("🔑 Extracted token:", token ? "EXISTS" : "NULL");
+          
+          if (token) {
+            localStorage.setItem("token", token);
+            console.log("🔑 Token saved to localStorage");
+          } else {
+            console.error("❌ No token in response!");
+          }
+          
+          // Extract clean user data
+          const userData = data?.data?._doc || data?.data;
+          console.log("👤 User data:", userData?._id);
+          
           set({
-            user: data.data,
+            user: userData,
             isAuthenticated: true,
             isLoading: false,
             isCheckingAuth: false,
@@ -86,6 +121,13 @@ export const useAuthStore = create(
           );
           // Backend now returns user data directly after verification
           const userData = response.data?.data?.user;
+          
+          // Save token if returned
+          const token = response.data?.token || response.data?.data?.token;
+          if (token) {
+            localStorage.setItem("token", token);
+          }
+          
           if (userData) {
             set({
               user: userData,
@@ -115,6 +157,8 @@ export const useAuthStore = create(
             error: null,
             isCheckingAuth: false,
           });
+          // Clear token from localStorage
+          localStorage.removeItem("token");
           await app.post(`${base}/v1/auth/logout`);
         } catch (error) {
           set({ error: null, isCheckingAuth: false });
@@ -128,7 +172,7 @@ export const useAuthStore = create(
         isAuthenticated: state.isAuthenticated,
       }),
       onRehydrateStorage: () => (state) => {
-        state.setHasHydrated(true); // 👈 mark hydration done
+        state.setHasHydrated(true);
       },
     }
   )

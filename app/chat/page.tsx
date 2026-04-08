@@ -6,123 +6,158 @@ import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Search, MessageCircle, Home, ArrowLeft } from "lucide-react";
+import { ArrowLeft, MessageCircle } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
 import Req from "@/app/utility/axois";
-import { initializeSocket, disconnectSocket, onEvent, offEvent } from "@/app/utility/socket";
-import { ChatListSkeleton } from "@/components/ui/skeleton";
-import FeatureInProgressOverlay from "@/components/UnderConstruction";
+import { 
+  initializeSocket, 
+  onEvent, 
+  offEvent, 
+  isSocketConnected 
+} from "@/app/utility/socket";
+import { formatDistanceToNow, isToday, isYesterday } from "date-fns";
 
 const { base, app } = Req;
 
-interface Conversation {
-  _id: string;
-  participantId: string;
-  participantName: string;
-  participantAvatar?: string;
-  lastMessage?: string;
-  lastMessageTime?: string;
+interface ChatUser {
+  userId: string;
+  userName: string;
+  lastMessage: string;
+  lastMessageTime: string;
+  isUnread: boolean;
   unreadCount: number;
-  propertyContext?: {
-    propertyId: string;
-    propertyTitle: string;
-  };
 }
 
 export default function ChatListPage() {
   const router = useRouter();
-  const { user, isAuthenticated, _hasHydrated } = useAuthStore();
-  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const { isAuthenticated, _hasHydrated, getUserId } = useAuthStore();
+  const [chatUsers, setChatUsers] = useState<ChatUser[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState("");
 
-  const fetchConversations = useCallback(async () => {
-    if (!user?._id) return;
+  const fetchMessages = useCallback(async () => {
+    const userId = getUserId();
+    if (!userId) return;
 
     try {
-      setLoading(true);
-      const res = await app.get(`${base}/v1/chat/${user._id}`).catch(() => ({ data: { data: [] } }));
-      const data = res.data?.data || [];
+      const res = await app.get(`${base}/v1/chat/messages/${userId}`);
+      const data = res.data?.data;
       
-      const formatted = data.map((conv: any) => ({
-        _id: conv._id || conv.conversationId,
-        participantId: conv.participantId,
-        participantName: conv.participantName || conv.participant?.userName || "User",
-        participantAvatar: conv.participantAvatar || conv.participant?.avatar,
-        lastMessage: conv.lastMessage,
-        lastMessageTime: conv.lastMessageTime,
-        unreadCount: conv.unreadCount || 0,
-        propertyContext: conv.propertyContext,
-      }));
-      
-      setConversations(formatted);
+      if (data && data.messages && data.messages.length > 0) {
+        const userMap = new Map<string, ChatUser>();
+        
+        data.messages.forEach((msg: any) => {
+          const otherUserId = msg.otherUserId || (msg.senderId === userId ? msg.receiverId : msg.senderId);
+          const otherUserName = msg.otherUserName || "User";
+          const isSentByMe = msg.senderId === userId;
+          const isRead = msg.read === true;
+          
+          if (!userMap.has(otherUserId)) {
+            userMap.set(otherUserId, {
+              userId: otherUserId,
+              userName: otherUserName,
+              lastMessage: msg.content || "",
+              lastMessageTime: msg.createdAt || msg.timestamp,
+              isUnread: !isSentByMe && !isRead,
+              unreadCount: !isSentByMe && !isRead ? 1 : 0,
+            });
+          } else {
+            const existing = userMap.get(otherUserId)!;
+            if (new Date(msg.createdAt) > new Date(existing.lastMessageTime)) {
+              existing.lastMessage = msg.content || "";
+              existing.lastMessageTime = msg.createdAt || msg.timestamp;
+            }
+            if (!isSentByMe && !isRead) {
+              existing.isUnread = true;
+              existing.unreadCount++;
+            }
+          }
+        });
+        
+        const chatUsersArray = Array.from(userMap.values()).sort(
+          (a, b) => new Date(b.lastMessageTime).getTime() - new Date(a.lastMessageTime).getTime()
+        );
+        setChatUsers(chatUsersArray);
+      } else {
+        setChatUsers([]);
+      }
     } catch (err) {
-      console.error("Error fetching conversations:", err);
+      console.error("Error fetching messages:", err);
     } finally {
       setLoading(false);
     }
-  }, [app, base, user?._id]);
+  }, [getUserId]);
 
   useEffect(() => {
     if (!_hasHydrated) return;
-    if (!isAuthenticated || !user) {
+    if (!isAuthenticated) {
       router.push("/auth/login");
       return;
     }
-    
+
+    const userId = getUserId();
+    if (!userId) return;
+
     const token = localStorage.getItem("token");
-    if (token) {
+    if (token && !isSocketConnected()) {
       initializeSocket(token);
     }
-    
-    fetchConversations();
-    
-    return () => {
-      disconnectSocket();
-    };
-  }, [_hasHydrated, isAuthenticated, user, router, fetchConversations]);
+
+    fetchMessages();
+  }, [_hasHydrated, isAuthenticated, router, fetchMessages, getUserId]);
 
   useEffect(() => {
-    const handleNewMessage = () => {
-      fetchConversations();
+    const handleNewMessage = (data: { message: any }) => {
+      const userId = getUserId();
+      if (!userId) return;
+      
+      const { message } = data;
+      const otherUserId = message.senderId === userId ? message.receiverId : message.senderId;
+      
+      setChatUsers(prev => {
+        const existing = prev.find(c => c.userId === otherUserId);
+        
+        if (existing) {
+          return prev.map(c => {
+            if (c.userId === otherUserId) {
+              const isUnread = message.senderId !== userId;
+              return {
+                ...c,
+                lastMessage: message.content,
+                lastMessageTime: message.timestamp || message.createdAt,
+                isUnread: isUnread,
+                unreadCount: isUnread ? c.unreadCount + 1 : c.unreadCount,
+              };
+            }
+            return c;
+          }).sort((a, b) => 
+            new Date(b.lastMessageTime).getTime() - new Date(a.lastMessageTime).getTime()
+          );
+        }
+        return prev;
+      });
     };
-    
-    const handleMessagesRead = () => {
-      fetchConversations();
-    };
-    
+
     onEvent("new_message", handleNewMessage);
-    onEvent("messages_read", handleMessagesRead);
-    
+
     return () => {
       offEvent("new_message", handleNewMessage);
-      offEvent("messages_read", handleMessagesRead);
     };
-  }, [fetchConversations]);
-
-  const filteredConversations = conversations.filter((conv) =>
-    conv.participantName.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  }, [getUserId]);
 
   const formatTime = (dateString?: string) => {
     if (!dateString) return "";
     const date = new Date(dateString);
-    const now = new Date();
-    const diff = now.getTime() - date.getTime();
-    const minutes = Math.floor(diff / 60000);
-    const hours = Math.floor(diff / 3600000);
-    const days = Math.floor(diff / 86400000);
-
-    if (minutes < 1) return "Just now";
-    if (minutes < 60) return `${minutes}m ago`;
-    if (hours < 24) return `${hours}h ago`;
-    if (days < 7) return `${days}d ago`;
-    return date.toLocaleDateString();
+    
+    if (isToday(date)) {
+      return formatDistanceToNow(date, { addSuffix: true });
+    }
+    if (isYesterday(date)) {
+      return "Yesterday";
+    }
+    return formatDistanceToNow(date, { addSuffix: true });
   };
-
-  if (!user && !loading) {
+console.log("Chat Users:", chatUsers);
+  if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="animate-spin h-8 w-8 border-4 border-black border-t-transparent rounded-full" />
@@ -133,7 +168,6 @@ export default function ChatListPage() {
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
       <div className="max-w-2xl mx-auto px-4 pt-4">
-        {/* Header */}
         <div className="flex items-center gap-3 mb-6 py-3">
           <Link href="/properties">
             <Button variant="ghost" size="icon" className="rounded-full bg-black text-white hover:bg-gray-800">
@@ -143,31 +177,15 @@ export default function ChatListPage() {
           <h1 className="text-xl font-bold">Messages</h1>
         </div>
 
-        {/* Search */}
-        <div className="relative mb-4">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-          <Input
-            placeholder="Search conversations..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10 bg-white"
-          />
-        </div>
-
-        {/* Conversations List */}
-        {loading ? (
-          <ChatListSkeleton />
-        ) : filteredConversations.length === 0 ? (
+        {chatUsers.length === 0 ? (
           <Card className="bg-white">
             <CardContent className="py-12 text-center">
               <MessageCircle className="h-12 w-12 text-gray-300 mx-auto mb-4" />
               <h3 className="text-lg font-semibold text-gray-700 mb-2">
-                {searchQuery ? "No conversations found" : "No messages yet"}
+                No messages yet
               </h3>
               <p className="text-gray-500 mb-4">
-                {searchQuery
-                  ? "Try a different search term"
-                  : "Start a conversation by contacting an agent about a property"}
+                Start a conversation by contacting an agent
               </p>
               <Link href="/properties">
                 <Button className="bg-black hover:bg-gray-800">
@@ -178,49 +196,41 @@ export default function ChatListPage() {
           </Card>
         ) : (
           <div className="space-y-2">
-            {filteredConversations.map((conv) => (
+            {chatUsers.map((chatUser) => (
               <Link
-                key={conv._id}
-                href={`/chat/${conv.participantId}`}
+                key={chatUser.userId}
+                href={`/chat/${chatUser.userId}`}
               >
-                <Card className="bg-white hover:bg-gray-50 transition-colors cursor-pointer">
+                <Card className={`bg-white hover:bg-gray-50 transition-colors cursor-pointer ${
+                  chatUser.isUnread ? "border-l-4 border-l-blue-500" : ""
+                }`}>
                   <CardContent className="p-4">
-                    <div className="flex items-start gap-3">
-                      {/* Avatar */}
-                      <Avatar className="h-12 w-12">
-                        <AvatarFallback className="bg-black text-white text-lg">
-                          {conv.participantName?.charAt(0)?.toUpperCase() || "U"}
+                    <div className="flex items-center gap-3">
+                      <Avatar className={`h-12 w-12 ${chatUser.isUnread ? "ring-2 ring-blue-500" : ""}`}>
+                        <AvatarFallback className="bg-gray-800 text-white text-lg">
+                          {chatUser.userName?.charAt(0)?.toUpperCase() || "U"}
                         </AvatarFallback>
                       </Avatar>
 
-                      {/* Content */}
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between">
-                          <h3 className="font-semibold text-gray-900 truncate">
-                            {conv.participantName}
+                          <h3 className={`${chatUser.isUnread ? "font-bold" : "font-semibold"} text-gray-900`}>
+                            {chatUser.userName}
                           </h3>
-                          <span className="text-xs text-gray-500 flex-shrink-0">
-                            {formatTime(conv.lastMessageTime)}
-                          </span>
+                          <div className="flex items-center gap-2">
+                            {chatUser.isUnread && (
+                              <span className="bg-blue-500 text-white text-xs px-2 py-0.5 rounded-full">
+                                {chatUser.unreadCount}
+                              </span>
+                            )}
+                            <span className="text-xs text-gray-500">
+                              {formatTime(chatUser.lastMessageTime)}
+                            </span>
+                          </div>
                         </div>
-
-                        {/* Property Context */}
-                        {conv.propertyContext && (
-                          <p className="text-xs text-gray-500 truncate mb-1">
-                            Re: {conv.propertyContext.propertyTitle}
-                          </p>
-                        )}
-
-                        <div className="flex items-center justify-between">
-                          <p className="text-sm text-gray-600 truncate">
-                            {conv.lastMessage || "Start a conversation"}
-                          </p>
-                          {conv.unreadCount > 0 && (
-                            <Badge className="bg-black text-white rounded-full px-2">
-                              {conv.unreadCount}
-                            </Badge>
-                          )}
-                        </div>
+                        <p className={`text-sm truncate ${chatUser.isUnread ? "text-gray-800 font-medium" : "text-gray-600"}`}>
+                          {chatUser.lastMessage}
+                        </p>
                       </div>
                     </div>
                   </CardContent>
@@ -230,9 +240,6 @@ export default function ChatListPage() {
           </div>
         )}
       </div>
-      <FeatureInProgressOverlay>
-        <div className="hidden">Placeholder</div>
-      </FeatureInProgressOverlay>
     </div>
   );
 }

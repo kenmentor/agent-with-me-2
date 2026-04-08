@@ -2,7 +2,7 @@ import axios from "axios";
 
 const baseURL = process.env.NEXT_PUBLIC_ENV === "production"
   ? "https://agent-with-me-backend.onrender.com"
-  : process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
+  : process.env.NEXT_PUBLIC_API_URL || "http://localhost:5036";
 
 const api = axios.create({
   baseURL,
