@@ -11,12 +11,99 @@ import {
 } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
 import { useState, useEffect, useRef } from "react";
+import {
+  initializeSocket,
+  onEvent,
+  offEvent,
+  isSocketConnected,
+} from "@/app/utility/socket";
+import Req from "@/app/utility/axois";
+
+const { base, app } = Req;
 
 export default function BottomNav() {
   const pathname = usePathname();
   const user = useAuthStore((state) => state.user);
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const _hasHydrated = useAuthStore((state) => state._hasHydrated);
+  const getUserId = useAuthStore((state) => state.getUserId);
   const [isVisible, setIsVisible] = useState(true);
+  const [unreadCount, setUnreadCount] = useState(0);
   const lastScrollY = useRef(0);
+
+  // Fetch initial unread count
+  useEffect(() => {
+    if (!_hasHydrated || !isAuthenticated) return;
+
+    const userId = getUserId();
+    if (!userId) return;
+
+    const fetchUnreadCount = async () => {
+      try {
+        const res = await app.get(`${base}/v1/chat/messages/${userId}`);
+        const data = res.data?.data;
+        
+        if (data && data.conversations) {
+          let total = 0;
+          Object.values(data.conversations).forEach((conv: any) => {
+            total += conv.unreadCount || 0;
+          });
+          setUnreadCount(total);
+        }
+      } catch (err) {
+        console.error("Failed to fetch unread count:", err);
+      }
+    };
+
+    fetchUnreadCount();
+  }, [_hasHydrated, isAuthenticated, getUserId]);
+
+  // Initialize socket and listen for new messages
+  useEffect(() => {
+    if (!_hasHydrated || !isAuthenticated) return;
+
+    const userId = getUserId();
+    if (!userId) return;
+
+    const token = localStorage.getItem("token");
+    if (token && !isSocketConnected()) {
+      initializeSocket(token);
+    }
+
+    const handleNewMessage = (data: { message: any }) => {
+      const currentUserId = getUserId();
+      if (!currentUserId) return;
+      
+      const { message } = data;
+      // Only increment if message is NOT from current user
+      if (message.senderId !== currentUserId) {
+        setUnreadCount((prev) => prev + 1);
+      }
+    };
+
+    const handleMessagesRead = (data: { conversationId: string; readBy: string }) => {
+      const currentUserId = getUserId();
+      if (!currentUserId) return;
+      
+      // If someone else read our messages, we don't change count
+      // We only decrement when WE read messages (handled separately)
+    };
+
+    onEvent("new_message", handleNewMessage);
+    onEvent("messages_read", handleMessagesRead);
+
+    return () => {
+      offEvent("new_message", handleNewMessage);
+      offEvent("messages_read", handleMessagesRead);
+    };
+  }, [_hasHydrated, isAuthenticated, getUserId]);
+
+  // Decrement when viewing chat
+  useEffect(() => {
+    if (pathname.startsWith("/chat/") && unreadCount > 0) {
+      setUnreadCount(0);
+    }
+  }, [pathname, unreadCount]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -28,7 +115,6 @@ export default function BottomNav() {
         return;
       }
       
-      // Scroll down = hide, Scroll up = show
       if (currentScrollY > lastScrollY.current && isVisible) {
         setIsVisible(false);
       } else if (currentScrollY < lastScrollY.current && !isVisible) {
@@ -46,11 +132,10 @@ export default function BottomNav() {
     { name: "Explore", href: "/properties", icon: Building2 },
     { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
     ...(user && (user.role === "agent" || user.role === "host" || user.role === "landlord") ? [{ name: "Add", href: "/properties/add", icon: PlusCircle }] : []),
-    { name: "Chat", href: "/chat", icon: MessageCircle },
+    { name: "Chat", href: "/chat", icon: MessageCircle, badge: unreadCount },
     { name: "Account", href: "/account", icon: User },
   ];
 
-  // Hide on chat pages (both list and individual chat)
   const HIDE_ON_PATHS = ["/chat"];
   const shouldHide = HIDE_ON_PATHS.some((path) => pathname.startsWith(path));
   
@@ -68,12 +153,11 @@ export default function BottomNav() {
             pathname === item.href ||
             (item.href !== "/" && pathname.startsWith(item.href));
             
-
           return (
             <Link
               key={item.name}
               href={item.href}
-              className="flex flex-col items-center flex-1 py-1.5 min-w-[48px]"
+              className="flex flex-col items-center flex-1 py-1.5 min-w-[48px] relative"
             >
               <div
                 className={`
@@ -83,6 +167,13 @@ export default function BottomNav() {
                 `}
               >
                 <item.icon className="w-4 h-4" />
+                
+                {/* Badge for unread messages */}
+                {item.badge > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold min-w-[18px] h-[18px] rounded-full flex items-center justify-center px-1">
+                    {item.badge > 99 ? "99+" : item.badge}
+                  </span>
+                )}
               </div>
               <span
                 className={`

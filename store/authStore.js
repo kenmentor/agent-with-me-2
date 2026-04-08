@@ -149,18 +149,30 @@ export const useAuthStore = create(
 
       // LOGOUT
       logout: async () => {
-        set({ isCheckingAuth: true });
         try {
-          await set({
+          // Disconnect socket
+          const { disconnectSocket } = await import("@/app/utility/socket");
+          disconnectSocket();
+          
+          // Clear all localStorage
+          localStorage.clear();
+          
+          // Clear state
+          set({
             user: null,
             isAuthenticated: false,
             error: null,
+            isLoading: false,
             isCheckingAuth: false,
           });
-          // Clear token from localStorage
-          localStorage.removeItem("token");
+          
+          // Call backend logout
           await app.post(`${base}/v1/auth/logout`);
+          
+          // Redirect to login
+          window.location.href = "/auth/login";
         } catch (error) {
+          console.error("Logout error:", error);
           set({ error: null, isCheckingAuth: false });
         }
       },

@@ -69,8 +69,6 @@ export default function Header({ color }: { color?: string }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const profileRef = useRef<HTMLDivElement>(null);
-  const [isHeaderVisible, setIsHeaderVisible] = useState(true);
-  const lastScrollY = useRef(0);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -81,29 +79,6 @@ export default function Header({ color }: { color?: string }) {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
-
-  useEffect(() => {
-    const handleScroll = () => {
-      const currentScrollY = window.scrollY;
-      
-      if (currentScrollY <= 0) {
-        setIsHeaderVisible(true);
-        lastScrollY.current = currentScrollY;
-        return;
-      }
-      
-      if (currentScrollY > lastScrollY.current && isHeaderVisible) {
-        setIsHeaderVisible(false);
-      } else if (currentScrollY < lastScrollY.current && !isHeaderVisible) {
-        setIsHeaderVisible(true);
-      }
-      
-      lastScrollY.current = currentScrollY;
-    };
-
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, [isHeaderVisible]);
 
   const handleLogout = () => {
     logout();
@@ -127,7 +102,7 @@ export default function Header({ color }: { color?: string }) {
   ];
 
   return (
-    <header className={`fixed top-0 left-0 right-0 z-50 bg-black transition-transform duration-300 ${isHeaderVisible ? 'translate-y-0' : '-translate-y-full'}`}>
+    <header className="fixed top-0 left-0 right-0 z-50 bg-black">
       <div className="max-w-7xl mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           {/* Left: Logo */}
@@ -185,7 +160,7 @@ export default function Header({ color }: { color?: string }) {
                         className="w-full h-full object-cover"
                       />
                     ) : (
-                      <span className="text-sm font-medium text-white">{initials}</span>
+                      <span className="text-sm font-medium">{initials}</span>
                     )}
                   </div>
                 </Button>
@@ -372,6 +347,40 @@ export default function Header({ color }: { color?: string }) {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Mobile Bottom Tab Bar - Only visible on small screens */}
+      {!hideBottomTabs && (
+        <div className="md:hidden fixed bottom-0 left-0 right-0 bg-black border-t border-white/10 z-50 pb-safe">
+        <nav className="flex justify-around items-center h-16">
+          {navLinks.slice(0, 4).map((link) => {
+            const Icon = link.icon;
+            const active = isActive(link.href);
+            return (
+              <Link key={link.href} href={link.href} className="flex flex-col items-center justify-center flex-1 py-2">
+                <Icon className={`w-5 h-5 ${active ? "text-white" : "text-white/50"}`} />
+                <span className={`text-xs mt-1 ${active ? "text-white" : "text-white/50"}`}>
+                  {link.name}
+                </span>
+              </Link>
+            );
+          })}
+          {/* Profile tab */}
+          {isAuthenticated ? (
+            <Link href="/user" className="flex flex-col items-center justify-center flex-1 py-2">
+              <User className={`w-5 h-5 ${isActive("/user") ? "text-white" : "text-white/50"}`} />
+              <span className={`text-xs mt-1 ${isActive("/user") ? "text-white" : "text-white/50"}`}>
+                Profile
+              </span>
+            </Link>
+          ) : (
+            <Link href="/auth/login" className="flex flex-col items-center justify-center flex-1 py-2">
+              <User className="w-5 h-5 text-white/50" />
+              <span className="text-xs mt-1 text-white/50">Login</span>
+            </Link>
+          )}
+        </nav>
+      </div>
+      )}
     </header>
   );
 }
