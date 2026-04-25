@@ -88,7 +88,8 @@ function LoginContent() {
       const errorMessage = err?.response?.data?.message || err?.message || "Login failed";
       setServerError(errorMessage);
       
-      if (errorMessage.toLowerCase().includes("verify")) {
+      // Only redirect to verify if explicitly told to verify email (not just any error with "verify" in message)
+      if (err?.response?.status === 403 && errorMessage.toLowerCase().includes("verify your email")) {
         router.push(`/auth/verify?email=${encodeURIComponent(data.email)}`);
       }
     }

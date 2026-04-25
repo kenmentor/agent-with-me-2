@@ -116,6 +116,7 @@ import { Range, Slider } from "@radix-ui/react-slider";
 import { validateProperty } from "@/app/utility/validateform";
 import getPlaceValue from "@/app/utility/placVealue";
 import Share from "@/components/Share";
+import { ShareListingModal } from "@/components/ui/ShareListingModal";
 export default function AddPropertyPage() {
   const { base, app } = Req;
   const user = useAuthStore((state) => state.user);
@@ -126,6 +127,7 @@ export default function AddPropertyPage() {
   const [selected, setSelected] = useState<number | null>(null);
   const [copied, setCopied] = useState(false);
   const [property, setProperty] = useState<PropertyUpload>();
+  const [showShareModal, setShowShareModal] = useState(false);
   const [formData, setFormData] = useState<Property>({
     // Basic Info
     title: "",
@@ -267,10 +269,8 @@ export default function AddPropertyPage() {
           toast.success("Property listed successfully!");
           setProperty(result.data);
           
-          // Redirect to property page
-          setTimeout(() => {
-            router.push(`/properties/${result.data._id}`);
-          }, 1500);
+          // Show share modal instead of immediate redirect
+          setShowShareModal(true);
         } catch (err: any) {
           console.error("Upload error:", err);
           console.error("Error response:", err.response?.data);
@@ -1012,6 +1012,27 @@ export default function AddPropertyPage() {
             </div>
           )}
         </form>
+        
+        <ShareListingModal
+          open={showShareModal}
+          onClose={() => {
+            setShowShareModal(false);
+            if (property?._id) {
+              router.push(`/properties/${property._id}`);
+            } else {
+              router.push("/dashboard");
+            }
+          }}
+          property={{
+            _id: property?._id,
+            title: formData.title,
+            price: property?.price || Number(formData.price),
+            address: property?.address || formData.address,
+            state: formData.state,
+            description: formData.description,
+            type: formData.type,
+          }}
+        />
       </div>
     </div>
   );

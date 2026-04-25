@@ -129,7 +129,18 @@ export default function AccountPage() {
       if (res.data?.ok || res.data?.success) {
         const updatedUser = res.data?.data || res.data?.user || res.data;
         if (updatedUser) {
+          // Update both zustand store AND local profile state
           setUser(updatedUser);
+          setProfile(updatedUser);
+          // Force re-render by updating formData with new user data
+          setFormData(prev => ({
+            ...prev,
+            userName: updatedUser.userName || prev.userName,
+            email: updatedUser.email || prev.email,
+            phoneNumber: updatedUser.phoneNumber || prev.phoneNumber,
+            address: updatedUser.address || prev.address,
+            bio: updatedUser.bio || prev.bio,
+          }));
         }
         toast.success("Profile image updated");
       } else {
@@ -157,8 +168,8 @@ export default function AccountPage() {
     );
   }
 
-  const avatarUrl = user?.profileImage || user?.avatar || user?.avater;
-  const initials = user?.userName?.[0]?.toUpperCase() || "?";
+  const avatarUrl = profile?.profileImage || profile?.avatar || profile?.avater || user?.profileImage || user?.avatar || user?.avater;
+  const initials = profile?.userName?.[0]?.toUpperCase() || user?.userName?.[0]?.toUpperCase() || "?";
 
   return (
     <div className="min-h-screen bg-gray-50 pb-20 md:pb-0">
@@ -252,11 +263,13 @@ export default function AccountPage() {
                           id="userName"
                           name="userName"
                           value={formData.userName}
-                          onChange={handleInputChange}
-                          className="pl-10"
+                          disabled
+                          readOnly
+                          className="pl-10 bg-gray-50 cursor-not-allowed"
                           placeholder="Your username"
                         />
                       </div>
+                      <p className="text-xs text-gray-400">Username cannot be changed</p>
                     </div>
 
                     <div className="space-y-2">
@@ -268,11 +281,13 @@ export default function AccountPage() {
                           name="email"
                           type="email"
                           value={formData.email}
-                          onChange={handleInputChange}
-                          className="pl-10"
+                          disabled
+                          readOnly
+                          className="pl-10 bg-gray-50 cursor-not-allowed"
                           placeholder="your@email.com"
                         />
                       </div>
+                      <p className="text-xs text-gray-400">Email cannot be changed</p>
                     </div>
 
                     <div className="space-y-2">
@@ -299,11 +314,13 @@ export default function AccountPage() {
                           id="address"
                           name="address"
                           value={formData.address}
-                          onChange={handleInputChange}
-                          className="pl-10"
+                          disabled
+                          readOnly
+                          className="pl-10 bg-gray-50 cursor-not-allowed"
                           placeholder="Your address"
                         />
                       </div>
+                      <p className="text-xs text-gray-400">Address cannot be changed</p>
                     </div>
 
                     <div className="space-y-2 md:col-span-2">
@@ -349,12 +366,14 @@ export default function AccountPage() {
                     </div>
                     <div>
                       <h4 className="font-medium">Password</h4>
-                      <p className="text-sm text-gray-500">Last changed 3 months ago</p>
+                      <p className="text-sm text-gray-500">Change your account password</p>
                     </div>
                   </div>
-                  <Button variant="outline" size="sm">
-                    Change
-                  </Button>
+                  <Link href="/auth/forgot-password">
+                    <Button variant="outline" size="sm">
+                      Change
+                    </Button>
+                  </Link>
                 </div>
 
                 <div className="flex items-center justify-between p-4 border rounded-lg">
@@ -367,7 +386,7 @@ export default function AccountPage() {
                       <p className="text-sm text-gray-500">Add an extra layer of security</p>
                     </div>
                   </div>
-                  <Button variant="outline" size="sm">
+                  <Button variant="outline" size="sm" disabled>
                     Enable
                   </Button>
                 </div>
@@ -382,9 +401,11 @@ export default function AccountPage() {
                       <p className="text-sm text-gray-500">Manage your logged in devices</p>
                     </div>
                   </div>
-                  <Button variant="outline" size="sm">
-                    View
-                  </Button>
+                  <Link href="/account/sessions">
+                    <Button variant="outline" size="sm">
+                      View
+                    </Button>
+                  </Link>
                 </div>
               </CardContent>
             </Card>
@@ -407,7 +428,7 @@ export default function AccountPage() {
                       <p className="text-sm text-gray-500">Receive notifications on your device</p>
                     </div>
                   </div>
-                  <Button variant="outline" size="sm">
+                  <Button variant="outline" size="sm" disabled>
                     Configure
                   </Button>
                 </div>
@@ -420,7 +441,7 @@ export default function AccountPage() {
                       <p className="text-sm text-gray-500">Receive updates via email</p>
                     </div>
                   </div>
-                  <Button variant="outline" size="sm">
+                  <Button variant="outline" size="sm" disabled>
                     Configure
                   </Button>
                 </div>
@@ -433,7 +454,7 @@ export default function AccountPage() {
                       <p className="text-sm text-gray-500">Get notified about payments</p>
                     </div>
                   </div>
-                  <Button variant="outline" size="sm">
+                  <Button variant="outline" size="sm" disabled>
                     Configure
                   </Button>
                 </div>
@@ -446,9 +467,11 @@ export default function AccountPage() {
                       <p className="text-sm text-gray-500">Get help with your account</p>
                     </div>
                   </div>
-                  <Button variant="outline" size="sm">
-                    Contact
-                  </Button>
+                  <Link href="/help">
+                    <Button variant="outline" size="sm">
+                      Contact
+                    </Button>
+                  </Link>
                 </div>
               </CardContent>
             </Card>
