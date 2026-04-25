@@ -64,7 +64,20 @@ export default function PropertyDetailClient({
   const [activeTab, setActiveTab] = useState("description");
   const [isLiked, setIsLiked] = useState(false);
   const [isLiking, setIsLiking] = useState(false);
+  const [initialLikeChecked, setInitialLikeChecked] = useState(false);
   const { user, isAuthenticated } = useAuthStore();
+
+  useEffect(() => {
+    if (isAuthenticated && user?._id && property._id && !initialLikeChecked) {
+      app.get(`${base}/v1/favorites/${user._id}`)
+        .then((res) => {
+          const favIds = res.data?.data?.map((fav: any) => fav.houseId?._id || fav.houseId) || [];
+          setIsLiked(favIds.includes(property._id));
+          setInitialLikeChecked(true);
+        })
+        .catch(() => setInitialLikeChecked(true));
+    }
+  }, [isAuthenticated, user?._id, property._id, app, base, initialLikeChecked]);
 
   const handleLike = async () => {
     if (!isAuthenticated || !user?._id) {

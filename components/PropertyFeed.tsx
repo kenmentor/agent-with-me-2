@@ -46,6 +46,7 @@ import { useAuthStore } from "@/store/authStore";
 
 interface PropertyFeedProps {
   properties: Property[];
+  favorites?: string[];
   onLike?: (id: string) => void;
   onClose?: () => void;
   onFilter?: (filters: FeedFilters) => void;
@@ -61,15 +62,16 @@ export interface FeedFilters {
   bedrooms: string;
 }
 
-export default function PropertyFeed({ properties, onLike, onClose }: PropertyFeedProps) {
+export default function PropertyFeed({ properties, favorites: favoritesProp, onLike, onClose }: PropertyFeedProps) {
   const router = useRouter();
-  const [likedProperties, setLikedProperties] = useState<Set<string>>(new Set());
+  const [likedProperties, setLikedProperties] = useState<Set<string>>(new Set(favoritesProp || []));
   const [currentIndex, setCurrentIndex] = useState(0);
   const [showFilters, setShowFilters] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState<Record<string, number>>({});
   const containerRef = useRef<HTMLDivElement>(null);
   const touchStartX = useRef<number>(0);
   const { user, isAuthenticated } = useAuthStore();
+  const [favoritesLoaded, setFavoritesLoaded] = useState(!!favoritesProp);
   
   const [filters, setFilters] = useState<FeedFilters>({
     search: "",
@@ -82,6 +84,21 @@ export default function PropertyFeed({ properties, onLike, onClose }: PropertyFe
   });
 
   const [selectedState, setSelectedState] = useState("all");
+
+  useEffect(() => {
+    if (favoritesProp && favoritesProp.length > 0 && !favoritesLoaded) {
+      setLikedProperties(new Set(favoritesProp));
+      setFavoritesLoaded(true);
+    } else if (isAuthenticated && user?._id && !favoritesLoaded && !favoritesProp) {
+      api.get(`${baseURL}/v1/favorites/${user._id}`)
+        .then((res) => {
+          const favIds = res.data?.data?.map((fav: any) => fav.houseId?._id || fav.houseId) || [];
+          setLikedProperties(new Set(favIds));
+          setFavoritesLoaded(true);
+        })
+        .catch(() => setFavoritesLoaded(true));
+    }
+  }, [isAuthenticated, user?._id, favoritesLoaded, favoritesProp]);
 
   // Advanced filter function
   const filteredProperties = useMemo(() => {

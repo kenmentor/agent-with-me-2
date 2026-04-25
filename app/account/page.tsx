@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -230,6 +231,14 @@ export default function AccountPage() {
                         {user?.role || "User"}
                       </span>
                     </div>
+                    {user?.role === "tenant" && (
+                      <Link href="/account/upgrade-agent">
+                        <Button variant="outline" size="sm" className="mt-2 w-full sm:w-auto">
+                          <Shield className="w-4 h-4 mr-2" />
+                          Become an Agent
+                        </Button>
+                      </Link>
+                    )}
                   </div>
                 </div>
 

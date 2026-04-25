@@ -52,7 +52,7 @@ export default function RegisterPage() {
                 <User className="h-6 w-6 text-blue-600" />
               </div>
               <div className="flex-1">
-                <p className="font-semibold text-gray-900">I'm looking to rent</p>
+                <p className="font-semibold text-gray-900">I need a house to rent </p>
                 <p className="text-sm text-gray-500">Find your perfect rental home</p>
               </div>
               <ArrowRight className="h-5 w-5 text-gray-400 group-hover:text-blue-600 transition-colors" />

@@ -10,6 +10,8 @@ export interface ChatMessage {
   content: string;
   timestamp: Date | string;
   read: boolean;
+  delivered?: boolean;
+  status?: "sent" | "delivered" | "read";
 }
 
 export interface Conversation {

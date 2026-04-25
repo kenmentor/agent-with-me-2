@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
 import { toast } from "sonner";
+import { isRole, getDashboardRoute, ROLE_LABELS, UserRole } from "@/lib/roles";
 
 const LOGO_SVG = (
   <svg
@@ -93,6 +94,8 @@ export default function Header({ color }: { color?: string }) {
 
   const userAvatar = user?.avater;
   const initials = user?.userName?.[0]?.toUpperCase() || "?";
+  const userRole = user?.role?.toLowerCase() as UserRole;
+  const roleLabel = userRole ? ROLE_LABELS[userRole] : null;
 
   const navLinks = [
     { name: "Properties", href: "/properties", icon: Building2 },
@@ -100,6 +103,11 @@ export default function Header({ color }: { color?: string }) {
     { name: "Chat", href: "/chat", icon: MessageCircle },
     { name: "Account", href: "/account", icon: User },
   ];
+
+  const getDashboardLink = () => {
+    if (!userRole) return "/dashboard";
+    return getDashboardRoute();
+  };
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-black">
@@ -176,9 +184,14 @@ export default function Header({ color }: { color?: string }) {
                       <div className="p-4 border-b">
                         <p className="font-semibold text-gray-900">{user.userName}</p>
                         <p className="text-sm text-gray-500">{user.email}</p>
+                        {roleLabel && (
+                          <span className="inline-block mt-1 text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded">
+                            {roleLabel}
+                          </span>
+                        )}
                       </div>
                       <div className="py-2">
-                        <Link href="/dashboard" onClick={() => setProfileOpen(false)}>
+                        <Link href={getDashboardLink()} onClick={() => setProfileOpen(false)}>
                           <Button variant="ghost" className="w-full justify-start text-gray-700">
                             <LayoutDashboard className="w-4 h-4 mr-3" />
                             Dashboard
@@ -293,17 +306,19 @@ export default function Header({ color }: { color?: string }) {
                 </Link>
               ))}
 
-              {/* Quick Actions for Authenticated Users */}
+{/* Quick Actions for Authenticated Users */}
               {isAuthenticated && (
                 <>
                   <div className="border-t border-white/10 pt-4 mt-4">
                     <p className="text-xs text-white/40 uppercase px-4 mb-2">Quick Actions</p>
-                    <Link href="/properties/add" onClick={() => setMobileMenuOpen(false)}>
-                      <div className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-white/5 transition-colors">
-                        <PlusCircle className="w-5 h-5 text-white/70" />
-                        <span className="text-white">List Property</span>
-                      </div>
-                    </Link>
+                    {isRole(["landlord", "host", "agent"]) && (
+                      <Link href="/properties/add" onClick={() => setMobileMenuOpen(false)}>
+                        <div className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-white/5 transition-colors">
+                          <PlusCircle className="w-5 h-5 text-white/70" />
+                          <span className="text-white">List Property</span>
+                        </div>
+                      </Link>
+                    )}
                     <Link href="/user" onClick={() => setMobileMenuOpen(false)}>
                       <div className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-white/5 transition-colors">
                         <User className="w-5 h-5 text-white/70" />

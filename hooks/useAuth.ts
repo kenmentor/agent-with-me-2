@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { useAuthStore } from "@/store/authStore";
 
@@ -33,6 +33,7 @@ export function useAuthCheck(options: UseAuthCheckOptions = {}) {
     user: null,
     isLoading: true,
   });
+  const redirectAttempted = useRef(false);
 
   useEffect(() => {
     if (!_hasHydrated) {
@@ -44,7 +45,6 @@ export function useAuthCheck(options: UseAuthCheckOptions = {}) {
     const isVerified = !user?.verifiedEmail || allowUnverified || user?.verifiedEmail;
     const isAuthAndVerified = isAuth && isVerified;
 
-    // Always set state first
     setState({
       isReady: true,
       isAuthenticated: isAuthAndVerified,
@@ -52,11 +52,12 @@ export function useAuthCheck(options: UseAuthCheckOptions = {}) {
       isLoading: false,
     });
 
-    // Then handle redirect
-    if (requireAuth && !isAuthAndVerified) {
+    if (requireAuth && !isAuthAndVerified && !redirectAttempted.current) {
+      redirectAttempted.current = true;
       const redirectPath = redirectTo || `/auth/login?redirect=${encodeURIComponent(pathname)}`;
       router.replace(redirectPath);
-    } else if (!requireAuth && isAuthAndVerified && redirectTo) {
+    } else if (!requireAuth && isAuthAndVerified && redirectTo && !redirectAttempted.current) {
+      redirectAttempted.current = true;
       router.replace(redirectTo);
     }
   }, [_hasHydrated, isAuthenticated, user, requireAuth, redirectTo, pathname, router, allowUnverified]);

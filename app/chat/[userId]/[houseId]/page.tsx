@@ -13,7 +13,7 @@ import { useChatStore, ChatMessage } from "@/store/chatStore";
 import { useAuthStore } from "@/store/authStore";
 import Req from "@/app/utility/axois";
 import { format, isToday, isYesterday } from "date-fns";
-import { initializeSocket, disconnectSocket, emitEvent, onEvent, offEvent, getSocket } from "@/app/utility/socket";
+import { initializeSocket, disconnectSocket, emitEvent, onEvent, offEvent, getSocket, onReconnect, offReconnect } from "@/app/utility/socket";
 import { ChatConversationSkeleton } from "@/components/ui/skeleton";
 
 const { base, app } = Req;
@@ -86,6 +86,20 @@ export default function ChatConversationPage() {
       emitEvent("leave_conversation", { conversationId: userId });
     };
   }, [_hasHydrated, isAuthenticated, user, router, userId]);
+
+  useEffect(() => {
+    const handleReconnect = () => {
+      console.log("Chat conversation [houseId]: socket reconnected, rejoin conversation and refetch messages");
+      emitEvent("join_conversation", { conversationId: userId });
+      fetchMessages();
+    };
+
+    onReconnect(handleReconnect);
+
+    return () => {
+      offReconnect(handleReconnect);
+    };
+  }, [userId, fetchMessages]);
 
   useEffect(() => {
     scrollToBottom();

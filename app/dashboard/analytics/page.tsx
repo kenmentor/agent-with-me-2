@@ -21,6 +21,8 @@ import {
   Pie,
   Cell,
 } from "recharts";
+import { isRole, getDashboardRoute } from "@/lib/roles";
+import { toast } from "sonner";
 
 const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#8884d8"];
 
@@ -45,10 +47,13 @@ export default function AnalyticsPage() {
       router.replace("/auth/login");
       return;
     }
-    if (user.role !== "admin") {
-      router.replace("/dashboard");
+    
+    if (!isRole(["admin"])) {
+      toast.error("Access denied. Admin access only.");
+      router.replace(getDashboardRoute());
       return;
     }
+    
     loadData();
   }, [_hasHydrated, isAuthenticated, user, router]);
 

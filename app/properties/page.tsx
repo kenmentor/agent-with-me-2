@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState, useCallback, Suspense } from "react";
+import { useEffect, useState, useCallback, Suspense, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -70,10 +70,28 @@ function PropertiesContent() {
   const [suggestions, setSuggestions] = useState<{text: string; type: string}[]>([]);
   const [suggestionsLoading, setSuggestionsLoading] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [suggestionQuery, setSuggestionQuery] = useState("");
   const [selectedState, setSelectedState] = useState("all");
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
+  const suggestionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Debounce suggestion query
+  useEffect(() => {
+    if (suggestionTimeoutRef.current) clearTimeout(suggestionTimeoutRef.current);
+    if (!suggestionQuery || suggestionQuery.length < 2) {
+      setSuggestions([]);
+      setSuggestionsLoading(false);
+      return;
+    }
+    suggestionTimeoutRef.current = setTimeout(() => {
+      fetchSuggestions(suggestionQuery);
+    }, 300);
+    return () => {
+      if (suggestionTimeoutRef.current) clearTimeout(suggestionTimeoutRef.current);
+    };
+  }, [suggestionQuery]);
 
   // Load view mode from localStorage
   useEffect(() => {
@@ -156,7 +174,14 @@ function PropertiesContent() {
     const value = e.target.value;
     setSearchQuery((prev) => ({ ...prev, keyword: value }));
     setShowSuggestions(true);
-    fetchSuggestions(value);
+    setSuggestionQuery(value);
+  };
+
+  // Trigger immediate search (no debounce for suggestions)
+  const triggerSearch = () => {
+    setPage(1);
+    setHasMore(true);
+    setData([]);
   };
 
   // Handle suggestion click
@@ -164,6 +189,9 @@ function PropertiesContent() {
     setSearchQuery((prev) => ({ ...prev, keyword: text }));
     setShowSuggestions(false);
     setSuggestions([]);
+    setSuggestionQuery("");
+    // Trigger search immediately without debounce
+    triggerSearch();
   };
 
   useEffect(() => {
@@ -221,20 +249,27 @@ function PropertiesContent() {
     }
   };
 
-  // Infinite scroll handler
+  const scrollGuardRef = useRef(false);
+
+  // Infinite scroll handler with proper guard
   useEffect(() => {
     const handleScroll = () => {
-      if (
-        window.innerHeight + document.documentElement.scrollTop
-        >= document.documentElement.offsetHeight - 500
-      ) {
-        loadMore();
+      if (scrollGuardRef.current || loadingMore || !hasMore) return;
+      
+      const scrollPosition = window.innerHeight + document.documentElement.scrollTop;
+      const threshold = document.documentElement.offsetHeight - 500;
+      
+      if (scrollPosition >= threshold) {
+        scrollGuardRef.current = true;
+        loadMore().finally(() => {
+          setTimeout(() => { scrollGuardRef.current = false; }, 500);
+        });
       }
     };
 
-    window.addEventListener("scroll", handleScroll);
+    window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
-  }, [page, hasMore, loadingMore, debouncedKeyword, searchQuery]);
+  }, [hasMore, loadingMore, loadMore]);
 
   const toggleFavorite = async (propertyId: string) => {
     if (!isAuthenticated || !user?._id) {
@@ -288,7 +323,12 @@ function PropertiesContent() {
                   name="keyword"
                   onChange={handleSearchChange}
                   onFocus={() => setShowSuggestions(true)}
-                  onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
+                  onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && suggestions.length > 0) {
+                      handleSuggestionClick(suggestions[0].text);
+                    }
+                  }}
                   className="pl-10"
                 />
                 {suggestionsLoading && (
@@ -432,6 +472,7 @@ function PropertiesContent() {
         {viewMode === "feed" ? (
           <PropertyFeed
             properties={data as any}
+            favorites={favorites}
             onLike={toggleFavorite}
             onClose={() => setViewMode("grid")}
           />
@@ -458,7 +499,7 @@ function PropertiesContent() {
                     key={property._id}
                     property={property as any}
                     favorites={favorites}
-                    // onToggleFavorite={toggleFavorite}
+                    onToggleFavorite={toggleFavorite}
                   />
                 ))}
               </div>

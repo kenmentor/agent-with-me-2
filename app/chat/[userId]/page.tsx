@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { ArrowLeft, Send, Loader2 } from "lucide-react";
+import { ArrowLeft, Send, Loader2, Check, CheckCheck } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
 import Req from "@/app/utility/axois";
 import { format, isToday, isYesterday } from "date-fns";
@@ -18,6 +18,12 @@ import {
   startTyping,
   stopTyping,
   isSocketConnected,
+  onReconnect,
+  offReconnect,
+  onDeliveryReceipt,
+  offDeliveryReceipt,
+  onReadReceipt,
+  offReadReceipt
 } from "@/app/utility/socket";
 import { ChatConversationSkeleton } from "@/components/ui/skeleton";
 
@@ -31,6 +37,8 @@ interface Message {
   createdAt: string;
   timestamp?: string;
   read: boolean;
+  delivered?: boolean;
+  status?: "sent" | "delivered" | "read";
 }
 
 export default function ChatConversationPage() {
@@ -148,6 +156,22 @@ export default function ChatConversationPage() {
   }, [conversationId, messages.length, loading]);
 
   useEffect(() => {
+    const handleReconnect = () => {
+      console.log("Chat conversation: socket reconnected, refetching messages");
+      const userId = getUserId();
+      if (userId) {
+        fetchMessages(userId);
+      }
+    };
+
+    onReconnect(handleReconnect);
+
+    return () => {
+      offReconnect(handleReconnect);
+    };
+  }, [getUserId]);
+
+  useEffect(() => {
     const handleConnect = () => {
       setSocketConnected(true);
     };
@@ -167,6 +191,7 @@ export default function ChatConversationPage() {
           const newMessages = [...prev, message];
           return newMessages;
         });
+        markMessagesAsRead()
         scrollToBottom();
 
         if (message.senderId === receiverId && message.receiverId === userId) {
@@ -190,13 +215,31 @@ export default function ChatConversationPage() {
             m._id?.toString().startsWith("temp-") ? data.message : m
           );
         });
+        
       }
     };
 
     const handleMessagesRead = (data: { conversationId: string; readBy: string }) => {
       if (data.readBy === receiverId) {
-        setMessages(prev => prev.map(m => ({ ...m, read: true })));
+        setMessages(prev => prev.map(m => ({ ...m, read: true, status: "read" as const })));
       }
+    };
+
+    const handleDeliveryReceipt = (data: { messageId?: string; conversationId: string; status: string; messages?: any[] }) => {
+      if (data.messages && data.messages.length > 0) {
+        setMessages(prev => prev.map(m => {
+          const delivered = data?.messages?.some(dm => dm._id === m._id);
+          return delivered ? { ...m, delivered: true, status: "delivered" as const } : m;
+        }));
+      } else if (data.messageId) {
+        setMessages(prev => prev.map(m => 
+          m._id === data.messageId ? { ...m, delivered: true, status: "delivered" as const } : m
+        ));
+      }
+    };
+
+    const handleReadReceipt = (data: { conversationId: string; status: string }) => {
+      setMessages(prev => prev.map(m => ({ ...m, read: true, status: "read" as const })));
     };
 
     // Set initial connection status
@@ -208,6 +251,8 @@ export default function ChatConversationPage() {
     onEvent("typing", handleTyping);
     onEvent("message_sent", handleMessageSent);
     onEvent("messages_read", handleMessagesRead);
+    onDeliveryReceipt(handleDeliveryReceipt);
+    onReadReceipt(handleReadReceipt);
 
     return () => {
       offEvent("connect", handleConnect);
@@ -216,6 +261,8 @@ export default function ChatConversationPage() {
       offEvent("typing", handleTyping);
       offEvent("message_sent", handleMessageSent);
       offEvent("messages_read", handleMessagesRead);
+      offDeliveryReceipt(handleDeliveryReceipt);
+      offReadReceipt(handleReadReceipt);
     };
   }, [receiverId, getUserId]);
 
@@ -321,8 +368,19 @@ export default function ChatConversationPage() {
                       : "bg-white border border-gray-200 text-gray-900 rounded-bl-md shadow-sm"
                   }`}>
                     <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
-                    <p className={`text-xs mt-1 ${isOwn ? "text-gray-400" : "text-gray-500"}`}>
+                    <p className={`text-xs mt-1 flex items-center gap-1 ${isOwn ? "text-gray-400" : "text-gray-500"}`}>
                       {formatTime(msg.timestamp || msg.createdAt)}
+                      {isOwn && (
+                        <span className="flex items-center">
+                          {msg.read ? (
+                            <CheckCheck className="w-3.5 h-3.5 text-blue-400" />
+                          ) : msg.delivered || msg.status === "delivered" ? (
+                            <CheckCheck className="w-3.5 h-3.5 text-gray-400" />
+                          ) : (
+                            <Check className="w-3.5 h-3.5" />
+                          )}
+                        </span>
+                      )}
                     </p>
                   </div>
                 </div>

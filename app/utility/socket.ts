@@ -6,6 +6,8 @@ const SOCKET_URL = process.env.NEXT_PUBLIC_ENV === "production"
 
 let socket: Socket | null = null;
 let connectionCallbacks: ((connected: boolean) => void)[] = [];
+let reconnectCallbacks: (() => void)[] = [];
+let isFirstConnection = true;
 
 export const initializeSocket = (token: string): Socket => {
   if (socket?.connected) {
@@ -27,14 +29,23 @@ export const initializeSocket = (token: string): Socket => {
   });
 
   socket.on("connect", () => {
+    console.log("Socket connected");
     connectionCallbacks.forEach(cb => cb(true));
+    
+    if (!isFirstConnection) {
+      console.log("Socket reconnected, firing reconnect callbacks");
+      reconnectCallbacks.forEach(cb => cb());
+    }
+    isFirstConnection = false;
   });
 
   socket.on("disconnect", () => {
     connectionCallbacks.forEach(cb => cb(false));
   });
 
-  socket.on("connect_error", () => {
+  socket.on("connect_error", (error) => {
+    console.error("Socket connection error:", error.message);
+    connectionCallbacks.forEach(cb => cb(false));
   });
 
   return socket!;
@@ -53,6 +64,14 @@ export const onConnectionChange = (callback: (connected: boolean) => void): void
 
 export const offConnectionChange = (callback: (connected: boolean) => void): void => {
   connectionCallbacks = connectionCallbacks.filter(cb => cb !== callback);
+};
+
+export const onReconnect = (callback: () => void): void => {
+  reconnectCallbacks.push(callback);
+};
+
+export const offReconnect = (callback: () => void): void => {
+  reconnectCallbacks = reconnectCallbacks.filter(cb => cb !== callback);
 };
 
 export const disconnectSocket = (): void => {
@@ -115,4 +134,20 @@ export const stopTyping = (conversationId: string, receiverId: string): void => 
 
 export const markMessagesRead = (conversationId: string, callback?: (response: any) => void): void => {
   emitEvent("mark_read", { conversationId }, callback);
+};
+
+export const onDeliveryReceipt = (callback: (data: any) => void): void => {
+  onEvent("delivery_receipt", callback);
+};
+
+export const offDeliveryReceipt = (callback: (data: any) => void): void => {
+  offEvent("delivery_receipt", callback);
+};
+
+export const onReadReceipt = (callback: (data: any) => void): void => {
+  onEvent("read_receipt", callback);
+};
+
+export const offReadReceipt = (callback: (data: any) => void): void => {
+  offEvent("read_receipt", callback);
 };

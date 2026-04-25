@@ -41,6 +41,8 @@ import {
   TourListSkeleton,
   PaymentListSkeleton,
 } from "@/components/ui/skeleton";
+import { isRole, getDashboardRoute } from "@/lib/roles";
+import { Loader2 } from "lucide-react";
 
 const { base, app } = Req;
 
@@ -126,6 +128,13 @@ function LandlordDashboardContent() {
       router.push("/auth/login");
       return;
     }
+    
+    if (!isRole(["landlord", "host"])) {
+      toast.error("Access denied. This dashboard is for landlords only.");
+      router.replace(getDashboardRoute());
+      return;
+    }
+    
     fetchData();
   }, [_hasHydrated, isAuthenticated, user, router, fetchData]);
 

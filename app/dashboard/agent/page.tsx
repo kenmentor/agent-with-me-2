@@ -42,6 +42,8 @@ import {
   TourListSkeleton,
   PaymentListSkeleton,
 } from "@/components/ui/skeleton";
+import { isRole, getDashboardRoute } from "@/lib/roles";
+import { Loader2 } from "lucide-react";
 
 const { base, app } = Req;
 
@@ -118,6 +120,13 @@ export default function AgentDashboard() {
       router.push("/auth/login");
       return;
     }
+    
+    if (!isRole(["agent"])) {
+      toast.error("Access denied. This dashboard is for agents only.");
+      router.replace(getDashboardRoute());
+      return;
+    }
+    
     fetchData();
   }, [_hasHydrated, isAuthenticated, user, router, fetchData]);
 

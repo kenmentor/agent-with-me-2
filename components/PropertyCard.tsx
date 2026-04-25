@@ -45,24 +45,15 @@ import Image from "next/image";
 interface PropertyCardProps {
   property: Property;
   favorites: string[];
+  onToggleFavorite?: (propertyId: string) => void;
 }
 
-const PropertyCard: React.FC<PropertyCardProps> = ({ property, favorites }) => {
-  function toggleFavorite(id: string): void {
-    if (favorites.includes(id)) {
-      // Remove from favorites
-      const updated = favorites.filter((favId: string) => favId !== id);
-      // If favorites is managed by parent, you should call a prop function here
-      // For demo, just log
-      console.log("Removed from favorites:", updated);
-    } else {
-      // Add to favorites
-      const updated = [...favorites, id];
-      // If favorites is managed by parent, you should call a prop function here
-      // For demo, just log
-      console.log("Added to favorites:", updated);
+const PropertyCard: React.FC<PropertyCardProps> = ({ property, favorites, onToggleFavorite }) => {
+  const handleToggleFavorite = () => {
+    if (onToggleFavorite) {
+      onToggleFavorite(property._id);
     }
-  }
+  };
 
   return (
     <Card
@@ -96,7 +87,7 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property, favorites }) => {
           size="sm"
           variant="secondary"
           className="absolute top-2 right-2 p-2"
-          onClick={() => toggleFavorite(property._id)}
+          onClick={handleToggleFavorite}
         >
           <Heart
             className={`h-4 w-4 ${
