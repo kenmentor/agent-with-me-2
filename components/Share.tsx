@@ -28,7 +28,7 @@ function Share({
   thumbnail?: string;
 }) {
   const [copied, setCopied] = useState(false);
-  const propertyLink = `https://agent-with-me-v2.vercel.app/properties/${_id}`;
+  const propertyLink = `https://agent-with-me-v2.vercel.app/properties/${_id}  `;
   const shareText = `${title?.trim() || "Property Listing"} available at ${
     address || "N/A"
   }${state ? `, ${state}` : ""}.

@@ -88,13 +88,35 @@ export default function AccountPage() {
   const handleProfileUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
+    
+    const userId = user?._id;
+    
+    if (!userId) {
+      toast.error("User not found. Please login again.");
+      setSaving(false);
+      return;
+    }
+    
     try {
-      const res = await app.put(`${base}/v1/user/update`, formData);
+      // Only send editable fields - bio and phoneNumber
+      const updateData = {
+        bio: formData.bio,
+        phoneNumber: formData.phoneNumber,
+      };
+      
+      const res = await app.put(`${base}/v1/user/${userId}`, updateData);
       if (res.data?.ok || res.data?.success) {
         const updatedUser = res.data?.data || res.data?.user || res.data;
         if (updatedUser) {
+          // Update zustand store
           setUser(updatedUser);
+          // Update local profile state
           setProfile(updatedUser);
+          // Update form with all user data (preserve non-editable fields)
+          setFormData(prev => ({
+            ...prev,
+            ...updatedUser,
+          }));
         }
         toast.success("Profile updated successfully");
       } else {

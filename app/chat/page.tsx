@@ -150,7 +150,7 @@ export default function ChatListPage() {
 
   useEffect(() => {
     const handleReconnect = () => {
-      console.log("Chat list: socket reconnected, refetching messages");
+      console.log("🔄 Chat list: socket reconnected, refetching all messages from server");
       fetchMessages();
     };
 
@@ -160,6 +160,8 @@ export default function ChatListPage() {
       offReconnect(handleReconnect);
     };
   }, [fetchMessages]);
+
+  // Also fetch on initial load when user comes online (session recovery)
 
   useEffect(() => {
     const handleNewMessage = (data: { message: any }) => {
