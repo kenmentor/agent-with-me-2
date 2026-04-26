@@ -26,8 +26,10 @@ import {
   offReadReceipt
 } from "@/app/utility/socket";
 import { ChatConversationSkeleton } from "@/components/ui/skeleton";
+import api, { baseURL } from "@/lib/api";
 
-const { base, app } = Req;
+const base = baseURL;
+const app = api;
 
 interface Message {
   _id: string;
@@ -107,7 +109,6 @@ export default function ChatConversationPage() {
 
   useEffect(() => {
     if (!_hasHydrated) {
-      console.log("⏳ Waiting for hydration...");
       return;
     }
     if (!isAuthenticated) {
@@ -115,22 +116,37 @@ export default function ChatConversationPage() {
       return;
     }
 
-    const userId = getUserId();
+    const userId = useAuthStore.getState().getUserId();
     if (!userId) {
-      console.log("❌ No userId found");
       setLoading(false);
       return;
     }
 
-    console.log("🔌 Initializing chat for user:", userId);
-    
-    const token = localStorage.getItem("token");
-    if (token) {
-      initializeSocket(token);
-    }
+    // Fetch messages via REST - always works
+    const loadMessages = async () => {
+      try {
+        setLoading(true);
+        const res = await app.get(`${base}/v1/chat/${userId}/${receiverId}`);
+        const data = res.data?.data;
+        
+        if (data) {
+          setMessages(data.messages || []);
+          setParticipant(data.participant || { _id: receiverId, userName: "User" });
+          if (data.conversationId) {
+            setConversationId(data.conversationId);
+          }
+        }
+      } catch (err) {
+        console.error("Error fetching messages:", err);
+        setMessages([]);
+        setParticipant({ _id: receiverId, userName: "User" });
+      } finally {
+        setLoading(false);
+      }
+    };
 
-    fetchMessages(userId);
-  }, [_hasHydrated, isAuthenticated, router, getUserId]);
+    loadMessages();
+  }, [_hasHydrated, isAuthenticated, router, receiverId, base]);
 
   const fetchMessages = async (userId: string) => {
     try {

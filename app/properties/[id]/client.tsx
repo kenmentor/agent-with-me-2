@@ -52,7 +52,7 @@ export default function PropertyDetailClient({
   }
 
   useEffect(() => {
-    trackPropertyView(property._id, property.type, property.price);
+    trackPropertyView(property?._id, property.type, property.price);
   }, [property._id, property.type, property.price]);
 
   const host = property.host || {};
