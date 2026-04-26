@@ -23,7 +23,9 @@ import {
   onDeliveryReceipt,
   offDeliveryReceipt,
   onReadReceipt,
-  offReadReceipt
+  offReadReceipt,
+  queueMessage,
+  emitEvent
 } from "@/app/utility/socket";
 import { ChatConversationSkeleton } from "@/components/ui/skeleton";
 import api, { baseURL } from "@/lib/api";
@@ -40,7 +42,7 @@ interface Message {
   timestamp?: string;
   read: boolean;
   delivered?: boolean;
-  status?: "sent" | "delivered" | "read";
+  status?: "sending" | "sent" | "delivered" | "read" | "failed" | "queued";
 }
 
 export default function ChatConversationPage() {
@@ -219,7 +221,7 @@ export default function ChatConversationPage() {
       setSocketConnected(false);
     };
 
-    const handleNewMessage = (data: { message: any }) => {
+    const handleNewMessage = async (data: { message: any }) => {
       const userId = getUserId();
       const { message } = data;
       console.log("📩 New message received:", message);
@@ -230,7 +232,21 @@ export default function ChatConversationPage() {
           const newMessages = [...prev, message];
           return newMessages;
         });
-        markMessagesAsRead()
+        
+        // Send delivery acknowledgment to server
+        if (message.senderId !== userId && message._id && message.conversationId) {
+          try {
+            emitEvent("message_ack", {
+              messageId: message._id,
+              conversationId: message.conversationId,
+              status: "delivered"
+            });
+          } catch (err) {
+            console.error("Failed to send ACK:", err);
+          }
+        }
+        
+        markMessagesAsRead();
         scrollToBottom();
 
         if (message.senderId === receiverId && message.receiverId === userId) {
@@ -309,7 +325,7 @@ export default function ChatConversationPage() {
     scrollToBottom();
   }, [messages]);
 
-  const handleSendMessage = () => {
+  const handleSendMessage = async () => {
     const userId = getUserId();
     if (!newMessage.trim() || !userId || sending) return;
 
@@ -320,6 +336,7 @@ export default function ChatConversationPage() {
       content: newMessage.trim(),
       createdAt: new Date().toISOString(),
       read: false,
+      status: "sending" as const,
     };
 
     setMessages((prev) => [...prev, tempMsg]);
@@ -327,18 +344,33 @@ export default function ChatConversationPage() {
     setSending(true);
     scrollToBottom();
 
-    socketSendMessage(
-      receiverId,
-      newMessage.trim(),
-      undefined,
-      (response: { success: boolean; message?: any }) => {
-        if (!response.success) {
-          setMessages((prev) => prev.filter((m) => m._id !== tempMsg._id));
-          setNewMessage(newMessage.trim());
+    if (isSocketConnected()) {
+      socketSendMessage(
+        receiverId,
+        newMessage.trim(),
+        conversationId || undefined,
+        (response: { success: boolean; message?: any }) => {
+          if (!response.success) {
+            queueMessage(receiverId, newMessage.trim(), conversationId || undefined);
+            setMessages((prev) => prev.map((m) => 
+              m._id === tempMsg._id ? { ...m, status: "queued" as const } : m
+            ));
+          } else {
+            setMessages((prev) => prev.map((m) => 
+              m._id === tempMsg._id ? { ...m, status: "sent" as const, _id: response.message?._id || tempMsg._id } : m
+            ));
+          }
+          setSending(false);
         }
-        setSending(false);
-      }
-    );
+      );
+    } else {
+      queueMessage(receiverId, newMessage.trim(), conversationId || undefined);
+      setMessages((prev) => prev.map((m) => 
+        m._id === tempMsg._id ? { ...m, status: "queued" as const } : m
+      ));
+      setSending(false);
+      console.log("Socket not connected. Message queued and will be sent when reconnected.");
+    }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -411,7 +443,13 @@ export default function ChatConversationPage() {
                       {formatTime(msg.timestamp || msg.createdAt)}
                       {isOwn && (
                         <span className="flex items-center">
-                          {msg.read ? (
+                          {msg.status === "sending" ? (
+                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          ) : msg.status === "failed" ? (
+                            <span className="text-red-500 text-xs">Failed</span>
+                          ) : msg.status === "queued" ? (
+                            <span className="text-yellow-500 text-xs">Queued</span>
+                          ) : msg.read ? (
                             <CheckCheck className="w-3.5 h-3.5 text-blue-400" />
                           ) : msg.delivered || msg.status === "delivered" ? (
                             <CheckCheck className="w-3.5 h-3.5 text-gray-400" />

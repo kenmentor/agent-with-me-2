@@ -9,6 +9,78 @@ let connectionCallbacks: ((connected: boolean) => void)[] = [];
 let reconnectCallbacks: (() => void)[] = [];
 let isFirstConnection = true;
 
+interface QueuedMessage {
+  receiverId: string;
+  content: string;
+  conversationId?: string;
+  timestamp: number;
+}
+
+let messageQueue: QueuedMessage[] = [];
+let isProcessingQueue = false;
+
+const STORAGE_KEY = "chat_message_queue";
+
+const saveQueueToStorage = () => {
+  if (typeof window !== "undefined") {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(messageQueue));
+    } catch (e) {
+      console.error("Failed to save message queue:", e);
+    }
+  }
+};
+
+const loadQueueFromStorage = (): QueuedMessage[] => {
+  if (typeof window !== "undefined") {
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      return stored ? JSON.parse(stored) : [];
+    } catch (e) {
+      console.error("Failed to load message queue:", e);
+      return [];
+    }
+  }
+  return [];
+};
+
+const processQueue = async () => {
+  if (isProcessingQueue || !socket?.connected || messageQueue.length === 0) {
+    return;
+  }
+
+  isProcessingQueue = true;
+
+  while (messageQueue.length > 0 && socket?.connected) {
+    const msg = messageQueue[0];
+    try {
+      await new Promise<void>((resolve, reject) => {
+        socket?.emit("send_message", {
+          receiverId: msg.receiverId,
+          content: msg.content,
+          conversationId: msg.conversationId,
+        }, (response: any) => {
+          if (response.success) {
+            resolve();
+          } else {
+            reject(new Error(response.message || "Failed to send"));
+          }
+        });
+      });
+      messageQueue.shift();
+      saveQueueToStorage();
+    } catch (error) {
+      console.error("Failed to process queued message:", error);
+      break;
+    }
+  }
+
+  isProcessingQueue = false;
+  if (messageQueue.length > 0 && socket?.connected) {
+    setTimeout(processQueue, 1000);
+  }
+};
+
 export const initializeSocket = (token: string): Socket => {
   if (socket?.connected) {
     return socket;
@@ -17,6 +89,8 @@ export const initializeSocket = (token: string): Socket => {
   if (socket) {
     socket.disconnect();
   }
+
+  messageQueue = loadQueueFromStorage();
 
   socket = io(`${SOCKET_URL}/chat`, {
     auth: { token },
@@ -35,11 +109,13 @@ export const initializeSocket = (token: string): Socket => {
     if (!isFirstConnection) {
       console.log("Socket reconnected, firing reconnect callbacks");
       reconnectCallbacks.forEach(cb => cb());
+      processQueue();
     }
     isFirstConnection = false;
   });
 
   socket.on("disconnect", () => {
+    console.log("Socket disconnected");
     connectionCallbacks.forEach(cb => cb(false));
   });
 
@@ -122,6 +198,44 @@ export const sendMessage = (
   callback?: (response: any) => void
 ): void => {
   emitEvent("send_message", { receiverId, content, conversationId }, callback);
+};
+
+export const sendMessageWithFallback = async (
+  receiverId: string,
+  content: string,
+  conversationId: string | undefined,
+  apiCallback?: (response: any) => void
+): Promise<{ success: boolean; message?: any; viaApi?: boolean }> => {
+  if (socket?.connected) {
+    return new Promise((resolve) => {
+      socket!.emit("send_message", { receiverId, content, conversationId }, (response: any) => {
+        if (apiCallback) apiCallback(response);
+        resolve({ success: response.success, message: response.message });
+      });
+    });
+  } else {
+    console.log("Socket not connected, using REST API fallback");
+    return { success: false, viaApi: true };
+  }
+};
+
+export const queueMessage = (receiverId: string, content: string, conversationId?: string): void => {
+  const queuedMsg: QueuedMessage = {
+    receiverId,
+    content,
+    conversationId,
+    timestamp: Date.now(),
+  };
+  messageQueue.push(queuedMsg);
+  saveQueueToStorage();
+  console.log("Message queued for later delivery:", messageQueue.length, "messages");
+};
+
+export const getQueuedMessages = (): QueuedMessage[] => [...messageQueue];
+
+export const clearMessageQueue = (): void => {
+  messageQueue = [];
+  saveQueueToStorage();
 };
 
 export const startTyping = (conversationId: string, receiverId: string): void => {
