@@ -106,28 +106,47 @@ export default function ChatConversationPage() {
   };
 
   useEffect(() => {
-    if (!_hasHydrated) return;
+    if (!_hasHydrated) {
+      console.log("⏳ Waiting for hydration...");
+      return;
+    }
     if (!isAuthenticated) {
       router.push("/auth/login");
       return;
     }
 
     const userId = getUserId();
-    if (!userId) return;
+    if (!userId) {
+      console.log("❌ No userId found");
+      setLoading(false);
+      return;
+    }
 
+    console.log("🔌 Initializing chat for user:", userId);
+    
     const token = localStorage.getItem("token");
     if (token) {
       initializeSocket(token);
     }
 
     fetchMessages(userId);
-  }, [_hasHydrated, isAuthenticated, router]);
+  }, [_hasHydrated, isAuthenticated, router, getUserId]);
 
   const fetchMessages = async (userId: string) => {
     try {
       setLoading(true);
+      
+      // Add timeout to prevent infinite loading
+      const timeoutId = setTimeout(() => {
+        console.log("⏱️ Fetch timeout - stopping loading");
+        setLoading(false);
+      }, 15000); // 15 second timeout
+      
       console.log("📋 Fetching messages for:", userId, receiverId);
       const res = await app.get(`${base}/v1/chat/${userId}/${receiverId}`);
+      
+      clearTimeout(timeoutId);
+      
       const data = res.data?.data;
       console.log("📋 Response data:", data);
       
@@ -143,11 +162,15 @@ export default function ChatConversationPage() {
     } catch (err: any) {
       console.error("Error fetching messages:", err);
       console.error("Response:", err.response?.data);
+      // Still show UI even if API fails
+      setMessages([]);
       setParticipant({ _id: receiverId, userName: "User" });
     } finally {
       setLoading(false);
     }
   };
+
+  // Still allow UI to show even without messages
 
   useEffect(() => {
     if (conversationId && messages.length > 0 && !loading) {
