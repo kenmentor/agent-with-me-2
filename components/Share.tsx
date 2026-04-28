@@ -48,7 +48,7 @@ ${propertyLink}
 Agent With Me`;
 
   const router = useRouter();
-
+console.log("hi")
   const handleCopy = async () => {
     try {
       await navigator.clipboard.writeText(propertyLink);
