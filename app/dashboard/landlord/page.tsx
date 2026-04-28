@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, Suspense } from "react";
+import { useState, useEffect, useCallback, useRef, Suspense } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
@@ -100,16 +100,26 @@ function LandlordDashboardContent() {
   const [payments, setPayments] = useState<Payment[]>([]);
   const [tours, setTours] = useState<Tour[]>([]);
   const [loading, setLoading] = useState(true);
+  const [initialized, setInitialized] = useState(false);
+
+  const userIdRef = useRef(user?._id);
 
   const fetchData = useCallback(async () => {
-    if (!user?._id) return;
+    const currentUserId = userIdRef.current;
+    if (!currentUserId) {
+      setLoading(false);
+      return;
+    }
     
+    if (initialized) return;
+    
+    setInitialized(true);
     try {
       setLoading(true);
       const [propertiesRes, paymentsRes, toursRes] = await Promise.all([
-        app.get(`${base}/v1/house?hostId=${user._id}`).catch(() => ({ data: { data: [] } })),
-        app.get(`${base}/v1/payment/${user._id}`).catch(() => ({ data: { data: [] } })),
-        app.get(`${base}/v1/tour/landlord/${user._id}`).catch(() => ({ data: { data: [] } })),
+        app.get(`${base}/v1/house?hostId=${currentUserId}`).catch(() => ({ data: { data: [] } })),
+        app.get(`${base}/v1/payment/${currentUserId}`).catch(() => ({ data: { data: [] } })),
+        app.get(`${base}/v1/tour/landlord/${currentUserId}`).catch(() => ({ data: { data: [] } })),
       ]);
       
       setProperties(propertiesRes.data?.data || []);
@@ -120,7 +130,11 @@ function LandlordDashboardContent() {
     } finally {
       setLoading(false);
     }
-  }, [app, base, user?._id]);
+  }, [app, base, initialized]);
+
+  useEffect(() => {
+    userIdRef.current = user?._id;
+  }, [user?._id]);
 
   useEffect(() => {
     if (!_hasHydrated) return;
@@ -130,7 +144,6 @@ function LandlordDashboardContent() {
     }
     
     if (!isRole(["landlord", "host"])) {
-      toast.error("Access denied. This dashboard is for landlords only.");
       router.replace(getDashboardRoute());
       return;
     }

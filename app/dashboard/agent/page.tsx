@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
@@ -90,18 +90,28 @@ export default function AgentDashboard() {
   const [tours, setTours] = useState<Tour[]>([]);
   const [payouts, setPayouts] = useState<Payout[]>([]);
   const [loading, setLoading] = useState(true);
+  const [initialized, setInitialized] = useState(false);
+
+  const userIdRef = useRef(user?._id);
 
   const referralCode = user?.referralCode || `AGENT${user?._id?.slice(-6).toUpperCase()}` || "AGENT1234";
 
   const fetchData = useCallback(async () => {
-    if (!user?._id) return;
+    const currentUserId = userIdRef.current;
+    if (!currentUserId) {
+      setLoading(false);
+      return;
+    }
     
+    if (initialized) return;
+    
+    setInitialized(true);
     try {
       setLoading(true);
       const [propertiesRes, toursRes, payoutsRes] = await Promise.all([
-        app.get(`${base}/v1/house?agentId=${user._id}`).catch(() => ({ data: { data: [] } })),
-        app.get(`${base}/v1/tour/agent/${user._id}`).catch(() => ({ data: { data: [] } })),
-        app.get(`${base}/v1/payout/agent/${user._id}`).catch(() => ({ data: { data: [] } })),
+        app.get(`${base}/v1/house?agentId=${currentUserId}`).catch(() => ({ data: { data: [] } })),
+        app.get(`${base}/v1/tour/agent/${currentUserId}`).catch(() => ({ data: { data: [] } })),
+        app.get(`${base}/v1/payout/agent/${currentUserId}`).catch(() => ({ data: { data: [] } })),
       ]);
       
       setProperties(propertiesRes.data?.data || []);
@@ -112,7 +122,11 @@ export default function AgentDashboard() {
     } finally {
       setLoading(false);
     }
-  }, [app, base, user?._id]);
+  }, [app, base, initialized]);
+
+  useEffect(() => {
+    userIdRef.current = user?._id;
+  }, [user?._id]);
 
   useEffect(() => {
     if (!_hasHydrated) return;
@@ -122,7 +136,6 @@ export default function AgentDashboard() {
     }
     
     if (!isRole(["agent"])) {
-      toast.error("Access denied. This dashboard is for agents only.");
       router.replace(getDashboardRoute());
       return;
     }

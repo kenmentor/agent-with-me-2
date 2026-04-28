@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
@@ -82,16 +82,26 @@ export default function TenantDashboard() {
   const [payments, setPayments] = useState<Payment[]>([]);
   const [tours, setTours] = useState<Tour[]>([]);
   const [loading, setLoading] = useState(true);
+  const [initialized, setInitialized] = useState(false);
+
+  const userIdRef = useRef(user?._id);
 
   const fetchData = useCallback(async () => {
-    if (!user?._id) return;
+    const currentUserId = userIdRef.current;
+    if (!currentUserId) {
+      setLoading(false);
+      return;
+    }
     
+    if (initialized) return;
+    
+    setInitialized(true);
     try {
       setLoading(true);
       const [savedRes, paymentsRes, toursRes] = await Promise.all([
-        app.get(`${base}/v1/favorites/${user._id}`).catch(() => ({ data: { data: [] } })),
-        app.get(`${base}/v1/payment/${user._id}`).catch(() => ({ data: { data: [] } })),
-        app.get(`${base}/v1/tour/guest/${user._id}`).catch(() => ({ data: { data: [] } })),
+        app.get(`${base}/v1/favorites/${currentUserId}`).catch(() => ({ data: { data: [] } })),
+        app.get(`${base}/v1/payment/${currentUserId}`).catch(() => ({ data: { data: [] } })),
+        app.get(`${base}/v1/tour/guest/${currentUserId}`).catch(() => ({ data: { data: [] } })),
       ]);
       
       setSavedHouses(savedRes.data?.data || []);
@@ -103,7 +113,11 @@ export default function TenantDashboard() {
     } finally {
       setLoading(false);
     }
-  }, [app, base, user?._id]);
+  }, [app, base, initialized]);
+
+  useEffect(() => {
+    userIdRef.current = user?._id;
+  }, [user?._id]);
 
   useEffect(() => {
     if (!_hasHydrated) return;
@@ -112,8 +126,7 @@ export default function TenantDashboard() {
       return;
     }
     
-    if (!isRole(["tenant"])) {
-      toast.error("Access denied. This dashboard is for tenants only.");
+    if (!isRole(["guest"])) {
       router.replace(getDashboardRoute());
       return;
     }
@@ -189,6 +202,27 @@ export default function TenantDashboard() {
                   {menuItems.map((item) => {
                     const Icon = item.icon;
                     return (
+                      (item.label=="Messages")?(
+                        <Link href={"/chat"}>
+                      <Button
+                
+                        key={item.id}
+                        variant={activeTab === item.id ? "default" : "ghost"}
+                        className="w-full justify-between"
+                        onClick={() => setActiveTab(item.id)}
+                      >
+                        <span className="flex items-center ">
+                          <Icon className="h-4 w-4 mr-2" />
+                          {item.label}
+                        </span>
+                        {item.badge ? (
+                          <span className="bg-red-500 text-white text-xs px-2 py-0.5 rounded-full">
+                            {item.badge}
+                          </span>
+                        ) : null}
+                      </Button>
+                      </Link>):(
+                        
                       <Button
                         key={item.id}
                         variant={activeTab === item.id ? "default" : "ghost"}
@@ -205,6 +239,7 @@ export default function TenantDashboard() {
                           </span>
                         ) : null}
                       </Button>
+                      )
                     );
                   })}
                   <Button

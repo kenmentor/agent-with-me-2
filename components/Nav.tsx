@@ -132,7 +132,7 @@ export default function BottomNav() {
     { name: "Explore", href: "/properties", icon: Building2 },
     { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
     ...(user && (user.role === "agent" || user.role === "host" || user.role === "landlord") ? [{ name: "Add", href: "/properties/add", icon: PlusCircle }] : []),
-    { name: "Chat", href: "/chat", icon: MessageCircle, badge: unreadCount },
+    { name: "Chat", href: "/chat", icon: MessageCircle, badge:  unreadCount},
     { name: "Account", href: "/account", icon: User },
   ];
 
@@ -161,6 +161,7 @@ export default function BottomNav() {
             >
               <div
                 className={`
+                  relative 
                   flex items-center justify-center w-9 h-9 rounded-lg
                   transition-colors duration-150
                   ${isActive ? "bg-white text-black" : "text-white/50"}
@@ -170,8 +171,9 @@ export default function BottomNav() {
                 
                 {/* Badge for unread messages */}
                 {item.badge > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold min-w-[18px] h-[18px] rounded-full flex items-center justify-center px-1">
-                    {item.badge > 99 ? "99+" : item.badge}
+
+                  <span className="absolute -top-1 -right-2 bg-red-500 text-white text-[10px] font-bold min-w-[18px] h-[18px] rounded-full flex items-center justify-center px-1">
+                    {item.badge > 99 ? "99+" : item.badge} 
                   </span>
                 )}
               </div>

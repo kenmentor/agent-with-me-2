@@ -9,20 +9,40 @@ import { Button } from "@/components/ui/button";
 import {
   Menu,
   X,
-  Building2,
-  PlusCircle,
-  LayoutDashboard,
-  MessageCircle,
-  User,
+ 
   Wallet,
   Bell,
   LogOut,
   Settings,
 } from "lucide-react";
-import { useAuthStore } from "@/store/authStore";
+
 import { toast } from "sonner";
 import { isRole, getDashboardRoute, ROLE_LABELS, UserRole } from "@/lib/roles";
 
+
+
+
+import {
+  Building2,
+  PlusCircle,
+  LayoutDashboard,
+  MessageCircle,
+  User,
+} from "lucide-react";
+import { useAuthStore } from "@/store/authStore";
+
+import {
+  initializeSocket,
+  onEvent,
+  offEvent,
+  isSocketConnected,
+} from "@/app/utility/socket";
+import Req from "@/app/utility/axois";
+
+const { base, app } = Req;
+
+
+  
 const LOGO_SVG = (
   <svg
     width="24"
@@ -64,12 +84,95 @@ const LOGO_SVG = (
 );
 
 export default function Header({ color }: { color?: string }) {
-  const router = useRouter();
   const pathname = usePathname();
-  const { user, logout, isAuthenticated } = useAuthStore();
+  const user = useAuthStore((state) => state.user);
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const _hasHydrated = useAuthStore((state) => state._hasHydrated);
+  const getUserId = useAuthStore((state) => state.getUserId);
+  const [isVisible, setIsVisible] = useState(true);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const lastScrollY = useRef(0);
+  const { logout } = useAuthStore();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const profileRef = useRef<HTMLDivElement>(null);
+
+  // Fetch initial unread count
+  useEffect(() => {
+    if (!_hasHydrated || !isAuthenticated) return;
+
+    const userId = getUserId();
+    if (!userId) return;
+
+    const fetchUnreadCount = async () => {
+      try {
+        const res = await app.get(`${base}/v1/chat/messages/${userId}`);
+        const data = res.data?.data;
+        
+        if (data && data.conversations) {
+          let total = 0;
+          Object.values(data.conversations).forEach((conv: any) => {
+            total += conv.unreadCount || 0;
+          });
+          setUnreadCount(total);
+        }
+      } catch (err) {
+        console.error("Failed to fetch unread count:", err);
+      }
+    };
+
+    fetchUnreadCount();
+  }, [_hasHydrated, isAuthenticated, getUserId]);
+
+  // Initialize socket and listen for new messages
+  useEffect(() => {
+    if (!_hasHydrated || !isAuthenticated) return;
+
+    const userId = getUserId();
+    if (!userId) return;
+
+    const token = localStorage.getItem("token");
+    if (token && !isSocketConnected()) {
+      initializeSocket(token);
+    }
+
+    const handleNewMessage = (data: { message: any }) => {
+      const currentUserId = getUserId();
+      if (!currentUserId) return;
+      
+      const { message } = data;
+      // Only increment if message is NOT from current user
+      if (message.senderId !== currentUserId) {
+        setUnreadCount((prev) => prev + 1);
+      }
+    };
+
+    const handleMessagesRead = (data: { conversationId: string; readBy: string }) => {
+      const currentUserId = getUserId();
+      if (!currentUserId) return;
+      
+      // If someone else read our messages, we don't change count
+      // We only decrement when WE read messages (handled separately)
+    };
+
+    onEvent("new_message", handleNewMessage);
+    onEvent("messages_read", handleMessagesRead);
+
+    return () => {
+      offEvent("new_message", handleNewMessage);
+      offEvent("messages_read", handleMessagesRead);
+    };
+  }, [_hasHydrated, isAuthenticated, getUserId]);
+
+  // Decrement when viewing chat
+  useEffect(() => {
+    if (pathname.startsWith("/chat/") && unreadCount > 0) {
+      setUnreadCount(0);
+    }
+  }, [pathname, unreadCount]);
+
+  const router = useRouter();
+
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -140,14 +243,21 @@ export default function Header({ color }: { color?: string }) {
           <div className="flex items-center gap-2">
             {/* Notification Bell - Desktop only */}
             {isAuthenticated && (
-              <Button
+              <Link href={"/chat"}>
+              <Button 
                 variant="ghost"
                 size="icon"
                 className="hidden sm:flex text-white hover:bg-white/10 relative"
               >
                 <Bell className="w-5 h-5" />
-                <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full" />
+                {unreadCount > 0 &&(
+                  <span className="absolute -top-1 -right-2 bg-red-500 text-white text-[10px] font-bold min-w-[18px] h-[18px] rounded-full flex items-center justify-center px-1">
+                    {unreadCount > 99 ? "99+" : unreadCount} 
+                  </span>
+                )
+}
               </Button>
+              </Link>
             )}
 
             {/* Profile / Auth - Desktop */}
