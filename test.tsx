@@ -92,7 +92,7 @@ export default function PropertyDetailPage() {
   useEffect(() => {
     getData();
   }, [id]);
-console.log("hello")
+console.log("hello HELLO WORLD ")
   // ---------- Skeleton Loading Section ----------
   if (loading) {
     return (
