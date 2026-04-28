@@ -1,5 +1,4 @@
 
-export const runtime = "edge";
 import { ImageResponse } from "next/og";
 export const alt = "Property Preview";
 export const size = {
