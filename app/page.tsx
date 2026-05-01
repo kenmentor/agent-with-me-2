@@ -17,7 +17,7 @@ import backgroundImage from "@/public/image1.png";
 import Header from "@/components/Header";
 import useWindowDimensions from "@/hooks/useWindowDimenstions";
 import FeaturedPropertyCard from "@/components/FeaturedPropertyCard";
-import Req from "@/app/utility/axois";
+import Req from "@/app/utility/axios";
 
 const { base, app } = Req;
 
@@ -31,7 +31,7 @@ interface Property {
   bathrooms: number;
   area: string;
   thumbnail: string;
-  landlord: string;
+  Host: string;
   rating: number;
   verified: boolean;
   views: number;
@@ -49,7 +49,7 @@ export default function HomePage() {
         const result = res.data;
         setData(result);
       } catch (err) {
-        console.error(err);
+// console.error(err);
       }
     };
 
@@ -76,7 +76,7 @@ export default function HomePage() {
             The smart way to find your next home
           </h1>
           <p className="text-xl text-white mb-8 max-w-3xl mx-auto">
-            Connect with verified landlords and tenants. Rent, buy, or sell
+            Connect with verified Hosts and Guests. Rent, buy, or sell
             properties with confidence.
           </p>
 
@@ -89,7 +89,7 @@ export default function HomePage() {
                 Browse Properties
               </Button>
             </Link>
-            <Link href="/auth/register?role=landlord">
+            <Link href="/auth/register?role=host">
               <Button
                 size="lg"
                 variant="outline"
@@ -161,7 +161,7 @@ export default function HomePage() {
                 <Home className="h-12 w-12 text-orange-600 mx-auto mb-4" />
                 <CardTitle>Rent Payments</CardTitle>
                 <CardDescription>
-                  Secure online rent payments with landlord approval system and
+                  Secure online rent payments with Host approval system and
                   payment history.
                 </CardDescription>
               </CardHeader>
@@ -216,7 +216,7 @@ export default function HomePage() {
             </div>
             <div className="bg-blue-700 p-6 rounded-lg">
               <div className="text-4xl mb-4">✅</div>
-              <h3 className="text-xl font-semibold mb-2">Landlord Approval</h3>
+              <h3 className="text-xl font-semibold mb-2">Host Approval</h3>
               <p className="text-blue-100">
                 Two-step verification ensures payment security
               </p>
@@ -242,7 +242,7 @@ export default function HomePage() {
             Join Agent with me today and start your property journey
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link href="/auth/register?role=tenant">
+            <Link href="/auth/register?role=guest">
               <Button
                 size="lg"
                 className="w-full sm:w-auto bg-white text-blue-600 hover:bg-gray-100"
@@ -250,7 +250,7 @@ export default function HomePage() {
                 I'm Looking for Property
               </Button>
             </Link>
-            <Link href="/auth/register?role=landlord">
+            <Link href="/auth/register?role=host">
               <Button
                 size="lg"
                 variant="outline"
@@ -312,7 +312,7 @@ export default function HomePage() {
               </p>
             </div>
             <div>
-              <h3 className="font-semibold mb-4">For Tenants</h3>
+              <h3 className="font-semibold mb-4">For Guests</h3>
               <ul className="space-y-2 text-gray-400">
                 <li>
                   <Link href="/properties" className="hover:text-white">
@@ -321,7 +321,7 @@ export default function HomePage() {
                 </li>
                 <li>
                   <Link
-                    href="/auth/register?role=tenant"
+                    href="/auth/register?role=guest"
                     className="hover:text-white"
                   >
                     Sign Up
@@ -330,11 +330,11 @@ export default function HomePage() {
               </ul>
             </div>
             <div>
-              <h3 className="font-semibold mb-4">For Landlords</h3>
+              <h3 className="font-semibold mb-4">For Hosts</h3>
               <ul className="space-y-2 text-gray-400">
                 <li>
                   <Link
-                    href="/auth/register?role=landlord"
+                    href="/auth/register?role=host"
                     className="hover:text-white"
                   >
                     List Property
@@ -371,3 +371,5 @@ export default function HomePage() {
     </div>
   );
 }
+
+

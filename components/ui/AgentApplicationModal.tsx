@@ -54,7 +54,7 @@ export function AgentApplicationModal({ open, onClose, email }: AgentApplication
               </li>
               <li className="flex items-center gap-2">
                 <span className="w-1.5 h-1.5 bg-green-500 rounded-full" />
-                Direct tenant inquiries
+                Direct Guest inquiries
               </li>
               <li className="flex items-center gap-2">
                 <span className="w-1.5 h-1.5 bg-green-500 rounded-full" />

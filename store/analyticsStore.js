@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import Req from "@/app/utility/axois";
+import Req from "@/app/utility/axios";
 
 const { app, base } = Req;
 

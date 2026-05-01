@@ -81,7 +81,7 @@ export function ShareListingModal({ open, onClose, property }: ShareListingModal
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch (err) {
-      console.error("Failed to copy:", err);
+// console.error("Failed to copy:", err);
     }
   };
 
@@ -95,7 +95,7 @@ export function ShareListingModal({ open, onClose, property }: ShareListingModal
         });
       } catch (err) {
         if ((err as Error).name !== "AbortError") {
-          console.error("Share failed:", err);
+// console.error("Share failed:", err);
         }
       }
     }

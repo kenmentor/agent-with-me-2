@@ -28,6 +28,7 @@ import {
   emitEvent
 } from "@/app/utility/socket";
 import { ChatConversationSkeleton } from "@/components/ui/skeleton";
+import { getDisplayName, getFirstName } from "@/lib/utils";
 import api, { baseURL } from "@/lib/api";
 
 const base = baseURL;
@@ -58,7 +59,7 @@ export default function ChatConversationPage() {
   const [newMessage, setNewMessage] = useState("");
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
-  const [participant, setParticipant] = useState<{_id: string; userName: string} | null>(null);
+  const [participant, setParticipant] = useState<{_id: string; userName: string; firstName?: string; lastName?: string} | null>(null);
   const [isTyping, setIsTyping] = useState(false);
   const [socketConnected, setSocketConnected] = useState(false);
   const [conversationId, setConversationId] = useState<string | null>(null);
@@ -403,12 +404,12 @@ export default function ChatConversationPage() {
 
         <Avatar className="h-10 w-10">
           <AvatarFallback className="bg-white text-black">
-            {participant?.userName?.charAt(0)?.toUpperCase() || "?"}
+            {getFirstName(participant)?.[0]?.toUpperCase() || "?"}
           </AvatarFallback>
         </Avatar>
 
         <div className="flex-1">
-          <h2 className="text-white font-semibold">{participant?.userName || "Chat"}</h2>
+          <h2 className="text-white font-semibold">{getDisplayName(participant) || "Chat"}</h2>
           <p className="text-gray-400 text-xs flex items-center gap-1">
             {socketConnected ? (
               <><span className="w-2 h-2 bg-green-500 rounded-full" /> Online</>

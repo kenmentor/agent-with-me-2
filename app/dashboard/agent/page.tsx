@@ -34,7 +34,7 @@ import {
 import Link from "next/link";
 import Header from "@/components/Header";
 import { useAuthStore } from "@/store/authStore";
-import Req from "@/app/utility/axois";
+import Req from "@/app/utility/axios";
 import { toast } from "sonner";
 import {
   DashboardStatsSkeleton,
@@ -43,6 +43,7 @@ import {
   PaymentListSkeleton,
 } from "@/components/ui/skeleton";
 import { isRole, getDashboardRoute } from "@/lib/roles";
+import { getFirstName, getDisplayName } from "@/lib/utils";
 import { Loader2 } from "lucide-react";
 
 const { base, app } = Req;
@@ -118,7 +119,7 @@ export default function AgentDashboard() {
       setTours(toursRes.data?.data || []);
       setPayouts(payoutsRes.data?.data || []);
     } catch (err) {
-      console.error("Error fetching data:", err);
+// console.error("Error fetching data:", err);
     } finally {
       setLoading(false);
     }
@@ -162,8 +163,8 @@ export default function AgentDashboard() {
     if (navigator.share) {
       navigator.share({
         title: "Join Agent with Me",
-        text: `Use my referral code: ${referralCode} to register as a landlord`,
-        url: window.location.origin + "/auth/register/landlord",
+        text: `Use my referral code: ${referralCode} to register as a host`,
+        url: window.location.origin + "/auth/register/host",
       });
     } else {
       copyReferralCode();
@@ -214,13 +215,13 @@ export default function AgentDashboard() {
               <Card>
                 <CardHeader className="pb-4">
                   <div className="flex items-center space-x-3">
-                    <Avatar className="h-12 w-12">
-                      <AvatarFallback className="bg-purple-100 text-purple-600">
-                        {user?.userName?.charAt(0)?.toUpperCase() || "A"}
+<Avatar className="h-12 w-12">
+                      <AvatarFallback className="bg-blue-100 text-blue-600">
+                        {getFirstName(user).charAt(0)?.toUpperCase() || "A"}
                       </AvatarFallback>
                     </Avatar>
                     <div>
-                      <h3 className="font-semibold">{user?.userName}</h3>
+                      <h3 className="font-semibold">{getDisplayName(user)}</h3>
                       <Badge variant="outline" className="text-xs bg-purple-50 text-purple-600 border-purple-200">Agent</Badge>
                     </div>
                   </div>
@@ -281,7 +282,7 @@ export default function AgentDashboard() {
               {activeTab === "overview" && (
                 <div className="space-y-6">
                   <h1 className="text-2xl font-bold">
-                    Welcome, {user?.userName?.split(" ")[0]}! 👋
+                    Welcome, {getFirstName(user)}! 👋
                   </h1>
 
                   {/* Stats Cards */}
@@ -533,7 +534,7 @@ export default function AgentDashboard() {
                             <p className="text-sm text-gray-600 flex items-center mt-1">
                               <MapPin className="h-3 w-3 mr-1" /> {property.location}
                             </p>
-                            <p className="text-sm text-gray-500 mt-1">Host: {property.host?.userName || "Unknown"}</p>
+                            <p className="text-sm text-gray-500 mt-1">Host: {getDisplayName(property.host) || "Unknown"}</p>
                             <div className="flex gap-2 mt-3">
                               <Link href={`/properties/${property._id}`} className="flex-1">
                                 <Button variant="outline" size="sm" className="w-full">
@@ -555,7 +556,7 @@ export default function AgentDashboard() {
                       <CardContent className="py-12 text-center">
                         <Building2 className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                         <h3 className="text-lg font-semibold text-gray-600 mb-2">No managed properties</h3>
-                        <p className="text-gray-500 mb-4">Share your referral code with landlords to manage their properties</p>
+                        <p className="text-gray-500 mb-4">Share your referral code with Hosts to manage their properties</p>
                         <Button onClick={shareReferralCode}>Share Referral Code</Button>
                       </CardContent>
                     </Card>
@@ -742,7 +743,7 @@ export default function AgentDashboard() {
                     <CardContent className="py-12 text-center">
                       <MessageSquare className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                       <h3 className="text-lg font-semibold text-gray-600 mb-2">No messages yet</h3>
-                      <p className="text-gray-500">Messages from landlords and tenants will appear here</p>
+                      <p className="text-gray-500">Messages from Hosts and Guests will appear here</p>
                     </CardContent>
                   </Card>
                 </div>
@@ -754,3 +755,5 @@ export default function AgentDashboard() {
     </>
   );
 }
+
+

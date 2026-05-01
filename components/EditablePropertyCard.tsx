@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Loader, Pencil, RefreshCcw, Save, Trash, X } from "lucide-react";
-import Req from "@/app/utility/axois";
+import Req from "@/app/utility/axios";
 import { toast } from "sonner";
 import { statesAndLGAs } from "@/app/data";
 import {
@@ -240,3 +240,4 @@ export default function EditablePropertyCard({
     </Card>
   );
 }
+

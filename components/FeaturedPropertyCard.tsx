@@ -9,7 +9,7 @@ interface Property {
   bathrooms: number;
   area: string;
   thumbnail: string;
-  landlord: string;
+  Host: string;
   rating: number;
   verified: boolean;
   views: number;
@@ -79,7 +79,7 @@ const FeaturedPropertyCard: React.FC<FeaturedPropertyCardProps> = ({
       setIsLiked(!isLiked);
       onToggleFavorite?.(id);
     } catch (error) {
-      console.error("Error toggling favorite:", error);
+// console.error("Error toggling favorite:", error);
       toast.error("Failed to update favorite");
     }
   }
@@ -156,3 +156,4 @@ const FeaturedPropertyCard: React.FC<FeaturedPropertyCardProps> = ({
   );
 };
 export default FeaturedPropertyCard;
+

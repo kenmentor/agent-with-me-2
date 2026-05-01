@@ -10,7 +10,7 @@ interface Property {
   bathrooms: number;
   area: string;
   thumbnail: string;
-  landlord: string;
+  Host: string;
   rating: number;
   verified: boolean;
   views: number;

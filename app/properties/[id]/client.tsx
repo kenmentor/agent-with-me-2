@@ -1,6 +1,5 @@
 "use client";
 import React from "react";
-import Image from "next/image";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -28,11 +27,11 @@ import {
 import { useState, useEffect } from "react";
 import AutoPlayVideo from "@/components/AutoplayVideo";
 import Share from "@/components/Share";
-import Req from "@/app/utility/axois";
+import Req from "@/app/utility/axios";
 import { useAuthStore } from "@/store/authStore";
 import { trackPropertyInteraction, trackPropertyView } from "@/hooks/usePageTracking";
 import { toast } from "sonner";
-import { formatCurrency, formatPhoneNumber } from "@/lib/utils";
+import { formatCurrency, formatPhoneNumber, getDisplayName, getFirstName } from "@/lib/utils";
 import { Property } from "@/lib/types";
 import BackNav from "@/components/BackNav";
 
@@ -433,28 +432,30 @@ export default function PropertyDetailClient({
                   <Card className="border border-gray-200 shadow-lg overflow-hidden">
                     <CardContent className="p-0">
                       {/* Agent Header */}
-                      <div className="bg-gradient-to-r from-gray-900 to-gray-800 p-5">
-                        <div className="flex items-center gap-4">
-                          <Avatar className="h-14 w-14 border-2 border-white/30">
-                            <AvatarImage src={host?.profileImage || host?.image} />
-                            <AvatarFallback className="bg-white/20 text-white">
-                              {host?.userName?.charAt(0)?.toUpperCase()}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2">
-                              <h3 className="font-bold text-lg text-white">{host.userName || "Unknown"}</h3>
-                              {host.adminVerified && (
-                                <CheckCircle2 className="h-4 w-4 text-green-400" />
-                              )}
+                      <Link href={`/agent/${host?._id}`} className="block">
+                        <div className="bg-gradient-to-r from-gray-900 to-gray-800 p-5">
+                          <div className="flex items-center gap-4">
+                            <Avatar className="h-14 w-14 border-2 border-white/30">
+                              <AvatarImage src={host?.profileImage || host?.image} />
+                              <AvatarFallback className="bg-white/20 text-white">
+                                {getFirstName(host)?.[0]?.toUpperCase()}}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2">
+                                <h3 className="font-bold text-lg text-white">{getDisplayName(host) || "Unknown"}</h3>
+                                {host.adminVerified && (
+                                  <CheckCircle2 className="h-4 w-4 text-green-400" />
+                                )}
+                              </div>
+                              <p className="text-sm text-gray-300">
+                                {host.role === "agent" ? "Certified Agent" : 
+                                 host.role === "host" ? "Property Owner" : "Agent"}
+                              </p>
                             </div>
-                            <p className="text-sm text-gray-300">
-                              {host.role === "agent" ? "Certified Agent" : 
-                               host.role === "landlord" || host.role === "host" ? "Property Owner" : "Agent"}
-                            </p>
                           </div>
                         </div>
-                      </div>
+                      </Link>
 
                       {/* Contact Info */}
                       <div className="p-4 space-y-2">

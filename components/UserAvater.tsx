@@ -8,6 +8,7 @@ import { User, Settings, LogOut, LayoutDashboard, MessageCircle, Wallet } from "
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
+import { getDisplayName } from "@/lib/utils";
 
 interface UserAvatarProps {
   size?: "sm" | "md" | "lg";
@@ -32,7 +33,8 @@ export default function UserAvatar({
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
   const avatarUrl = user?.avater;
-  const initials = user?.userName?.[0]?.toUpperCase() || "?";
+  const displayName = getDisplayName(user);
+  const initials = displayName[0]?.toUpperCase() || "?";
   const sizeClass = sizeClasses[size];
 
   const handleLogout = () => {
@@ -74,7 +76,7 @@ export default function UserAvatar({
             {avatarUrl ? (
               <Image
                 src={avatarUrl}
-                alt={user.userName || "User"}
+                alt={displayName}
                 width={48}
                 height={48}
                 className="w-full h-full object-cover"
@@ -84,7 +86,7 @@ export default function UserAvatar({
             )}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="font-semibold truncate">{user.userName}</p>
+            <p className="font-semibold truncate">{displayName}</p>
             <p className="text-xs text-white/70 truncate">{user.email}</p>
           </div>
         </div>
@@ -159,7 +161,7 @@ export default function UserAvatar({
         {avatarUrl ? (
           <Image
             src={avatarUrl}
-            alt={user.userName || "User"}
+            alt={displayName}
             width={size === "sm" ? 32 : size === "md" ? 40 : 48}
             height={size === "sm" ? 32 : size === "md" ? 40 : 48}
             quality={80}

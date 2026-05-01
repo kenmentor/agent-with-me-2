@@ -26,9 +26,9 @@ export default function InstallAppPrompt() {
     const { outcome } = await deferredPrompt.userChoice;
 
     if (outcome === "accepted") {
-      console.log("✅ App installed!");
+// console.log("✅ App installed!");
     } else {
-      console.log("❌ User dismissed install");
+// console.log("❌ User dismissed install");
     }
 
     setDeferredPrompt(null);

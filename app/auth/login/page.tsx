@@ -61,7 +61,13 @@ function LoginContent() {
   useEffect(() => {
     if (!_hasHydrated) return;
     if (isAuthenticated && user) {
-      router.replace(searchParams.get("from") === "dashboard" ? "/dashboard" : "/properties");
+      const fromUrl = searchParams.get("from");
+      // Redirect to the original URL if provided, otherwise default to dashboard
+      if (fromUrl) {
+        router.replace(fromUrl);
+      } else {
+        router.replace("/dashboard");
+      }
     }
   }, [_hasHydrated, isAuthenticated, user, router, searchParams]);
 
@@ -83,7 +89,12 @@ function LoginContent() {
       if (user?._id) {
         trackLogin(user._id, "email");
       }
-      router.replace(searchParams.get("from") === "dashboard" ? "/dashboard" : "/properties");
+      const fromUrl = searchParams.get("from");
+      if (fromUrl) {
+        router.replace(fromUrl);
+      } else {
+        router.replace("/dashboard");
+      }
     } catch (err: any) {
       const errorMessage = err?.response?.data?.message || err?.message || "Login failed";
       setServerError(errorMessage);
@@ -101,7 +112,7 @@ function LoginContent() {
       trackLogin(null, "google");
       window.location.href = `${baseURL}/v1/auth/google`;
     } catch (err) {
-      console.error("Google login error:", err);
+// console.error("Google login error:", err);
       setIsGoogleLoading(false);
     }
   };

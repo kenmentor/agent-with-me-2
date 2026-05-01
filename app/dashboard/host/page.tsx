@@ -33,7 +33,7 @@ import {
 import Link from "next/link";
 import Header from "@/components/Header";
 import { useAuthStore } from "@/store/authStore";
-import Req from "@/app/utility/axois";
+import Req from "@/app/utility/axios";
 import { toast } from "sonner";
 import {
   DashboardStatsSkeleton,
@@ -42,6 +42,7 @@ import {
   PaymentListSkeleton,
 } from "@/components/ui/skeleton";
 import { isRole, getDashboardRoute } from "@/lib/roles";
+import { getFirstName, getDisplayName } from "@/lib/utils";
 import { Loader2 } from "lucide-react";
 
 const { base, app } = Req;
@@ -79,19 +80,19 @@ interface Tour {
   notes?: string;
 }
 
-export default function LandlordDashboard() {
+export default function HostDashboard() {
   return (
     <Suspense fallback={
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin h-8 w-8 border-4 border-blue-600 border-t-transparent rounded-full" />
       </div>
     }>
-      <LandlordDashboardContent />
+      <HostDashboardContent />
     </Suspense>
   );
 }
 
-function LandlordDashboardContent() {
+function HostDashboardContent() {
   const router = useRouter();
   const { user, logout, isAuthenticated, _hasHydrated } = useAuthStore();
 
@@ -119,14 +120,14 @@ function LandlordDashboardContent() {
       const [propertiesRes, paymentsRes, toursRes] = await Promise.all([
         app.get(`${base}/v1/house?hostId=${currentUserId}`).catch(() => ({ data: { data: [] } })),
         app.get(`${base}/v1/payment/${currentUserId}`).catch(() => ({ data: { data: [] } })),
-        app.get(`${base}/v1/tour/landlord/${currentUserId}`).catch(() => ({ data: { data: [] } })),
+        app.get(`${base}/v1/tour/Host/${currentUserId}`).catch(() => ({ data: { data: [] } })),
       ]);
       
       setProperties(propertiesRes.data?.data || []);
       setPayments(paymentsRes.data?.data || []);
       setTours(toursRes.data?.data || []);
     } catch (err) {
-      console.error("Error fetching data:", err);
+// console.error("Error fetching data:", err);
     } finally {
       setLoading(false);
     }
@@ -143,7 +144,7 @@ function LandlordDashboardContent() {
       return;
     }
     
-    if (!isRole(["landlord", "host"])) {
+    if (!isRole(["host", "host"])) {
       router.replace(getDashboardRoute());
       return;
     }
@@ -210,12 +211,12 @@ function LandlordDashboardContent() {
                   <div className="flex items-center space-x-3">
                     <Avatar className="h-12 w-12">
                       <AvatarFallback className="bg-blue-100 text-blue-600">
-                        {user?.userName?.charAt(0)?.toUpperCase() || "U"}
+                        {getFirstName(user).charAt(0)?.toUpperCase() || "U"}
                       </AvatarFallback>
                     </Avatar>
                     <div>
-                      <h3 className="font-semibold">{user?.userName}</h3>
-                      <Badge variant="outline" className="text-xs">Landlord</Badge>
+                      <h3 className="font-semibold">{getDisplayName(user)}</h3>
+                      <Badge variant="outline" className="text-xs">Host</Badge>
                     </div>
                   </div>
                 </CardHeader>
@@ -258,7 +259,7 @@ function LandlordDashboardContent() {
                 <div className="space-y-6">
                   <div className="flex items-center justify-between">
                     <h1 className="text-2xl font-bold">
-                      Welcome, {user?.userName?.split(" ")[0]}!
+                      Welcome, {getFirstName(user)}!
                     </h1>
                     <Link href="/properties/add">
                       <Button>
@@ -524,7 +525,7 @@ function LandlordDashboardContent() {
                       <CardContent className="py-12 text-center">
                         <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                         <h3 className="text-lg font-semibold text-gray-600 mb-2">No tours scheduled</h3>
-                        <p className="text-gray-500">Tours requested by tenants will appear here</p>
+                        <p className="text-gray-500">Tours requested by Guests will appear here</p>
                       </CardContent>
                     </Card>
                   )}
@@ -575,7 +576,7 @@ function LandlordDashboardContent() {
                         <h3 className="text-lg font-semibold text-gray-600 mb-2">
                           No payment history
                         </h3>
-                        <p className="text-gray-500">You&apos;ll see payments from tenants here</p>
+                        <p className="text-gray-500">You&apos;ll see payments from Guests here</p>
                       </CardContent>
                     </Card>
                   )}
@@ -591,7 +592,7 @@ function LandlordDashboardContent() {
                       <h3 className="text-lg font-semibold text-gray-600 mb-2">
                         No messages yet
                       </h3>
-                      <p className="text-gray-500">Messages from tenants will appear here</p>
+                      <p className="text-gray-500">Messages from Guests will appear here</p>
                     </CardContent>
                   </Card>
                 </div>
@@ -634,3 +635,5 @@ function LandlordDashboardContent() {
     </>
   );
 }
+
+

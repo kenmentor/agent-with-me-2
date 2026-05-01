@@ -19,7 +19,7 @@ import {
   List, Map as MapIcon, ChevronDown, Filter, Bed, Bath, Square
 } from "lucide-react";
 import Header from "@/components/Header";
-import Req from "@/app/utility/axois";
+import Req from "@/app/utility/axios";
 import { statesAndLGAs } from "../../data";
 import { toast } from "sonner";
 import "leaflet/dist/leaflet.css";
@@ -127,7 +127,7 @@ function CityPropertiesContent() {
           toast.success("Location detected!");
         },
         (error) => {
-          console.error("Location error:", error);
+// console.error("Location error:", error);
           setLocationLoading(false);
           toast.error("Could not get your location. Showing all properties.");
         }
@@ -163,7 +163,7 @@ function CityPropertiesContent() {
       
       setProperties(data);
     } catch (err) {
-      console.error("Error fetching properties:", err);
+// console.error("Error fetching properties:", err);
     } finally {
       setLoading(false);
     }
@@ -480,3 +480,4 @@ function CityPropertiesContent() {
     </div>
   );
 }
+

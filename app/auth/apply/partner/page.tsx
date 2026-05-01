@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import Req from "@/app/utility/axois";
+import Req from "@/app/utility/axios";
 
 const { base, app } = Req;
 
@@ -74,7 +74,7 @@ function PartnerApplicationContent() {
         router.push("/auth/login");
       }, 2000);
     } catch (err) {
-      console.error("Application error:", err);
+// console.error("Application error:", err);
     } finally {
       setIsLoading(false);
     }
@@ -241,3 +241,4 @@ export default function PartnerApplicationPage() {
     </Suspense>
   );
 }
+

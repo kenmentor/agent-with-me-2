@@ -58,3 +58,52 @@ export function formatPhoneForCall(phone: string | number | null | undefined): s
   }
   return phoneStr;
 }
+
+export function getDisplayName(user: { firstName?: string; lastName?: string; userName?: string } | null): string {
+  if (!user) return "User";
+  return user.firstName && user.lastName 
+    ? `${user.firstName} ${user.lastName}` 
+    : user.userName || "User";
+}
+
+export function getFirstName(user: { firstName?: string; userName?: string } | null): string {
+  if (!user) return "User";
+  return user.firstName || user.userName?.split(" ")[0] || "User";
+}
+
+const PROPERTY_DRAFT_KEY = "property_draft";
+
+export interface PropertyDraft {
+  formData?: Record<string, any>;
+  images?: string[];
+  savedAt?: number;
+}
+
+export function savePropertyDraft(draft: PropertyDraft): void {
+  if (typeof window === "undefined") return;
+  localStorage.setItem(PROPERTY_DRAFT_KEY, JSON.stringify({
+    ...draft,
+    savedAt: Date.now()
+  }));
+}
+
+export function getPropertyDraft(): PropertyDraft | null {
+  if (typeof window === "undefined") return null;
+  const draft = localStorage.getItem(PROPERTY_DRAFT_KEY);
+  if (!draft) return null;
+  try {
+    return JSON.parse(draft);
+  } catch {
+    return null;
+  }
+}
+
+export function clearPropertyDraft(): void {
+  if (typeof window === "undefined") return;
+  localStorage.removeItem(PROPERTY_DRAFT_KEY);
+}
+
+export function hasPropertyDraft(): boolean {
+  const draft = getPropertyDraft();
+  return !!(draft?.formData || draft?.images?.length);
+}

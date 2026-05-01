@@ -34,7 +34,7 @@ import {
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/authStore";
-import Req from "@/app/utility/axois";
+import Req from "@/app/utility/axios";
 
 type Payment = any;
 
@@ -90,7 +90,7 @@ function PaymentHistoryContent() {
       if (res?.data?.data) setPayments(res.data.data);
       else setPayments([]);
     } catch (err) {
-      console.error("Fetch error:", err);
+// console.error("Fetch error:", err);
       setPayments([]);
     } finally {
       setLoading(false);
@@ -193,7 +193,7 @@ function PaymentHistoryContent() {
   const sendReminder = (payment: Payment) => {
     // Replace with real API call if needed
     alert(
-      `Reminder sent to ${payment.landlordName} at ${payment.landlordPhone}`
+      `Reminder sent to ${payment.HostName} at ${payment.HostPhone}`
     );
   };
 
@@ -203,7 +203,7 @@ GHAR KONNECT - Payment Receipt
 ==============================
 Transaction ID: ${payment.paymentRef || "N/A"}
 Property: ${payment.propertyTitle || "N/A"}
-Landlord: ${payment.landlordName || "N/A"}
+Host: ${payment.HostName || "N/A"}
 Amount: ${payment.amount ? formatCurrency(payment.amount) : "N/A"}
 Payment Date: ${payment.paidDate || "N/A"}
 Payment Time: ${payment.paidTime || "N/A"}
@@ -486,7 +486,7 @@ ${
                           </div>
 
                           <div>
-                            <p className="font-medium">Tenant</p>
+                            <p className="font-medium">Guest</p>
                             <p>{payment.guest || "-"}</p>
                           </div>
                         </div>
@@ -571,3 +571,5 @@ ${
     </div>
   );
 }
+
+

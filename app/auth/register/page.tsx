@@ -22,7 +22,12 @@ export default function RegisterPage() {
   useEffect(() => {
     if (!_hasHydrated || !mounted) return;
     if (isAuthenticated && user) {
-      router.replace(searchParams.get("from") === "dashboard" ? "/dashboard" : "/properties");
+      const fromUrl = searchParams.get("from");
+      if (fromUrl) {
+        router.replace(fromUrl);
+      } else {
+        router.replace("/dashboard");
+      }
     }
   }, [_hasHydrated, isAuthenticated, user, router, searchParams, mounted]);
 
@@ -46,13 +51,13 @@ export default function RegisterPage() {
         </div>
 
         <div className="space-y-3">
-          <Link href="/auth/register/tenant" className="block">
+          <Link href="/auth/register/guest" className="block">
             <div className="flex items-center p-4 rounded-xl border-2 border-gray-100 hover:border-blue-600 hover:bg-blue-50 transition-all cursor-pointer group">
               <div className="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center mr-4">
                 <User className="h-6 w-6 text-blue-600" />
               </div>
               <div className="flex-1">
-                <p className="font-semibold text-gray-900">I need a house to rent </p>
+                <p className="font-semibold text-gray-900">I'm looking for a place to rent</p>
                 <p className="text-sm text-gray-500">Find your perfect rental home</p>
               </div>
               <ArrowRight className="h-5 w-5 text-gray-400 group-hover:text-blue-600 transition-colors" />
@@ -72,14 +77,14 @@ export default function RegisterPage() {
             </div>
           </Link>
 
-          <Link href="/auth/register/landlord" className="block">
+          <Link href="/auth/register/host" className="block">
             <div className="flex items-center p-4 rounded-xl border-2 border-gray-100 hover:border-green-600 hover:bg-green-50 transition-all cursor-pointer group">
               <div className="w-12 h-12 rounded-xl bg-green-100 flex items-center justify-center mr-4">
                 <Building2 className="h-6 w-6 text-green-600" />
               </div>
               <div className="flex-1">
                 <p className="font-semibold text-gray-900">I have properties to rent</p>
-                <p className="text-sm text-gray-500">List your properties for tenants</p>
+                <p className="text-sm text-gray-500">List your properties for Guests</p>
               </div>
               <ArrowRight className="h-5 w-5 text-gray-400 group-hover:text-green-600 transition-colors" />
             </div>
@@ -98,3 +103,4 @@ export default function RegisterPage() {
     </div>
   );
 }
+

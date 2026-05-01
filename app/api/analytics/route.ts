@@ -81,7 +81,7 @@ export async function GET(request: Request) {
     userJourneys: [
       { path: "/ → /properties → /properties/123 → /chat", count: 45 },
       { path: "/ → /properties → /dashboard", count: 32 },
-      { path: "/ → /auth/login → /dashboard/tenant", count: 28 },
+      { path: "/ → /auth/login → /dashboard/guest", count: 28 },
     ],
     recommendations: {
       popularInLocation: ["Lekki", "Ikoyi", "Victoria Island"],

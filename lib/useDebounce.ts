@@ -50,7 +50,7 @@ export function useSearchSuggestions() {
     
     setLoading(true);
     try {
-      const Req = require("@/app/utility/axois").default;
+      const Req = require("@/app/utility/axios").default;
       const res = await Req.app.get(`${Req.base}/v1/house?searchWord=${encodeURIComponent(query)}&limit=5`);
       const properties = res.data?.data || [];
       

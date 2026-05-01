@@ -16,7 +16,7 @@ import { Label } from "@/components/ui/label";
 import { CheckCircle, Mail, AlertCircle, ArrowLeft, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useAuthStore } from "@/store/authStore";
-import Req from "@/app/utility/axois";
+import Req from "@/app/utility/axios";
 import { toast } from "sonner";
 
 const { app, base } = Req;
@@ -79,7 +79,7 @@ function VerifyContent() {
   const handleResendCode = async () => {
     if (!email) {
       toast.error("Email not found. Please register again.");
-      router.push("/auth/register/tenant");
+      router.push("/auth/register/guest");
       return;
     }
 
@@ -199,7 +199,7 @@ function VerifyContent() {
 
           <div className="mt-6 pt-4 border-t">
             <Link
-              href="/auth/register/tenant"
+              href="/auth/register/Guest"
               className="flex items-center justify-center text-sm text-gray-600 hover:text-blue-600"
             >
               <ArrowLeft className="h-4 w-4 mr-1" />
@@ -219,3 +219,5 @@ export default function VerifyPage() {
     </Suspense>
   );
 }
+
+

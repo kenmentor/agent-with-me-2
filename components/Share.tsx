@@ -48,14 +48,14 @@ ${propertyLink}
 Agent With Me`;
 
   const router = useRouter();
-console.log("hi")
+// console.log("hi")
   const handleCopy = async () => {
     try {
       await navigator.clipboard.writeText(propertyLink);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch (err) {
-      console.error("Failed to copy link:", err);
+// console.error("Failed to copy link:", err);
     }
   };
   const handleSocialShare = (platform: string) => {

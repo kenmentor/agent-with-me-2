@@ -5,7 +5,7 @@ import Link from "next/link";
 import { ArrowLeft, Smartphone, Monitor, Globe, Trash2, Loader2, LogIn, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Header from "@/components/Header";
-import Req from "@/app/utility/axois";
+import Req from "@/app/utility/axios";
 import { useAuthStore } from "@/store/authStore";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -44,7 +44,7 @@ export default function SessionsPage() {
       const res = await app.get(`${base}/v1/auth/sessions`);
       setSessions(res.data?.data || []);
     } catch (err) {
-      console.error("Error fetching sessions:", err);
+// console.error("Error fetching sessions:", err);
     } finally {
       setLoading(false);
     }
@@ -172,3 +172,5 @@ export default function SessionsPage() {
     </div>
   );
 }
+
+

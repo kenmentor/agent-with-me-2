@@ -22,7 +22,7 @@ export function PaymentNotifications() {
       id: 2,
       type: "approval_pending",
       title: "Payment Pending Approval",
-      message: "Your payment of 45,000 is waiting for landlord approval",
+      message: "Your payment of 45,000 is waiting for Host approval",
       action: "View Details",
       actionLink: "/payments/history",
       priority: "medium",
@@ -91,3 +91,4 @@ export function PaymentNotifications() {
     </div>
   );
 }
+

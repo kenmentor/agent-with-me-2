@@ -29,10 +29,10 @@ export default function DashboardPage() {
       router.replace("/dashboard/analytics");
     } else if (role === "agent") {
       router.replace("/dashboard/agent");
-    } else if (role === "host" || role === "landlord") {
-      router.replace("/dashboard/landlord");
+    } else if (role === "host") {
+      router.replace("/dashboard/host");
     } else {
-      router.replace("/dashboard/tenant");
+      router.replace("/dashboard/guest");
     }
   }, [_hasHydrated, user, router, redirecting]);
 
@@ -56,3 +56,4 @@ export default function DashboardPage() {
     </div>
   );
 }
+

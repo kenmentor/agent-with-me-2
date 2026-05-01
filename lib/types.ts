@@ -53,7 +53,7 @@ export interface Property {
   
   // Relations
   host?: User;
-  landlord?: string;
+  host?: string;
   
   // Metrics
   rating?: number;

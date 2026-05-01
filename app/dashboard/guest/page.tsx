@@ -29,7 +29,7 @@ import {
 import Link from "next/link";
 import Header from "@/components/Header";
 import { useAuthStore } from "@/store/authStore";
-import Req from "@/app/utility/axois";
+import Req from "@/app/utility/axios";
 import { toast } from "sonner";
 import {
   DashboardStatsSkeleton,
@@ -38,6 +38,7 @@ import {
   PaymentListSkeleton,
 } from "@/components/ui/skeleton";
 import { isRole, getDashboardRoute } from "@/lib/roles";
+import { getFirstName, getDisplayName } from "@/lib/utils";
 import { Loader2 } from "lucide-react";
 
 const { base, app } = Req;
@@ -72,7 +73,7 @@ interface Tour {
   notes?: string;
 }
 
-export default function TenantDashboard() {
+export default function GuestDashboard() {
   const router = useRouter();
   const { user, logout, isAuthenticated, _hasHydrated } = useAuthStore();
 
@@ -109,7 +110,7 @@ export default function TenantDashboard() {
       setLikedProperties(savedRes.data?.data || []);
       setTours(toursRes.data?.data || []);
     } catch (err) {
-      console.error("Error fetching data:", err);
+// console.error("Error fetching data:", err);
     } finally {
       setLoading(false);
     }
@@ -189,12 +190,12 @@ export default function TenantDashboard() {
                   <div className="flex items-center space-x-3">
                     <Avatar className="h-12 w-12">
                       <AvatarFallback className="bg-blue-100 text-blue-600">
-                        {user?.userName?.charAt(0)?.toUpperCase() || "U"}
+                        {getFirstName(user).charAt(0)?.toUpperCase() || "U"}
                       </AvatarFallback>
                     </Avatar>
                     <div>
-                      <h3 className="font-semibold">{user?.userName}</h3>
-                      <Badge variant="outline" className="text-xs">Tenant</Badge>
+                      <h3 className="font-semibold">{getDisplayName(user)}</h3>
+                      <Badge variant="outline" className="text-xs">Guest</Badge>
                     </div>
                   </div>
                 </CardHeader>
@@ -260,7 +261,7 @@ export default function TenantDashboard() {
               {activeTab === "overview" && (
                 <div className="space-y-6">
                   <h1 className="text-2xl font-bold">
-                    Welcome back, {user?.userName?.split(" ")[0]}! 👋
+                    Welcome back, {getFirstName(user)}! 👋
                   </h1>
 
                   {/* Stats Cards */}
@@ -591,7 +592,7 @@ export default function TenantDashboard() {
                     <CardContent className="py-12 text-center">
                       <MessageSquare className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                       <h3 className="text-lg font-semibold text-gray-600 mb-2">No messages yet</h3>
-                      <p className="text-gray-500 mb-4">Start a conversation with a landlord or agent</p>
+                      <p className="text-gray-500 mb-4">Start a conversation with a Host or agent</p>
                       <Link href="/properties"><Button>Browse Properties</Button></Link>
                     </CardContent>
                   </Card>
@@ -604,3 +605,5 @@ export default function TenantDashboard() {
     </>
   );
 }
+
+

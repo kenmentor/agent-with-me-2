@@ -62,8 +62,9 @@ import {
 import Link from "next/link";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useAuthStore } from "@/store/authStore";
-import Req from "@/app/utility/axois";
+import Req from "@/app/utility/axios";
 import { toast } from "sonner";
+import { getDisplayName } from "@/lib/utils";
 import PaystackPop from "@paystack/inline-js";
 import PayRentSkeleton from "@/components/PayRentSkeleton";
 import FeatureInProgressOverlay from "@/components/UnderConstruction";
@@ -191,7 +192,7 @@ function PayRentContent() {
 
   const sendPaymentNotification = () => {
     toast.success(
-      `Payment notification sent to ${paymentData?.host?.userName} at ${paymentData?.host?.phoneNumber}`
+      `Payment notification sent to ${getDisplayName(paymentData?.host) || paymentData?.host?.userName} at ${paymentData?.host?.phoneNumber}`
     );
   };
 
@@ -303,8 +304,8 @@ function PayRentContent() {
                         {paymentData?.title}
                       </h3>
                       <p className="text-gray-600">
-                        {paymentData?.host?.userName}
-                        host: {paymentData?.host?.userName}
+                        {getDisplayName(paymentData?.host) || paymentData?.host?.userName}
+                        host: {getDisplayName(paymentData?.host) || paymentData?.host?.userName}
                       </p>
                       <p className="text-gray-600">
                         Phone: {paymentData?.host?.phoneNumber}
@@ -385,7 +386,7 @@ function PayRentContent() {
                         <div className="flex justify-between">
                           <span>host:</span>
                           <span className="font-medium">
-                            {paymentData?.host?.userName}
+                            {getDisplayName(paymentData?.host) || paymentData?.host?.userName}
                           </span>
                         </div>
                       </div>

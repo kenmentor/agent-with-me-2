@@ -37,7 +37,9 @@ import {
   offEvent,
   isSocketConnected,
 } from "@/app/utility/socket";
-import Req from "@/app/utility/axois";
+import Req from "@/app/utility/axios";
+import { getDisplayName } from "@/lib/utils";
+import { AuthPromptDialog, useAuthPrompt } from "@/components/AuthPromptDialog";
 
 const { base, app } = Req;
 
@@ -96,6 +98,7 @@ export default function Header({ color }: { color?: string }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const profileRef = useRef<HTMLDivElement>(null);
+  const { showAuthPrompt, setShowAuthPrompt } = useAuthPrompt();
 
   // Fetch initial unread count
   useEffect(() => {
@@ -117,7 +120,7 @@ export default function Header({ color }: { color?: string }) {
           setUnreadCount(total);
         }
       } catch (err) {
-        console.error("Failed to fetch unread count:", err);
+// console.error("Failed to fetch unread count:", err);
       }
     };
 
@@ -196,7 +199,8 @@ export default function Header({ color }: { color?: string }) {
   const hideBottomTabs = pathname.startsWith("/chat/") || pathname === "/user" || pathname.startsWith("/messages") || pathname === "/account";
 
   const userAvatar = user?.avater;
-  const initials = user?.userName?.[0]?.toUpperCase() || "?";
+  const displayName = getDisplayName(user);
+  const initials = displayName[0]?.toUpperCase() || "?";
   const userRole = user?.role?.toLowerCase() as UserRole;
   const roleLabel = userRole ? ROLE_LABELS[userRole] : null;
 
@@ -272,7 +276,7 @@ export default function Header({ color }: { color?: string }) {
                     {userAvatar ? (
                       <Image
                         src={userAvatar}
-                        alt={user.userName || "User"}
+                        alt={displayName}
                         width={32}
                         height={32}
                         className="w-full h-full object-cover"
@@ -292,7 +296,7 @@ export default function Header({ color }: { color?: string }) {
                       className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-xl border overflow-hidden"
                     >
                       <div className="p-4 border-b">
-                        <p className="font-semibold text-gray-900">{user.userName}</p>
+                        <p className="font-semibold text-gray-900">{displayName}</p>
                         <p className="text-sm text-gray-500">{user.email}</p>
                         {roleLabel && (
                           <span className="inline-block mt-1 text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded">
@@ -380,7 +384,7 @@ export default function Header({ color }: { color?: string }) {
                     {userAvatar ? (
                       <Image
                         src={userAvatar}
-                        alt={user.userName || "User"}
+                        alt={displayName}
                         width={48}
                         height={48}
                         className="w-full h-full object-cover"
@@ -390,7 +394,7 @@ export default function Header({ color }: { color?: string }) {
                     )}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-white truncate">{user.userName}</p>
+                    <p className="font-semibold text-white truncate">{displayName}</p>
                     <p className="text-sm text-white/60 truncate">{user.email}</p>
                   </div>
                 </div>
@@ -416,19 +420,33 @@ export default function Header({ color }: { color?: string }) {
                 </Link>
               ))}
 
-{/* Quick Actions for Authenticated Users */}
-              {isAuthenticated && (
+{/* Quick Actions - visible to all but different content */}
+              <div className="border-t border-white/10 pt-4 mt-4">
+                <p className="text-xs text-white/40 uppercase px-4 mb-2">Quick Actions</p>
+                
+                {/* Show List Property to agents/Hosts/hosts OR unauthenticated users */}
+                {(isAuthenticated && isRole(["host", "host", "agent"])) && (
+                  <Link href="/properties/add" onClick={() => setMobileMenuOpen(false)}>
+                    <div className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-white/5 transition-colors">
+                      <PlusCircle className="w-5 h-5 text-white/70" />
+                      <span className="text-white">List Property</span>
+                    </div>
+                  </Link>
+                )}
+                
+                {/* Show List Property (prompt auth) for unauthenticated users */}
+                {!isAuthenticated && (
+                  <div 
+                    onClick={() => { setMobileMenuOpen(false); setShowAuthPrompt(true); }}
+                    className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-white/5 transition-colors cursor-pointer"
+                  >
+                    <PlusCircle className="w-5 h-5 text-white/70" />
+                    <span className="text-white">List Property</span>
+                  </div>
+                )}
+                
+                {isAuthenticated && (
                 <>
-                  <div className="border-t border-white/10 pt-4 mt-4">
-                    <p className="text-xs text-white/40 uppercase px-4 mb-2">Quick Actions</p>
-                    {isRole(["landlord", "host", "agent"]) && (
-                      <Link href="/properties/add" onClick={() => setMobileMenuOpen(false)}>
-                        <div className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-white/5 transition-colors">
-                          <PlusCircle className="w-5 h-5 text-white/70" />
-                          <span className="text-white">List Property</span>
-                        </div>
-                      </Link>
-                    )}
                     <Link href="/user" onClick={() => setMobileMenuOpen(false)}>
                       <div className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-white/5 transition-colors">
                         <User className="w-5 h-5 text-white/70" />
@@ -441,17 +459,19 @@ export default function Header({ color }: { color?: string }) {
                         <span className="text-white">Settings</span>
                       </div>
                     </Link>
-                  </div>
-                  <div className="border-t border-white/10 pt-4 mt-4">
-                    <button
-                      onClick={handleLogout}
-                      className="w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-white/5 transition-colors text-red-400"
-                    >
-                      <LogOut className="w-5 h-5" />
-                      <span>Log out</span>
-                    </button>
-                  </div>
                 </>
+                )}
+              </div>
+              {isAuthenticated && (
+                <div className="border-t border-white/10 pt-4 mt-4">
+                  <button
+                    onClick={handleLogout}
+                    className="w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-white/5 transition-colors text-red-400"
+                  >
+                    <LogOut className="w-5 h-5" />
+                    <span>Log out</span>
+                  </button>
+                </div>
               )}
 
               {!isAuthenticated && (
@@ -473,12 +493,16 @@ export default function Header({ color }: { color?: string }) {
         )}
       </AnimatePresence>
 
-      {/* Mobile Bottom Tab Bar - Only visible on small screens */}
+{/* Mobile Bottom Tab Bar - Only visible on small screens */}
       {!hideBottomTabs && (
         <div className="md:hidden fixed bottom-0 left-0 right-0 bg-black border-t border-white/10 z-50 pb-safe">
        
-      </div>
+        </div>
       )}
+
+      <AuthPromptDialog open={showAuthPrompt} onOpenChange={setShowAuthPrompt} />
     </header>
   );
 }
+
+

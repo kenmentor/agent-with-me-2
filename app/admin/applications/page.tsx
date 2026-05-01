@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Building2, Check, X, Eye, ArrowLeft, Loader2, Filter } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import Req from "@/app/utility/axois";
+import Req from "@/app/utility/axios";
 import { useAuthStore } from "@/store/authStore";
 import { useRouter } from "next/navigation";
 
@@ -46,7 +46,7 @@ export default function AdminApplicationsPage() {
       const res = await app.get(`${base}/v1/agents/applications`);
       setApplications(res.data?.data || []);
     } catch (err) {
-      console.error("Error fetching applications:", err);
+// console.error("Error fetching applications:", err);
     } finally {
       setLoading(false);
     }
@@ -63,7 +63,7 @@ export default function AdminApplicationsPage() {
       );
       setSelectedApp(null);
     } catch (err) {
-      console.error("Error updating status:", err);
+// console.error("Error updating status:", err);
     } finally {
       setUpdating(null);
     }
@@ -287,3 +287,4 @@ export default function AdminApplicationsPage() {
     </div>
   );
 }
+

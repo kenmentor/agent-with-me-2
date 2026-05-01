@@ -29,14 +29,17 @@ import {
 import Header from "@/components/Header";
 import { useAuthStore } from "@/store/authStore";
 import { useAuthCheck } from "@/hooks/useAuth";
-import Req from "@/app/utility/axois";
+import Req from "@/app/utility/axios";
 import { toast } from "sonner";
+import { getDisplayName, getFirstName } from "@/lib/utils";
 
 const { app, base } = Req;
 
 interface UserProfile {
   _id: string;
   userName: string;
+  firstName?: string;
+  lastName?: string;
   email: string;
   phoneNumber?: string;
   role?: string;
@@ -55,6 +58,8 @@ export default function AccountPage() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [formData, setFormData] = useState({
     userName: "",
+    firstName: "",
+    lastName: "",
     email: "",
     phoneNumber: "",
     address: "",
@@ -72,6 +77,8 @@ export default function AccountPage() {
       setProfile(user);
       setFormData({
         userName: user?.userName || "",
+        firstName: user?.firstName || "",
+        lastName: user?.lastName || "",
         email: user?.email || "",
         phoneNumber: user?.phoneNumber || "",
         address: user?.address || "",
@@ -98,8 +105,10 @@ export default function AccountPage() {
     }
     
     try {
-      // Only send editable fields - bio and phoneNumber
+      // Send editable fields including firstName and lastName
       const updateData = {
+        firstName: formData.firstName,
+        lastName: formData.lastName,
         bio: formData.bio,
         phoneNumber: formData.phoneNumber,
       };
@@ -191,7 +200,7 @@ export default function AccountPage() {
   }
 
   const avatarUrl = profile?.profileImage || profile?.avatar || profile?.avater || user?.profileImage || user?.avatar || user?.avater;
-  const initials = profile?.userName?.[0]?.toUpperCase() || user?.userName?.[0]?.toUpperCase() || "?";
+  const initials = getFirstName(profile || user)[0]?.toUpperCase() || "?";
 
   return (
     <div className="min-h-screen bg-gray-50 pb-20 md:pb-0">
@@ -231,7 +240,7 @@ export default function AccountPage() {
                 <div className="flex flex-col sm:flex-row items-center gap-6">
                   <div className="relative">
                     <Avatar className="w-24 h-24 border-4 border-white shadow-lg">
-                      <AvatarImage src={avatarUrl} alt={user?.userName} />
+                      <AvatarImage src={avatarUrl} alt={getDisplayName(user)} />
                       <AvatarFallback className="text-2xl bg-blue-600 text-white">
                         {initials}
                       </AvatarFallback>
@@ -256,7 +265,7 @@ export default function AccountPage() {
                     />
                   </div>
                   <div className="text-center sm:text-left">
-                    <h3 className="font-semibold text-lg">{user?.userName}</h3>
+                    <h3 className="font-semibold text-lg">{getDisplayName(user)}</h3>
                     <p className="text-gray-500">{user?.email}</p>
                     <div className="flex items-center gap-2 mt-2 justify-center sm:justify-start">
                       <Shield className="w-4 h-4 text-blue-600" />
@@ -264,7 +273,7 @@ export default function AccountPage() {
                         {user?.role || "User"}
                       </span>
                     </div>
-                    {user?.role === "tenant" && (
+                    {user?.role === "guest" && (
                       <Link href="/account/upgrade-agent">
                         <Button variant="outline" size="sm" className="mt-2 w-full sm:w-auto">
                           <Shield className="w-4 h-4 mr-2" />
@@ -276,6 +285,38 @@ export default function AccountPage() {
                 </div>
 
                 <form onSubmit={handleProfileUpdate} className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="firstName">First Name</Label>
+                      <div className="relative">
+                        <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                        <Input
+                          id="firstName"
+                          name="firstName"
+                          value={formData.firstName}
+                          onChange={handleInputChange}
+                          className="pl-10"
+                          placeholder="Your first name"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="lastName">Last Name</Label>
+                      <div className="relative">
+                        <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                        <Input
+                          id="lastName"
+                          name="lastName"
+                          value={formData.lastName}
+                          onChange={handleInputChange}
+                          className="pl-10"
+                          placeholder="Your last name"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="userName">Username</Label>
@@ -514,3 +555,5 @@ export default function AccountPage() {
     </div>
   );
 }
+
+

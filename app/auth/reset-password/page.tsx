@@ -15,7 +15,7 @@ import { KeyRound, Lock, CheckCircle, AlertCircle, ArrowLeft, Loader2, Eye, EyeO
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
-import axios from "@/app/utility/axois";
+import axios from "@/app/utility/axios";
 
 function ResetPasswordLoading() {
   return (
@@ -259,3 +259,4 @@ function ResetPasswordContent() {
     </div>
   );
 }
+

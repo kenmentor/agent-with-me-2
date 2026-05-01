@@ -11,10 +11,11 @@ import { ArrowLeft, Send, Loader2, Phone, Mail } from "lucide-react";
 import Link from "next/link";
 import { useChatStore, ChatMessage } from "@/store/chatStore";
 import { useAuthStore } from "@/store/authStore";
-import Req from "@/app/utility/axois";
+import Req from "@/app/utility/axios";
 import { format, isToday, isYesterday } from "date-fns";
 import { initializeSocket, disconnectSocket, emitEvent, onEvent, offEvent, getSocket, onReconnect, offReconnect } from "@/app/utility/socket";
 import { ChatConversationSkeleton } from "@/components/ui/skeleton";
+import { getDisplayName, getFirstName } from "@/lib/utils";
 
 const { base, app } = Req;
 
@@ -35,7 +36,7 @@ export default function ChatConversationPage() {
   const [newMessage, setNewMessage] = useState("");
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
-  const [participant, setParticipant] = useState<{_id: string; userName: string; avatar?: string} | null>(null);
+  const [participant, setParticipant] = useState<{_id: string; userName: string; firstName?: string; lastName?: string; avatar?: string} | null>(null);
   const [isTyping, setIsTyping] = useState(false);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
@@ -263,12 +264,12 @@ export default function ChatConversationPage() {
         
         <Avatar className="h-10 w-10">
           <AvatarFallback className="bg-white text-black">
-            {participant?.userName?.charAt(0)?.toUpperCase() || "?"}
+            {getFirstName(participant)?.[0]?.toUpperCase() || "?"}
           </AvatarFallback>
         </Avatar>
         
         <div className="flex-1">
-          <h2 className="text-white font-semibold">{participant?.userName || "Chat"}</h2>
+          <h2 className="text-white font-semibold">{getDisplayName(participant) || "Chat"}</h2>
           <p className="text-gray-400 text-xs">Tap to view profile</p>
         </div>
       </header>

@@ -17,7 +17,7 @@ import { CheckCircle, Mail, AlertCircle, ArrowLeft, Loader2 } from "lucide-react
 import Link from "next/link";
 import { useAuthStore } from "@/store/authStore";
 import { trackVerification } from "@/store/analyticsStore";
-import Req from "@/app/utility/axois";
+import Req from "@/app/utility/axios";
 import { toast } from "sonner";
 
 const { app, base } = Req;
@@ -93,7 +93,7 @@ function VerifyContent() {
   const handleResendCode = async () => {
     if (!email) {
       toast.error("Email not found. Please register again.");
-      router.push("/auth/register/tenant");
+      router.push("/auth/register/guest");
       return;
     }
 

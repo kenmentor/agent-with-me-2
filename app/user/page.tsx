@@ -7,12 +7,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { motion } from "framer-motion";
-import Req from "@/app/utility/axois";
+import Req from "@/app/utility/axios";
 import { useRouter } from "next/navigation";
-import { MapPin, Building2, Home } from "lucide-react";
-const { app, base } = Req;
+import { MapPin, Building2, Home, Loader2 } from "lucide-react";
+import { getDisplayName } from "@/lib/utils";
+import Link from "next/link";
 
-import { Loader2 } from "lucide-react";
+const { app, base } = Req;
 
 interface Property {
   _id: string;
@@ -28,6 +29,8 @@ interface Property {
 interface User {
   _id: string;
   userName: string;
+  firstName?: string;
+  lastName?: string;
   email: string;
   phoneNumber?: string;
   role?: string;
@@ -48,16 +51,16 @@ export default function AllUsers() {
   useEffect(() => {
     const fetchUsers = async () => {
       try {
-        // Get users with role filter - agents and landlords only (exclude guests)
-        const res = await app.get(`${base}/v1/user?rule=agent,landlord`);
+        // Get users with role filter - agents and hosts only
+        const res = await app.get(`${base}/v1/user?rule=agent,host`);
         const allUsers = res.data.data || [];
         
-        // Filter to only agents and landlords (exclude guests)
+        // Filter to only agents and hosts
         const agents = allUsers.filter((u: User) => 
-          u.role === "agent" || u.role === "landlord" || u.role === "host"
+          u.role === "agent" || u.role === "host"
         );
         
-        // For each agent/landlord, fetch their properties
+        // For each agent/Host, fetch their properties
         const usersWithProperties = await Promise.all(
           agents.map(async (user: User) => {
             try {
@@ -73,7 +76,7 @@ export default function AllUsers() {
         setUsers(usersWithProperties);
         setFiltered(usersWithProperties);
       } catch (error: any) {
-        console.error("Failed to fetch users:", error);
+// console.error("Failed to fetch users:", error);
       } finally {
         setLoading(false);
       }
@@ -85,7 +88,7 @@ export default function AllUsers() {
     const lower = search.toLowerCase();
     const filteredList = users.filter(
       (u) =>
-        u.userName?.toLowerCase().includes(lower) ||
+        getDisplayName(u)?.toLowerCase().includes(lower) ||
         u.email?.toLowerCase().includes(lower)
     );
     setFiltered(filteredList);
@@ -101,7 +104,7 @@ export default function AllUsers() {
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-center mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Agents & Landlords</h1>
+          <h1 className="text-3xl font-bold text-gray-900">Agents & Hosts</h1>
           <p className="text-gray-500 mt-1">Browse property owners and their listings</p>
         </div>
 
@@ -123,8 +126,8 @@ export default function AllUsers() {
           <p className="text-2xl font-bold text-gray-900">{users.filter(u => u.role === "agent").length}</p>
         </div>
         <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
-          <p className="text-sm text-gray-500">Landlords</p>
-          <p className="text-2xl font-bold text-gray-900">{users.filter(u => u.role === "landlord" || u.role === "host").length}</p>
+          <p className="text-sm text-gray-500">Hosts</p>
+          <p className="text-2xl font-bold text-gray-900">{users.filter(u => u.role === "host").length}</p>
         </div>
         <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
           <p className="text-sm text-gray-500">Showing</p>
@@ -142,7 +145,7 @@ export default function AllUsers() {
           <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <Building2 className="w-8 h-8 text-gray-400" />
           </div>
-          <p className="text-gray-500">No agents or landlords found</p>
+          <p className="text-gray-500">No agents or Hosts found</p>
         </div>
       ) : (
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -152,25 +155,29 @@ export default function AllUsers() {
               whileHover={{ y: -4 }}
               transition={{ type: "spring", stiffness: 300 }}
             >
-              <Card className="bg-white border border-gray-100 rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden">
+              <Card className="bg-white border border-gray-100 rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden cursor-pointer" onClick={() => router.push(`/agent/${user._id}`)}>
                 {/* Card Header with gradient */}
-                <div className="h-20 bg-gradient-to-r from-gray-900 via-gray-800 to-gray-700 relative">
-                  <div className="absolute -bottom-10 left-1/2 -translate-x-1/2">
-                    <img
-                      src={
-                        user.profileImage || user.avatar ||
-                        `https://ui-avatars.com/api/?name=${user.userName}&background=111111&color=fff&size=128`
-                      }
-                      alt={user.userName}
-                      className="w-20 h-20 rounded-full object-cover border-4 border-white shadow-lg"
-                    />
+                <div className="h-20 bg-gradient-to-r from-gray-900 via-gray-800 to-gray-700 relative" onClick={(e) => { e.stopPropagation(); router.push(`/agent/${user._id}`); }}>
+                  <div className="absolute -bottom-10 left-1/2 -translate-x-1/2" onClick={(e) => e.stopPropagation()}>
+                    <Link href={`/agent/${user._id}`}>
+                      <img
+                        src={
+                          user.profileImage || user.avatar ||
+                          `https://ui-avatars.com/api/?name=${getDisplayName(user)}&background=111111&color=fff&size=128`
+                        }
+                        alt={getDisplayName(user)}
+                        className="w-20 h-20 rounded-full object-cover border-4 border-white shadow-lg hover:scale-110 transition-transform"
+                      />
+                    </Link>
                   </div>
                 </div>
                 
                 <CardHeader className="pt-12 pb-2 text-center">
-                  <CardTitle className="text-lg font-bold text-gray-900">
-                    {user.userName}
-                  </CardTitle>
+                  <Link href={`/agent/${user._id}`} onClick={(e) => e.stopPropagation()}>
+                    <CardTitle className="text-lg font-bold text-gray-900 hover:text-blue-600 transition-colors">
+                      {getDisplayName(user)}
+                    </CardTitle>
+                  </Link>
                   <p className="text-sm text-gray-500 truncate px-4">{user.email}</p>
                 </CardHeader>
                 
@@ -183,7 +190,7 @@ export default function AllUsers() {
                           : "bg-purple-100 text-purple-700"
                       }`}
                     >
-                      {user.role === "agent" ? "🏠 Agent" : "🏢 Landlord"}
+                      {user.role === "agent" ? "🏠 Agent" : "🏢 Host"}
                     </Badge>
                     <Badge className="text-xs font-medium px-3 py-1 bg-gray-100 text-gray-600">
                       {user.propertyCount || 0} properties
@@ -197,7 +204,7 @@ export default function AllUsers() {
                       {user.properties.slice(0, 2).map((prop) => (
                         <div 
                           key={prop._id}
-                          onClick={() => router.push(`/properties/${prop._id}`)}
+                          onClick={(e) => { e.stopPropagation(); router.push(`/properties/${prop._id}`); }}
                           className="flex items-center gap-3 p-2 rounded-lg bg-gray-50 hover:bg-gray-100 cursor-pointer transition-colors"
                         >
                           <div className="w-12 h-12 rounded-lg overflow-hidden bg-gray-200 shrink-0">
@@ -238,3 +245,4 @@ export default function AllUsers() {
     </motion.div>
   );
 }
+

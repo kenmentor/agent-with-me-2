@@ -3,7 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { Share2, Facebook, Factory } from "lucide-react";
 import { useParams, usePathname } from "next/navigation";
-import Req from "@/app/utility/axois";
+import Req from "@/app/utility/axios";
 import { use, useEffect, useState } from "react";
 import { set } from "date-fns";
 import { Console } from "console";

@@ -21,8 +21,9 @@ import {
 } from "lucide-react";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import Req from "@/app/utility/axois";
+import Req from "@/app/utility/axios";
 import { useAuthStore } from "@/store/authStore";
+import { getDisplayName } from "@/lib/utils";
 import AutoPlayVideo from "@/components/AutoplayVideo";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -83,7 +84,7 @@ export default function PropertyDetailPage() {
         setSelectedImage(thumbnail);
       }
     } catch (err) {
-      console.log("Fetch error:", err);
+// console.log("Fetch error:", err);
     } finally {
       setLoading(false);
     }
@@ -92,7 +93,7 @@ export default function PropertyDetailPage() {
   useEffect(() => {
     getData();
   }, [id]);
-console.log("hello HELLO WORLD ")
+// console.log("hello HELLO WORLD ")
   // ---------- Skeleton Loading Section ----------
   if (loading) {
     return (
@@ -348,15 +349,15 @@ console.log("hello HELLO WORLD ")
             <div className="relative h-16 w-16 overflow-hidden rounded-full">
               <Image
                 src={property?.host?.image || "/placeholder.svg"}
-                alt={property?.host?.userName}
+                alt={getDisplayName(property?.host)}
                 fill
                 className="object-cover"
               />
             </div>
             <div>
-              <h3 className="font-semibold">{property?.host?.userName}</h3>
+              <h3 className="font-semibold">{getDisplayName(property?.host)}</h3>
               <p className="text-sm text-muted-foreground">
-                {property.host.userName}
+                {getDisplayName(property.host)}
               </p>
             </div>
           </div>
@@ -385,3 +386,4 @@ console.log("hello HELLO WORLD ")
     </div>
   );
 }
+

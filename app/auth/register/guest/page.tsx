@@ -25,7 +25,8 @@ import { toast } from "sonner";
 import { openEmailClient } from "@/lib/utils";
 
 const registerSchema = z.object({
-  userName: z.string().min(2, "Name must be at least 2 characters"),
+  firstName: z.string().min(1, "First name is required"),
+  lastName: z.string().min(1, "Last name is required"),
   email: z.string().email("Please enter a valid email address"),
   phoneNumber: z.string().min(10, "Please enter a valid phone number"),
   dateOfBirth: z.string().min(1, "Date of birth is required"),
@@ -39,7 +40,7 @@ const registerSchema = z.object({
 
 type RegisterForm = z.infer<typeof registerSchema>;
 
-export default function TenantRegisterPage() {
+export default function GuestRegisterPage() {
   const router = useRouter();
   const { user, isAuthenticated, _hasHydrated } = useAuthStore();
   const signup = useAuthStore((state) => state.signup);
@@ -65,7 +66,8 @@ export default function TenantRegisterPage() {
   } = useForm<RegisterForm>({
     resolver: zodResolver(registerSchema),
     defaultValues: {
-      userName: "",
+      firstName: "",
+      lastName: "",
       email: "",
       phoneNumber: "",
       dateOfBirth: "",
@@ -93,7 +95,8 @@ export default function TenantRegisterPage() {
     setServerError(null);
     try {
       const result = await signup({
-        userName: data.userName,
+        firstName: data.firstName,
+        lastName: data.lastName,
         email: data.email,
         password: data.password,
         dateOfBirth: data.dateOfBirth,
@@ -137,20 +140,38 @@ export default function TenantRegisterPage() {
             )}
 
             <div className="space-y-2">
-              <Label htmlFor="userName">Full Name</Label>
+              <Label htmlFor="firstName">First Name</Label>
               <div className="relative">
                 <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                 <Input
-                  id="userName"
+                  id="firstName"
                   type="text"
-                  placeholder="Enter your full name"
-                  {...register("userName")}
-                  className={`pl-10 ${errors.userName ? "border-red-500" : "border-gray-200"}`}
+                  placeholder="Enter your first name"
+                  {...register("firstName")}
+                  className={`pl-10 ${errors.firstName ? "border-red-500" : "border-gray-200"}`}
                   disabled={isLoading}
                 />
               </div>
-              {errors.userName && (
-                <p className="text-red-500 text-sm">{errors.userName.message}</p>
+              {errors.firstName && (
+                <p className="text-red-500 text-sm">{errors.firstName.message}</p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="lastName">Last Name</Label>
+              <div className="relative">
+                <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                <Input
+                  id="lastName"
+                  type="text"
+                  placeholder="Enter your last name"
+                  {...register("lastName")}
+                  className={`pl-10 ${errors.lastName ? "border-red-500" : "border-gray-200"}`}
+                  disabled={isLoading}
+                />
+              </div>
+              {errors.lastName && (
+                <p className="text-red-500 text-sm">{errors.lastName.message}</p>
               )}
             </div>
 
@@ -300,3 +321,4 @@ export default function TenantRegisterPage() {
     </div>
   );
 }
+

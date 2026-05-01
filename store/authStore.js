@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import Req from "@/app/utility/axois";
+import Req from "@/app/utility/axios";
 import { toast } from "sonner";
 
 const { app, base } = Req;
@@ -25,6 +25,22 @@ export const useAuthStore = create(
         const id = user._id || user._doc?._id || user.id;
         console.log("👤 getUserId:", id);
         return id;
+      },
+
+      // Helper to get display name (firstName + lastName or userName)
+      getDisplayName: () => {
+        const user = get().user;
+        if (!user) return "User";
+        return user.firstName && user.lastName 
+          ? `${user.firstName} ${user.lastName}` 
+          : user.userName || "User";
+      },
+
+      // Helper to get first name for greetings
+      getFirstName: () => {
+        const user = get().user;
+        if (!user) return "User";
+        return user.firstName || user.userName?.split(" ")[0] || "User";
       },
 
       // Helper to mark hydration complete
@@ -189,3 +205,4 @@ export const useAuthStore = create(
     }
   )
 );
+

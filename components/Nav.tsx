@@ -1,6 +1,6 @@
 "use client";
 
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   Building2,
@@ -17,7 +17,9 @@ import {
   offEvent,
   isSocketConnected,
 } from "@/app/utility/socket";
-import Req from "@/app/utility/axois";
+import Req from "@/app/utility/axios";
+import { AuthPromptDialog, useAuthPrompt } from "./AuthPromptDialog";
+import { savePropertyDraft, clearPropertyDraft, getPropertyDraft, hasPropertyDraft } from "@/lib/utils";
 
 const { base, app } = Req;
 
@@ -51,7 +53,7 @@ export default function BottomNav() {
           setUnreadCount(total);
         }
       } catch (err) {
-        console.error("Failed to fetch unread count:", err);
+// console.error("Failed to fetch unread count:", err);
       }
     };
 
@@ -128,12 +130,36 @@ export default function BottomNav() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, [isVisible]);
 
+  const { showAuthPrompt, setShowAuthPrompt } = useAuthPrompt();
+
+  const handleAddClick = (e: React.MouseEvent, requiresAuth: boolean) => {
+    if (requiresAuth && !isAuthenticated) {
+      e.preventDefault();
+      setShowAuthPrompt(true);
+    }
+  };
+
+  // Show Add button only to hosts and agents - NOT to guests
+  const isHostOrAgent = user && (user.role === "agent" || user.role === "host");
+  const addItem = {
+    name: "Add",
+    href: "/properties/add",
+    icon: PlusCircle,
+    onClick: (e: React.MouseEvent) => {
+      e.preventDefault();
+      if (!isAuthenticated) {
+        setShowAuthPrompt(true);
+      }
+    },
+    requiresAuth: isHostOrAgent
+  };
+
   const NAV_ITEMS = [
     { name: "Explore", href: "/properties", icon: Building2 },
     { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-    ...(user && (user.role === "agent" || user.role === "host" || user.role === "landlord") ? [{ name: "Add", href: "/properties/add", icon: PlusCircle }] : []),
-    { name: "Chat", href: "/chat", icon: MessageCircle, badge:  unreadCount},
-    { name: "Account", href: "/account", icon: User },
+    ...(isAuthenticated && isHostOrAgent ? [addItem] : []),
+    { name: "Chat", href: "/chat", icon: MessageCircle, badge: unreadCount, requiresAuth: true },
+    { name: "Account", href: "/account", icon: User, requiresAuth: true },
   ];
 
   const HIDE_ON_PATHS = ["/chat"];
@@ -152,11 +178,18 @@ export default function BottomNav() {
           const isActive =
             pathname === item.href ||
             (item.href !== "/" && pathname.startsWith(item.href));
-            
+          
+          const handleClick = (e: React.MouseEvent) => {
+            if (item.onClick) {
+              item.onClick(e);
+            }
+          };
+          
           return (
             <Link
               key={item.name}
               href={item.href}
+              onClick={handleClick}
               className="flex flex-col items-center flex-1 py-1.5 min-w-[48px] relative"
             >
               <div
@@ -189,6 +222,8 @@ export default function BottomNav() {
           );
         })}
       </div>
+      <AuthPromptDialog open={showAuthPrompt} onOpenChange={setShowAuthPrompt} />
     </nav>
   );
 }
+

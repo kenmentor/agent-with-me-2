@@ -109,7 +109,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { amenitiesList, propertyType, statesAndLGAs } from "@/app/data";
 import { useAuthStore } from "@/store/authStore";
-import Req from "@/app/utility/axois";
+import Req from "@/app/utility/axios";
 import { set } from "date-fns";
 import { toast } from "sonner";
 import { Range, Slider } from "@radix-ui/react-slider";
@@ -117,9 +117,15 @@ import { validateProperty } from "@/app/utility/validateform";
 import getPlaceValue from "@/app/utility/placVealue";
 import Share from "@/components/Share";
 import { ShareListingModal } from "@/components/ui/ShareListingModal";
+import { savePropertyDraft, getPropertyDraft, clearPropertyDraft, hasPropertyDraft } from "@/lib/utils";
+import { useEffect } from "react";
+import { AuthPromptDialog, useAuthPrompt } from "@/components/AuthPromptDialog";
+
 export default function AddPropertyPage() {
   const { base, app } = Req;
   const user = useAuthStore((state) => state.user);
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const _hasHydrated = useAuthStore((state) => state._hasHydrated);
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -128,6 +134,16 @@ export default function AddPropertyPage() {
   const [copied, setCopied] = useState(false);
   const [property, setProperty] = useState<PropertyUpload>();
   const [showShareModal, setShowShareModal] = useState(false);
+  const [showDraftBanner, setShowDraftBanner] = useState(false);
+  const { showAuthPrompt, setShowAuthPrompt, promptAuth } = useAuthPrompt();
+  
+  // Show auth prompt immediately if not authenticated - user must login or signup
+  useEffect(() => {
+    if (!isAuthenticated && _hasHydrated) {
+      setShowAuthPrompt(true);
+    }
+  }, [isAuthenticated, _hasHydrated, setShowAuthPrompt]);
+  
   const [formData, setFormData] = useState<Property>({
     // Basic Info
     title: "",
@@ -156,9 +172,45 @@ export default function AddPropertyPage() {
     thumbnail: null as File | null,
     // Contact
   });
-
   const [selectedState, setSelectedState] = useState<string>("all");
   const [errors, setErrors] = useState<Record<string, string>>({});
+  
+  // Restore draft on mount
+  useEffect(() => {
+    const draft = getPropertyDraft();
+    if (draft?.formData) {
+      setShowDraftBanner(true);
+    }
+  }, []);
+
+  // Auto-save draft when formData changes
+  useEffect(() => {
+    if (!formData.title && !formData.description) return;
+    
+    const timer = setTimeout(() => {
+      const dataToSave = { ...formData };
+      // Don't save File objects to localStorage (can't serialize)
+      savePropertyDraft({ formData: dataToSave });
+    }, 2000); // Save after 2 seconds of inactivity
+    
+    return () => clearTimeout(timer);
+  }, [formData]);
+
+  // Restore draft data to form when "Restore" is clicked
+  const handleRestoreDraft = () => {
+    const draft = getPropertyDraft();
+    if (draft?.formData) {
+      setFormData((prev: any) => ({ ...prev, ...draft.formData }));
+      setShowDraftBanner(false);
+      toast.success("Draft restored!");
+    }
+  };
+
+// Clear draft after successful upload
+  const handleClearDraft = () => {
+    clearPropertyDraft();
+    setShowDraftBanner(false);
+  };
 
   const validateStep = (step: number): boolean => {
     const newErrors: Record<string, string> = {};
@@ -204,6 +256,7 @@ export default function AddPropertyPage() {
       toast.error("Please fill in all required fields");
       return;
     }
+
     if (!formData.thumbnail)
       setFormData((prev) => ({ ...prev, thumbnail: prev.images[0] }));
     try {
@@ -243,7 +296,7 @@ export default function AddPropertyPage() {
         data.append("video", formData.video);
       }
       
-      console.log("Submitting property with images:", formData.images.length);
+// console.log("Submitting property with images:", formData.images.length);
       
       if (currentStep === 4) {
         setUploadProgress(0);
@@ -260,20 +313,21 @@ export default function AddPropertyPage() {
           setUploadProgress(100);
           const result = res.data;
           
-          console.log("Upload response:", result);
+// console.log("Upload response:", result);
           
           if (!result.ok) {
             throw new Error(result.message || "Upload failed");
           }
           
           toast.success("Property listed successfully!");
+          clearPropertyDraft(); // Clear draft after successful upload
           setProperty(result.data);
           
           // Show share modal instead of immediate redirect
           setShowShareModal(true);
         } catch (err: any) {
-          console.error("Upload error:", err);
-          console.error("Error response:", err.response?.data);
+// console.error("Upload error:", err);
+// console.error("Error response:", err.response?.data);
           toast.error(err.response?.data?.message || err.message || "Upload failed");
         } finally {
           setIsLoading(false);
@@ -281,7 +335,7 @@ export default function AddPropertyPage() {
         }
       }
     } catch (err: any) {
-      console.error(err);
+// console.error(err);
       toast.error(err.response?.data?.message || err.message || "Upload failed");
     } finally {
       setIsLoading(false);
@@ -353,7 +407,7 @@ export default function AddPropertyPage() {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch (err) {
-      console.error("Failed to copy link:", err);
+// console.error("Failed to copy link:", err);
     }
   };
 
@@ -408,13 +462,56 @@ export default function AddPropertyPage() {
       </header>
 
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Draft Banner - shows if user has saved draft */}
+        {showDraftBanner && (
+          <div className="mb-6 bg-amber-50 border border-amber-200 rounded-lg p-4 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-amber-100 rounded-full flex items-center justify-center">
+                <span className="text-amber-600">📝</span>
+              </div>
+              <div>
+                <p className="font-medium text-amber-800">You have a saved draft</p>
+                <p className="text-sm text-amber-600">Restore your previous progress</p>
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" onClick={handleClearDraft} className="border-amber-300 text-amber-700 hover:bg-amber-100">
+                Dismiss
+              </Button>
+              <Button size="sm" onClick={handleRestoreDraft} className="bg-amber-600 hover:bg-amber-700">
+                Restore
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* Auth required prompt - show for unauthenticated users */}
+        {!isAuthenticated && (
+          <div className="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                  <span className="text-blue-600">💡</span>
+                </div>
+                <div>
+                  <p className="font-medium text-blue-800">Save progress by creating an account</p>
+                  <p className="text-sm text-blue-600">Your draft will be saved automatically</p>
+                </div>
+              </div>
+              <Link href="/auth/register?from=/properties/add">
+                <Button size="sm">Sign Up</Button>
+              </Link>
+            </div>
+          </div>
+        )}
+
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900">
             List Your Property
           </h1>
           <p className="text-gray-600 mt-2">
-            Get your property in front of thousands of potential tenants/buyers
+            Get your property in front of thousands of potential Guests/buyers
           </p>
         </div>
 
@@ -975,12 +1072,27 @@ export default function AddPropertyPage() {
 
               {currentStep <= 4 && (
                 <div className="flex space-x-4">
+                  {/* Save as Draft button - for authenticated users */}
+                  {isAuthenticated ? (
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      onClick={() => {
+                        savePropertyDraft({ formData: { ...formData } });
+                        toast.success("Draft saved!");
+                      }}
+                    >
+                      Save Draft
+                    </Button>
+                  ) : null}
+                  
                   {currentStep < 4 ? (
                     <Button type="button" onClick={nextStep}>
                       Next Step
                     </Button>
                   ) : (
                     <Button
+                      id="publish-property-btn"
                       disabled={isLoading}
                       type="button"
                       onClick={handleSubmit}
@@ -1034,6 +1146,10 @@ export default function AddPropertyPage() {
           }}
         />
       </div>
+      
+      <AuthPromptDialog open={showAuthPrompt} onOpenChange={setShowAuthPrompt} />
     </div>
   );
 }
+
+

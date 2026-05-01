@@ -15,6 +15,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { priceRanges, propertyType, statesAndLGAs } from "@/app/data";
+import { getDisplayName } from "@/lib/utils";
 
 interface Property {
   _id: string;
@@ -31,9 +32,9 @@ interface Property {
   state?: string;
   lga?: string;
   verified: boolean;
-  host?: { _id: string; userName: string; avatar?: string } | string;
+  host?: { _id: string; userName: string; firstName?: string; lastName?: string; avatar?: string } | string;
   agentId?: string;
-  agent?: { _id: string; userName: string; avatar?: string };
+  agent?: { _id: string; userName: string; firstName?: string; lastName?: string; avatar?: string };
   description?: string;
   furnished?: boolean;
   electricity?: number;
@@ -176,7 +177,7 @@ export default function PropertyFeed({ properties, favorites: favoritesProp, onL
       return;
     }
 
-    console.log("Like request:", { userId: user._id, houseId: id });
+// console.log("Like request:", { userId: user._id, houseId: id });
 
     try {
       const res = await api.post(`${baseURL}/v1/favorites/toggle`, {
@@ -184,7 +185,7 @@ export default function PropertyFeed({ properties, favorites: favoritesProp, onL
         houseId: id,
       });
       
-      console.log("Favorite toggle response:", res.data);
+// console.log("Favorite toggle response:", res.data);
       
       setLikedProperties(prev => {
         const newSet = new Set(prev);
@@ -200,7 +201,7 @@ export default function PropertyFeed({ properties, favorites: favoritesProp, onL
       });
       onLike?.(id);
     } catch (error: any) {
-      console.error("Error toggling like:", error.response?.data || error.message);
+// console.error("Error toggling like:", error.response?.data || error.message);
       toast.error(error.response?.data?.message || error.response?.data?.error || "Failed to update like");
     }
   }, [isAuthenticated, user?._id, onLike]);
@@ -233,10 +234,10 @@ export default function PropertyFeed({ properties, favorites: favoritesProp, onL
 
   const getAgentInfo = (property: Property) => {
     if (property.agent && typeof property.agent === 'object') {
-      return { id: property.agent._id, name: property.agent.userName, propertyId: property._id };
+      return { id: property.agent._id, name: getDisplayName(property.agent) || property.agent.userName, propertyId: property._id };
     }
     if (property.host && typeof property.host === 'object') {
-      return { id: property.host._id, name: property.host.userName, propertyId: property._id };
+      return { id: property.host._id, name: getDisplayName(property.host) || property.host.userName, propertyId: property._id };
     }
     return { id: property.agentId || "", name: typeof property.host === 'string' ? property.host : "", propertyId: property._id };
   };

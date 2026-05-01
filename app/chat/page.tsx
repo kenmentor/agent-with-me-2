@@ -8,7 +8,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { ArrowLeft, MessageCircle, Search, Check, CheckCheck, ArrowDown } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
-import Req from "@/app/utility/axois";
+import Req from "@/app/utility/axios";
 import { 
   initializeSocket, 
   onEvent, 
@@ -24,12 +24,15 @@ import {
   offReadReceipt
 } from "@/app/utility/socket";
 import { formatDistanceToNow, isToday, isYesterday } from "date-fns";
+import { getDisplayName, getFirstName } from "@/lib/utils";
 
 const { base, app } = Req;
 
 interface ChatUser {
   userId: string;
   userName: string;
+  firstName?: string;
+  lastName?: string;
   userAvatar?: string;
   lastMessage: string;
   lastMessageTime: string;
@@ -110,7 +113,7 @@ export default function ChatListPage() {
         }, 0);
       }
     } catch (err) {
-      console.error("Error fetching messages:", err);
+// console.error("Error fetching messages:", err);
     } finally {
       setLoading(false);
     }
@@ -150,7 +153,7 @@ export default function ChatListPage() {
 
   useEffect(() => {
     const handleReconnect = () => {
-      console.log("🔄 Chat list: socket reconnected, refetching all messages from server");
+// console.log("🔄 Chat list: socket reconnected, refetching all messages from server");
       fetchMessages();
     };
 
@@ -282,7 +285,7 @@ offEvent("new_message", handleNewMessage);
   }, [getUserId]);
 
   const filteredChatUsers = chatUsers.filter(user => 
-    user.userName.toLowerCase().includes(searchQuery.toLowerCase())
+    getDisplayName(user).toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const scrollToBottom = () => {
@@ -410,7 +413,7 @@ offEvent("new_message", handleNewMessage);
                     <div className="relative">
                       <Avatar className={`h-14 w-14 ${chatUser.isUnread ? "ring-2 ring-blue-500 ring-offset-2" : ""}`}>
                         <AvatarFallback className="bg-gray-800 text-white text-lg">
-                          {chatUser.userName?.charAt(0)?.toUpperCase() || "U"}
+                          {getFirstName(chatUser)?.[0]?.toUpperCase() || "U"}
                         </AvatarFallback>
                       </Avatar>
                       {onlineUsers.has(chatUser.userId) && (
@@ -421,7 +424,7 @@ offEvent("new_message", handleNewMessage);
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between mb-1">
                         <h3 className={`${chatUser.isUnread ? "font-bold" : "font-semibold"} text-gray-900 truncate pr-2`}>
-                          {chatUser.userName}
+                          {getDisplayName(chatUser)}
                         </h3>
                         <span className="text-xs text-gray-500 whitespace-nowrap">
                           {formatTime(chatUser.lastMessageTime)}
@@ -471,3 +474,4 @@ offEvent("new_message", handleNewMessage);
     </div>
   );
 }
+

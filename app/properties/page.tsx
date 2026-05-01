@@ -14,7 +14,7 @@ import { Search, LayoutGrid, AlignVerticalJustifyCenter, Loader2 } from "lucide-
 import Header from "@/components/Header";
 import PropertyCard from "../../components/PropertyCard";
 import PropertyFeed from "@/components/PropertyFeed";
-import Req from "@/app/utility/axois";
+import Req from "@/app/utility/axios";
 import { priceRanges, propertyType, statesAndLGAs } from "../data";
 import NoResults from "../../components/NoResults";
 import { Spinner } from "@/components/ui/spinner";
@@ -163,7 +163,7 @@ function PropertiesContent() {
       
       setSuggestions(newSuggestions.slice(0, 6));
     } catch (error) {
-      console.error("Error fetching suggestions:", error);
+// console.error("Error fetching suggestions:", error);
     } finally {
       setSuggestionsLoading(false);
     }
@@ -201,19 +201,19 @@ function PropertiesContent() {
     setData([]);
     
     const finalUrl = buildHouseUrl(base, searchQuery, debouncedKeyword) + `&page=1`;
-    console.log("Fetching:", finalUrl);
+// console.log("Fetching:", finalUrl);
 
     const fetchData = async () => {
       try {
         setLoading(true);
         setError(false);
-        console.log("Search keyword:", debouncedKeyword);
+// console.log("Search keyword:", debouncedKeyword);
         const res = (await app.get(finalUrl)).data;
-        console.log("Results:", res.data?.length);
+// console.log("Results:", res.data?.length);
         setData(res.data || []);
         setHasMore(res.data?.length >= 20);
       } catch (err) {
-        console.error("Fetch error:", err);
+// console.error("Fetch error:", err);
         setError(true);
       } finally {
         setLoading(false);
@@ -229,7 +229,7 @@ function PropertiesContent() {
     
     const nextPage = page + 1;
     const finalUrl = buildHouseUrl(base, searchQuery, debouncedKeyword) + `&page=${nextPage}`;
-    console.log("Loading more:", finalUrl);
+// console.log("Loading more:", finalUrl);
     
     setLoadingMore(true);
     try {
@@ -243,7 +243,7 @@ function PropertiesContent() {
         setHasMore(false);
       }
     } catch (err) {
-      console.error("Load more error:", err);
+// console.error("Load more error:", err);
     } finally {
       setLoadingMore(false);
     }
@@ -289,14 +289,14 @@ function PropertiesContent() {
           : [...prev, propertyId]
       );
     } catch (error) {
-      console.error("Error toggling favorite:", error);
+// console.error("Error toggling favorite:", error);
       toast.error("Failed to update favorite");
     }
   };
 
   // Fetch user favorites on mount
   useEffect(() => {
-    console.log("Fetching favorites for user:", user?._id);
+// console.log("Fetching favorites for user:", user?._id);
     if (isAuthenticated && user?._id) {
       app.get(`${base}/v1/favorites/${user._id}`)
         .then((res) => {
@@ -510,3 +510,4 @@ function PropertiesContent() {
     </div>
   );
 }
+

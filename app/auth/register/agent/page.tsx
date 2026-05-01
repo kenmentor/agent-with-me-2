@@ -29,7 +29,8 @@ export default function AgentRegisterPage() {
   const isLoading = useAuthStore((state) => state.isLoading);
 
   const [formData, setFormData] = useState({
-    userName: "",
+    firstName: "",
+    lastName: "",
     email: "",
     password: "",
     dateOfBirth: "",
@@ -64,7 +65,8 @@ export default function AgentRegisterPage() {
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
 
-    if (!formData.userName.trim()) newErrors.userName = "Full name is required";
+    if (!formData.firstName.trim()) newErrors.firstName = "First name is required";
+    if (!formData.lastName.trim()) newErrors.lastName = "Last name is required";
     if (!formData.email.trim()) newErrors.email = "Email is required";
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
       newErrors.email = "Please enter a valid email";
@@ -121,22 +123,42 @@ export default function AgentRegisterPage() {
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="userName">Full Name</Label>
+              <Label htmlFor="firstName">First Name</Label>
               <div className="relative">
                 <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                 <Input
-                  id="userName"
+                  id="firstName"
                   type="text"
-                  placeholder="Enter your full name"
-                  value={formData.userName}
+                  placeholder="Enter your first name"
+                  value={formData.firstName}
                   onChange={(e) =>
-                    setFormData({ ...formData, userName: e.target.value })
+                    setFormData({ ...formData, firstName: e.target.value })
                   }
                   className="pl-10"
                 />
               </div>
-              {errors.userName && (
-                <p className="text-red-500 text-sm">{errors.userName}</p>
+              {errors.firstName && (
+                <p className="text-red-500 text-sm">{errors.firstName}</p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="lastName">Last Name</Label>
+              <div className="relative">
+                <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                <Input
+                  id="lastName"
+                  type="text"
+                  placeholder="Enter your last name"
+                  value={formData.lastName}
+                  onChange={(e) =>
+                    setFormData({ ...formData, lastName: e.target.value })
+                  }
+                  className="pl-10"
+                />
+              </div>
+              {errors.lastName && (
+                <p className="text-red-500 text-sm">{errors.lastName}</p>
               )}
             </div>
 

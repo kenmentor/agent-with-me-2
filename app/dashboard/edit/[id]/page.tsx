@@ -29,7 +29,7 @@ import {
 } from "lucide-react";
 import Header from "@/components/Header";
 import { useAuthStore } from "@/store/authStore";
-import Req from "@/app/utility/axois";
+import Req from "@/app/utility/axios";
 import { toast } from "sonner";
 import { propertyType, statesAndLGAs, amenitiesList } from "@/app/data";
 import { isRole, getDashboardRoute } from "@/lib/roles";

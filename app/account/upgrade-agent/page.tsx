@@ -37,7 +37,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/authStore";
 import { toast } from "sonner";
-import Req from "@/app/utility/axois";
+import Req from "@/app/utility/axios";
 
 const { base, app } = Req;
 
@@ -56,6 +56,8 @@ export default function UpgradeToAgentPage() {
   const [applicationSent, setApplicationSent] = useState(false);
 
   const [formData, setFormData] = useState({
+    firstName: "",
+    lastName: "",
     userName: "",
     email: "",
     phoneNumber: "",
@@ -89,6 +91,8 @@ export default function UpgradeToAgentPage() {
     
     setFormData((prev) => ({
       ...prev,
+      firstName: user.firstName || "",
+      lastName: user.lastName || "",
       userName: user.userName || "",
       email: user.email || "",
       phoneNumber: user.phoneNumber || "",
@@ -122,7 +126,8 @@ export default function UpgradeToAgentPage() {
 
     switch (step) {
       case 1:
-        if (!formData.userName.trim()) newErrors.userName = "Full name is required";
+        if (!formData.firstName.trim()) newErrors.firstName = "First name is required";
+        if (!formData.lastName.trim()) newErrors.lastName = "Last name is required";
         if (!formData.email.trim()) newErrors.email = "Email is required";
         else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
           newErrors.email = "Please enter a valid email";
@@ -334,15 +339,28 @@ export default function UpgradeToAgentPage() {
                   Your profile information has been pre-filled from your account. Please verify and update if needed.
                 </p>
 
-                <div className="space-y-2">
-                  <Label htmlFor="userName">Full Name *</Label>
-                  <Input
-                    id="userName"
-                    value={formData.userName}
-                    onChange={(e) => setFormData({ ...formData, userName: e.target.value })}
-                    placeholder="Enter your full name"
-                  />
-                  {errors.userName && <p className="text-red-500 text-sm">{errors.userName}</p>}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="firstName">First Name *</Label>
+                    <Input
+                      id="firstName"
+                      value={formData.firstName}
+                      onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                      placeholder="Enter your first name"
+                    />
+                    {errors.firstName && <p className="text-red-500 text-sm">{errors.firstName}</p>}
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="lastName">Last Name *</Label>
+                    <Input
+                      id="lastName"
+                      value={formData.lastName}
+                      onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+                      placeholder="Enter your last name"
+                    />
+                    {errors.lastName && <p className="text-red-500 text-sm">{errors.lastName}</p>}
+                  </div>
                 </div>
 
                 <div className="space-y-2">
@@ -533,7 +551,7 @@ export default function UpgradeToAgentPage() {
                   <div className="grid grid-cols-2 gap-3 text-sm">
                     <div>
                       <span className="text-gray-500">Name:</span>
-                      <span className="ml-2 font-medium">{formData.userName}</span>
+                      <span className="ml-2 font-medium">{formData.firstName} {formData.lastName}</span>
                     </div>
                     <div>
                       <span className="text-gray-500">Email:</span>
@@ -597,3 +615,5 @@ export default function UpgradeToAgentPage() {
     </div>
   );
 }
+
+

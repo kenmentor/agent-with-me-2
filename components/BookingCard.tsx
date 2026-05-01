@@ -15,7 +15,7 @@ export interface BookingCardProps {
     _id: string;
     houseTitle: string;
     guestName: string;
-    tenantPhone: string;
+    GuestPhone: string;
     amount: number;
     status: BookingStatus;
     checkIn: string;
@@ -104,7 +104,7 @@ export default function BookingCard({
         </div>
 
         <p className="mt-3 text-sm text-gray-600">
-          📞 <span className="font-medium">{booking.tenantPhone}</span>
+          📞 <span className="font-medium">{booking.GuestPhone}</span>
         </p>
       </div>
 
@@ -150,3 +150,4 @@ export default function BookingCard({
     </div>
   );
 }
+

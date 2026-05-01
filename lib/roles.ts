@@ -1,18 +1,16 @@
 import { useAuthStore } from "@/store/authStore";
 
-export type UserRole = "tenant" | "landlord" | "host" | "agent" | "admin";
+export type UserRole = "guest" | "host" | "agent" | "admin";
 
 export const ROLE_HIERARCHY: Record<UserRole, number> = {
   admin: 5,
   agent: 4,
   host: 3,
-  landlord: 3,
-  tenant: 1,
+  guest: 1,
 };
 
 export const ROLE_LABELS: Record<UserRole, string> = {
-  tenant: "Tenant",
-  landlord: "Landlord",
+  guest: "Guest",
   host: "Host",
   agent: "Agent",
   admin: "Admin",
@@ -21,9 +19,8 @@ export const ROLE_LABELS: Record<UserRole, string> = {
 export const DASHBOARD_ROUTES: Record<UserRole, string> = {
   admin: "/dashboard/analytics",
   agent: "/dashboard/agent",
-  host: "/dashboard/landlord",
-  landlord: "/dashboard/landlord",
-  tenant: "/dashboard/tenant",
+  host: "/dashboard/host",
+  guest: "/dashboard/guest",
 };
 
 export function hasMinimumRole(requiredRole: UserRole): boolean {
@@ -56,18 +53,17 @@ export function getDashboardRoute(): string {
   if (!user?.role) return "/auth/login";
   
   const userRole = user.role.toLowerCase() as UserRole;
-  return DASHBOARD_ROUTES[userRole] || "/dashboard/tenant";
+  return DASHBOARD_ROUTES[userRole] || "/dashboard/guest";
 }
 
 export function canAccessRoute(pathname: string, userRole: UserRole | null): boolean {
   if (!userRole) return false;
   
   const roleRoutes: Record<UserRole, string[]> = {
-    admin: ["/dashboard", "/dashboard/analytics", "/dashboard/agent", "/dashboard/landlord", "/dashboard/tenant"],
-    agent: ["/dashboard", "/dashboard/agent", "/dashboard/landlord", "/dashboard/tenant"],
-    host: ["/dashboard", "/dashboard/landlord", "/dashboard/tenant"],
-    landlord: ["/dashboard", "/dashboard/landlord", "/dashboard/tenant"],
-    tenant: ["/dashboard", "/dashboard/tenant"],
+    admin: ["/dashboard", "/dashboard/analytics", "/dashboard/agent", "/dashboard/host", "/dashboard/guest"],
+    agent: ["/dashboard", "/dashboard/agent", "/dashboard/host", "/dashboard/guest"],
+    host: ["/dashboard", "/dashboard/host", "/dashboard/guest"],
+    guest: ["/dashboard", "/dashboard/guest"],
   };
   
   const allowedRoutes = roleRoutes[userRole] || [];
@@ -87,6 +83,6 @@ export function redirectToCorrectDashboard(router: any): void {
   if (dashboardRoute) {
     router.replace(dashboardRoute);
   } else {
-    router.replace("/dashboard/tenant");
+    router.replace("/dashboard/guest");
   }
 }
