@@ -55,6 +55,8 @@ export default function PropertyDetailClient({
     trackPropertyView(property?._id, property.type, property.price);
   }, [property._id, property.type, property.price]);
 
+  const { user, isAuthenticated } = useAuthStore();
+
   const host = property.host || {};
   const hostId = host._id?.toString();
   const currentUserId = user?._id?.toString();
@@ -68,7 +70,6 @@ export default function PropertyDetailClient({
   const [isLiked, setIsLiked] = useState(false);
   const [isLiking, setIsLiking] = useState(false);
   const [initialLikeChecked, setInitialLikeChecked] = useState(false);
-  const { user, isAuthenticated } = useAuthStore();
 
   useEffect(() => {
     if (isAuthenticated && user?._id && property._id && !initialLikeChecked) {

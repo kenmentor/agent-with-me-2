@@ -291,9 +291,11 @@ export default function ChatConversationPage() {
       }
     };
 
-    const handleMessagesRead = (data: { conversationId: string; readBy: string }) => {
-      if (data.readBy === receiverId) {
-        setMessages(prev => prev.map(m => ({ ...m, read: true, status: "read" as const })));
+    const handleMessagesRead = (data: { conversationId: string; readBy: string; receiverId?: string }) => {
+      if (data.readBy === receiverId || data.receiverId === receiverId) {
+        setMessages(prev => prev.map(m => 
+          m.senderId !== userId ? { ...m, read: true, status: "read" as const } : m
+        ));
       }
     };
 

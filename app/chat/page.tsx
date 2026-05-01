@@ -236,26 +236,31 @@ export default function ChatListPage() {
       });
     };
 
-    const handleDeliveryReceipt = (data: { messages?: any[]; messageId?: string; conversationId?: string; status?: string }) => {
+    const handleDeliveryReceipt = (data: { messages?: any[]; messageId?: string; conversationId?: string; status?: string; receiverId?: string }) => {
       setChatUsers(prev => {
         return prev.map(c => {
+          if (data.receiverId && c.userId === data.receiverId) {
+            return { ...c, lastMessageStatus: "delivered" as const };
+          }
           if (data.messages && data.messages.length > 0) {
             const deliveredMsg = data.messages.find((m: any) => m.receiverId === c.userId);
             if (deliveredMsg) {
               return { ...c, lastMessageStatus: "delivered" as const };
             }
           }
-          if (data.messageId) {
-            return { ...c, lastMessageStatus: "delivered" as const };
-          }
           return c;
         });
       });
     };
 
-    const handleReadReceipt = (data: { conversationId?: string; status?: string }) => {
+    const handleReadReceipt = (data: { conversationId?: string; status?: string; receiverId?: string }) => {
       setChatUsers(prev => {
-        return prev.map(c => ({ ...c, lastMessageStatus: "read" as const }));
+        return prev.map(c => {
+          if (data.receiverId && c.userId === data.receiverId) {
+            return { ...c, lastMessageStatus: "read" as const };
+          }
+          return c;
+        });
       });
     };
 
@@ -307,6 +312,14 @@ offEvent("new_message", handleNewMessage);
   const filteredChatUsers = chatUsers.filter(user => 
     getDisplayName(user).toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  const formatLastMessage = (content: string) => {
+    const propertyId = content.match(/\{\{property:(\w+)\}\}/)?.[1];
+    if (propertyId) {
+      return `🏠 Property details`;
+    }
+    return content;
+  };
 
   const scrollToBottom = () => {
     listRef.current?.scrollTo({
@@ -460,7 +473,7 @@ offEvent("new_message", handleNewMessage);
                             <Check className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
                           ) : null}
                           <p className={`text-sm truncate overflow-hidden text-ellipsis ${chatUser.isUnread ? "text-gray-900 font-medium" : "text-gray-500"}`}>
-                            {chatUser.lastMessage}
+                            {formatLastMessage(chatUser.lastMessage)}
                           </p>
                         </div>
                         {chatUser.isUnread && chatUser.unreadCount > 0 && (
