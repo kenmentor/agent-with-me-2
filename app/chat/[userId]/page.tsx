@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { ArrowLeft, Send, Loader2, Check, CheckCheck, Mic, Image as ImageIcon, Square } from "lucide-react";
+import { ArrowLeft, Send, Loader2, Check, CheckCheck, Mic, Image as ImageIcon, Square, Trash2, Play, Pause } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
 import Req from "@/app/utility/axois";
 import { format, isToday, isYesterday } from "date-fns";
@@ -67,8 +67,10 @@ export default function ChatConversationPage() {
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [recording, setRecording] = useState(false);
+  const [paused, setPaused] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
   const [audioLevels, setAudioLevels] = useState<number[]>(new Array(40).fill(4));
+  const [recordingPreview, setRecordingPreview] = useState<{ url: string; blob: Blob; duration: number } | null>(null);
   const hasMarkedRead = useRef(false);
 
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -466,15 +468,8 @@ export default function ChatConversationPage() {
     e.target.value = "";
   };
 
-  const toggleRecording = async () => {
-    if (recording) {
-      stopRecording();
-    } else {
-      await startRecording();
-    }
-  };
-
   const startRecording = async () => {
+    setRecordingPreview(null);
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
 
@@ -521,16 +516,18 @@ export default function ChatConversationPage() {
         if (e.data.size > 0) chunksRef.current.push(e.data);
       };
 
-      mediaRecorder.onstop = async () => {
+      const startTime = Date.now();
+      mediaRecorder.onstop = () => {
         const blob = new Blob(chunksRef.current, { type: mimeType || "audio/mp3" });
-        const ext = mimeType.includes("webm") ? "webm" : mimeType.includes("ogg") ? "ogg" : "mp3";
-        const file = new File([blob], `voice-${Date.now()}.${ext}`, { type: blob.type });
-        await handleMediaUpload(file, "audio");
+        const url = URL.createObjectURL(blob);
+        const duration = recordingTime || Math.round((Date.now() - startTime) / 1000);
+        setRecordingPreview({ url, blob, duration });
         stream.getTracks().forEach((track) => track.stop());
       };
 
       mediaRecorder.start();
       setRecording(true);
+      setPaused(false);
       setRecordingTime(0);
 
       recordingTimerRef.current = setInterval(() => {
@@ -538,6 +535,26 @@ export default function ChatConversationPage() {
       }, 1000);
     } catch (err) {
       console.error("Failed to start recording:", err);
+    }
+  };
+
+  const pauseRecording = () => {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
+      mediaRecorderRef.current.pause();
+      setPaused(true);
+      if (recordingTimerRef.current) {
+        clearInterval(recordingTimerRef.current);
+      }
+    }
+  };
+
+  const resumeRecording = () => {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state === "paused") {
+      mediaRecorderRef.current.resume();
+      setPaused(false);
+      recordingTimerRef.current = setInterval(() => {
+        setRecordingTime((prev) => prev + 1);
+      }, 1000);
     }
   };
 
@@ -555,8 +572,46 @@ export default function ChatConversationPage() {
       audioContextRef.current.close();
     }
     setRecording(false);
+    setPaused(false);
     setRecordingTime(0);
     setAudioLevels(new Array(40).fill(4));
+  };
+
+  const discardRecording = () => {
+    setRecordingPreview(null);
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
+      mediaRecorderRef.current.stop();
+    }
+    if (recordingTimerRef.current) {
+      clearInterval(recordingTimerRef.current);
+    }
+    if (animationFrameRef.current) {
+      cancelAnimationFrame(animationFrameRef.current);
+    }
+    if (audioContextRef.current) {
+      audioContextRef.current.close();
+    }
+    setRecording(false);
+    setPaused(false);
+    setRecordingTime(0);
+    setAudioLevels(new Array(40).fill(4));
+  };
+
+  const discardPreview = () => {
+    if (recordingPreview?.url) {
+      URL.revokeObjectURL(recordingPreview.url);
+    }
+    setRecordingPreview(null);
+  };
+
+  const sendVoiceNote = async () => {
+    if (!recordingPreview) return;
+    const { blob } = recordingPreview;
+    const mimeType = blob.type || "audio/webm";
+    const ext = mimeType.includes("webm") ? "webm" : mimeType.includes("ogg") ? "ogg" : "mp3";
+    const file = new File([blob], `voice-${Date.now()}.${ext}`, { type: mimeType });
+    await handleMediaUpload(file, "audio");
+    setRecordingPreview(null);
   };
 
   const formatRecordingTime = (seconds: number) => {
@@ -687,34 +742,79 @@ export default function ChatConversationPage() {
         />
 
         {recording && (
-          <div className="mb-3 px-2">
-            <div className="flex items-center gap-3 bg-gray-50 rounded-2xl px-4 py-3">
-              <div className="w-2.5 h-2.5 bg-red-500 rounded-full animate-pulse flex-shrink-0" />
-              <div className="flex items-center gap-[2px] flex-1 h-8 overflow-hidden">
-                {audioLevels.map((level, i) => (
-                  <div
-                    key={i}
-                    className="w-[3px] rounded-full bg-red-500"
-                    style={{
-                      height: `${Math.max(4, Math.min(100, level))}%`,
-                      minHeight: "4px",
-                      opacity: 0.3 + Math.min(0.7, level / 80),
-                      transition: "height 60ms ease-out, opacity 60ms ease-out",
-                    }}
-                  />
-                ))}
-              </div>
-              <span className="text-sm font-mono font-medium text-red-500 flex-shrink-0">{formatRecordingTime(recordingTime)}</span>
-              <Button
-                type="button"
-                size="sm"
-                variant="ghost"
-                onClick={stopRecording}
-                className="h-8 px-2 text-xs text-gray-500 hover:text-red-500 flex-shrink-0"
-              >
-                Cancel
-              </Button>
+          <div className="flex items-center gap-3 px-2">
+            <div className="w-2.5 h-2.5 bg-red-500 rounded-full animate-pulse flex-shrink-0" />
+            <div className="flex items-center gap-[2px] flex-1 h-8 overflow-hidden">
+              {audioLevels.map((level, i) => (
+                <div
+                  key={i}
+                  className="w-[3px] rounded-full bg-red-500"
+                  style={{
+                    height: `${Math.max(4, Math.min(100, level))}%`,
+                    minHeight: "4px",
+                    opacity: paused ? 0.2 : 0.3 + Math.min(0.7, level / 80),
+                    transition: "height 60ms ease-out, opacity 60ms ease-out",
+                  }}
+                />
+              ))}
             </div>
+            <span className="text-sm font-mono font-medium text-red-500 flex-shrink-0">{formatRecordingTime(recordingTime)}</span>
+            <Button
+              type="button"
+              size="icon"
+              variant="ghost"
+              onClick={paused ? resumeRecording : pauseRecording}
+              className="h-10 w-10 rounded-full flex-shrink-0 hover:bg-gray-100"
+            >
+              {paused ? <Play className="h-5 w-5 text-gray-600" /> : <Pause className="h-5 w-5 text-gray-600" />}
+            </Button>
+            <Button
+              type="button"
+              size="icon"
+              variant="ghost"
+              onClick={discardRecording}
+              className="h-10 w-10 rounded-full flex-shrink-0 hover:bg-red-50"
+            >
+              <Trash2 className="h-5 w-5 text-red-500" />
+            </Button>
+          </div>
+        )}
+
+        {recordingPreview && (
+          <div className="flex items-center gap-3 px-2">
+            <audio src={recordingPreview.url} preload="metadata" className="hidden" id="preview-audio" />
+            <button
+              onClick={() => {
+                const a = document.getElementById("preview-audio") as HTMLAudioElement;
+                if (a?.paused) a.play();
+                else if (a) a.pause();
+              }}
+              className="w-10 h-10 rounded-full bg-black text-white flex items-center justify-center flex-shrink-0 hover:bg-gray-800 transition-colors"
+            >
+              <Play className="h-4 w-4 ml-0.5" />
+            </button>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-gray-900 truncate">Voice note</p>
+              <p className="text-xs text-gray-400">{formatRecordingTime(recordingPreview.duration)}</p>
+            </div>
+            <Button
+              type="button"
+              size="icon"
+              variant="ghost"
+              onClick={discardPreview}
+              className="h-10 w-10 rounded-full text-gray-400 hover:text-red-500 hover:bg-red-50"
+            >
+              <Trash2 className="h-5 w-5" />
+            </Button>
+            <Button
+              type="button"
+              size="icon"
+              onClick={sendVoiceNote}
+              disabled={uploading}
+              className="h-10 w-10 bg-black hover:bg-gray-800 rounded-full flex-shrink-0"
+            >
+              {uploading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5" />}
+            </Button>
           </div>
         )}
 
@@ -729,20 +829,6 @@ export default function ChatConversationPage() {
               className="h-10 w-10 rounded-full text-gray-500 hover:text-black hover:bg-gray-100"
             >
               {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ImageIcon className="h-5 w-5" />}
-            </Button>
-            <Button
-              type="button"
-              size="icon"
-              variant="ghost"
-              onClick={toggleRecording}
-              disabled={uploading || sending}
-              className={`h-10 w-10 rounded-full transition-colors ${
-                recording
-                  ? "bg-red-500 text-white hover:bg-red-600"
-                  : "text-gray-500 hover:text-black hover:bg-gray-100"
-              }`}
-            >
-              {recording ? <Square className="h-4 w-4" /> : <Mic className="h-5 w-5" />}
             </Button>
           </div>
           <textarea
@@ -764,11 +850,25 @@ export default function ChatConversationPage() {
           />
           <Button
             size="icon"
-            onClick={handleSendMessage}
-            disabled={!newMessage.trim() || sending || recording}
-            className="h-12 w-12 bg-black hover:bg-gray-800 rounded-full"
+            onClick={recording ? stopRecording : newMessage.trim() ? handleSendMessage : startRecording}
+            disabled={uploading || (sending && !recording)}
+            className={`h-12 w-12 rounded-full flex-shrink-0 transition-all ${
+              recording
+                ? "bg-red-500 hover:bg-red-600 text-white"
+                : newMessage.trim()
+                  ? "bg-black hover:bg-gray-800 text-white"
+                  : "bg-black hover:bg-gray-800 text-white"
+            }`}
           >
-            {sending ? <Loader2 className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5" />}
+            {sending ? (
+              <Loader2 className="h-5 w-5 animate-spin" />
+            ) : recording ? (
+              <Square className="h-5 w-5" />
+            ) : newMessage.trim() ? (
+              <Send className="h-5 w-5" />
+            ) : (
+              <Mic className="h-5 w-5" />
+            )}
           </Button>
         </div>
       </div>

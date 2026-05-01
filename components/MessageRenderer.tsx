@@ -10,6 +10,16 @@ const { app, base } = Req;
 
 const propertyCache = new Map<string, any>();
 
+let currentPlayingAudio: HTMLAudioElement | null = null;
+
+function stopAllAudio() {
+  if (currentPlayingAudio) {
+    currentPlayingAudio.pause();
+    currentPlayingAudio.currentTime = 0;
+    currentPlayingAudio = null;
+  }
+}
+
 export function parseMessageTag(text: string): { type: string; value: string } | null {
   const propMatch = text.match(/\{\{property:(\w+)\}\}/);
   if (propMatch) return { type: "property", value: propMatch[1] };
@@ -116,6 +126,7 @@ function AudioMessageCard({ url, isOwn }: { url: string; isOwn: boolean }) {
     const onEnded = () => {
       setPlaying(false);
       setCurrentTime(0);
+      currentPlayingAudio = null;
     };
 
     audio.addEventListener("loadedmetadata", onLoaded);
@@ -148,7 +159,10 @@ function AudioMessageCard({ url, isOwn }: { url: string; isOwn: boolean }) {
     if (!audioRef.current || !loaded) return;
     if (playing) {
       audioRef.current.pause();
+      currentPlayingAudio = null;
     } else {
+      stopAllAudio();
+      currentPlayingAudio = audioRef.current;
       audioRef.current.play();
     }
     setPlaying(!playing);
