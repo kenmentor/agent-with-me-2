@@ -10,7 +10,7 @@ import AnalyticsTracker from "../components/AnalyticsTracker";
 import { Suspense } from "react";
 
 function ToasterWrapper() {
-  return <Toaster richColors position="top-right" />;
+  return <Toaster richColors position="top-right" visibleToasts={1} />;
 }
 
 function AnalyticsTrackerWrapper() {

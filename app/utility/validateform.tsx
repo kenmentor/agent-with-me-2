@@ -67,10 +67,10 @@ export function validateProperty(property: Property): boolean {
 
   // ⚡ Show result
   if (missingFields.length > 0) {
-    toast.message(`Please fill in: ${missingFields.join(", ")}`);
+    toast.error(`Please fill in: ${missingFields.join(", ")}`);
     return false;
   }
 
-  toast.message("All fields are valid ✅ Ready to upload!");
+  toast.success("All fields are valid ✅ Ready to upload!");
   return true;
 }

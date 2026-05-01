@@ -199,7 +199,7 @@ export default function AccountPage() {
     );
   }
 
-  const avatarUrl = profile?.profileImage || profile?.avatar || profile?.avater || user?.profileImage || user?.avatar || user?.avater;
+  const avatarUrl = profile?.profileImage || profile?.avatar || user?.profileImage || user?.avatar;
   const initials = getFirstName(profile || user)[0]?.toUpperCase() || "?";
 
   return (

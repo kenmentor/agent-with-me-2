@@ -32,7 +32,7 @@ export default function UserAvatar({
   const router = useRouter();
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
-  const avatarUrl = user?.avater;
+  const avatarUrl = user?.profileImage || user?.avatar;
   const displayName = getDisplayName(user);
   const initials = displayName[0]?.toUpperCase() || "?";
   const sizeClass = sizeClasses[size];
