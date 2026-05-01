@@ -132,26 +132,23 @@ export default function BottomNav() {
 
   const { showAuthPrompt, setShowAuthPrompt } = useAuthPrompt();
 
-  const handleAddClick = (e: React.MouseEvent, requiresAuth: boolean) => {
-    if (requiresAuth && !isAuthenticated) {
+  // Show Add button only to hosts and agents - NOT to guests
+  const isHostOrAgent = user && (user.role === "agent" || user.role === "host");
+  
+  const handleAddClick = (e: React.MouseEvent) => {
+    if (!isAuthenticated || !isHostOrAgent) {
       e.preventDefault();
       setShowAuthPrompt(true);
     }
+    // If authenticated and isHostOrAgent, let the link navigate normally
   };
 
-  // Show Add button only to hosts and agents - NOT to guests
-  const isHostOrAgent = user && (user.role === "agent" || user.role === "host");
   const addItem = {
     name: "Add",
     href: "/properties/add",
     icon: PlusCircle,
-    onClick: (e: React.MouseEvent) => {
-      e.preventDefault();
-      if (!isAuthenticated) {
-        setShowAuthPrompt(true);
-      }
-    },
-    requiresAuth: isHostOrAgent
+    onClick: handleAddClick,
+    requiresAuth: true
   };
 
   const NAV_ITEMS = [
