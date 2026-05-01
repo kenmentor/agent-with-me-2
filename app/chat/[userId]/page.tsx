@@ -30,6 +30,7 @@ import {
 import { ChatConversationSkeleton } from "@/components/ui/skeleton";
 import { getDisplayName, getFirstName } from "@/lib/utils";
 import api, { baseURL } from "@/lib/api";
+import { toast } from "sonner";
 
 const base = baseURL;
 const app = api;
@@ -67,6 +68,7 @@ export default function ChatConversationPage() {
 
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const processedMsgIds = useRef<Set<string>>(new Set());
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -122,6 +124,12 @@ export default function ChatConversationPage() {
     const userId = useAuthStore.getState().getUserId();
     if (!userId) {
       setLoading(false);
+      return;
+    }
+
+    if (receiverId?.toString() === userId?.toString()) {
+      toast.error("You can't chat with yourself");
+      router.push("/chat");
       return;
     }
 
@@ -225,36 +233,40 @@ export default function ChatConversationPage() {
     const handleNewMessage = async (data: { message: any }) => {
       const userId = getUserId();
       const { message } = data;
-      console.log("📩 New message received:", message);
+      const msgId = message._id;
       
-      if (message.senderId === receiverId || message.receiverId === receiverId) {
-        setMessages((prev) => {
-          if (prev.some((m) => m._id === message._id)) return prev;
-          const newMessages = [...prev, message];
-          return newMessages;
-        });
-        
-        // Send delivery acknowledgment to server
-        if (message.senderId !== userId && message._id && message.conversationId) {
-          try {
-            emitEvent("message_ack", {
-              messageId: message._id,
-              conversationId: message.conversationId,
-              status: "delivered"
-            });
-          } catch (err) {
-            console.error("Failed to send ACK:", err);
-          }
+      if (!msgId || processedMsgIds.current.has(msgId)) return;
+      processedMsgIds.current.add(msgId);
+      
+      setMessages((prev) => {
+        if (prev.some((m) => m._id === msgId)) return prev;
+        const tempExists = prev.find((m) => 
+          m._id?.toString().startsWith("temp-") && 
+          m.senderId === message.senderId && 
+          m.content === message.content
+        );
+        if (tempExists) {
+          return prev.map((m) => 
+            m._id === tempExists._id ? { ...message, status: "sent" as const } : m
+          );
         }
-        
-        markMessagesAsRead();
-        scrollToBottom();
-
-        if (message.senderId === receiverId && message.receiverId === userId) {
-          console.log("📖 Marking new message as read");
-          markMessagesAsRead();
+        return [...prev, { ...message, status: "sent" as const }];
+      });
+      
+      if (message.senderId !== userId && message.conversationId) {
+        try {
+          emitEvent("message_ack", {
+            messageId: message._id,
+            conversationId: message.conversationId,
+            status: "delivered"
+          });
+        } catch (err) {
+          console.error("Failed to send ACK:", err);
         }
       }
+      
+      markMessagesAsRead();
+      scrollToBottom();
     };
 
     const handleTyping = (data: { userId: string; isTyping: boolean }) => {
@@ -266,12 +278,16 @@ export default function ChatConversationPage() {
     const handleMessageSent = (data: { success: boolean; message?: any }) => {
       if (data.success && data.message) {
         setSending(false);
+        const serverMsg = data.message;
+        const msgId = serverMsg._id;
+        if (msgId) processedMsgIds.current.add(msgId);
         setMessages((prev) => {
+          const tempMsg = prev.find((m) => m._id?.toString().startsWith("temp-"));
+          if (!tempMsg) return prev;
           return prev.map((m) =>
-            m._id?.toString().startsWith("temp-") ? data.message : m
+            m._id === tempMsg._id ? { ...serverMsg, status: "sent" as const } : m
           );
         });
-        
       }
     };
 
@@ -350,17 +366,7 @@ export default function ChatConversationPage() {
         receiverId,
         newMessage.trim(),
         conversationId || undefined,
-        (response: { success: boolean; message?: any }) => {
-          if (!response.success) {
-            queueMessage(receiverId, newMessage.trim(), conversationId || undefined);
-            setMessages((prev) => prev.map((m) => 
-              m._id === tempMsg._id ? { ...m, status: "queued" as const } : m
-            ));
-          } else {
-            setMessages((prev) => prev.map((m) => 
-              m._id === tempMsg._id ? { ...m, status: "sent" as const, _id: response.message?._id || tempMsg._id } : m
-            ));
-          }
+        () => {
           setSending(false);
         }
       );
@@ -370,7 +376,6 @@ export default function ChatConversationPage() {
         m._id === tempMsg._id ? { ...m, status: "queued" as const } : m
       ));
       setSending(false);
-      console.log("Socket not connected. Message queued and will be sent when reconnected.");
     }
   };
 

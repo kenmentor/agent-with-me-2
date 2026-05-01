@@ -138,6 +138,26 @@ export default function ChatListPage() {
   }, [_hasHydrated, isAuthenticated, router, fetchMessages, getUserId]);
 
   useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        fetchMessages();
+      }
+    };
+
+    const handleFocus = () => {
+      fetchMessages();
+    };
+
+    window.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener("focus", handleFocus);
+
+    return () => {
+      window.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("focus", handleFocus);
+    };
+  }, [fetchMessages]);
+
+  useEffect(() => {
     const handleConnectionChange = (connected: boolean) => {
       if (connected) {
         fetchMessages();

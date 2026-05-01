@@ -56,6 +56,9 @@ export default function PropertyDetailClient({
   }, [property._id, property.type, property.price]);
 
   const host = property.host || {};
+  const hostId = host._id?.toString();
+  const currentUserId = user?._id?.toString();
+  const isOwnProperty = hostId && currentUserId && hostId === currentUserId;
   const [selectedImage, setSelectedImage] = useState<string>(
     property.thumbnail || property.images?.[0]?.url || "/placeholder.svg"
   );
@@ -416,15 +419,26 @@ export default function PropertyDetailClient({
                     </div>
 
                     {/* Chat Button */}
-                    <Link href={`/chat/${property.host?._id || "unknown"}/${property._id}`}>
+                    {isOwnProperty ? (
                       <Button
                         variant="outline"
-                        className="w-full h-11 border-2 border-black hover:bg-black hover:text-white"
+                        className="w-full h-11 border-2 border-gray-200 text-gray-400 cursor-not-allowed"
+                        disabled
                       >
                         <MessageCircle className="h-5 w-5 mr-2" />
-                        Chat with Agent
+                        This is your property
                       </Button>
-                    </Link>
+                    ) : hostId ? (
+                      <Link href={`/chat/${hostId}/${property._id}`}>
+                        <Button
+                          variant="outline"
+                          className="w-full h-11 border-2 border-black hover:bg-black hover:text-white"
+                        >
+                          <MessageCircle className="h-5 w-5 mr-2" />
+                          Chat with Agent
+                        </Button>
+                      </Link>
+                    ) : null}
                   </CardContent>
                 </Card>
 
@@ -492,12 +506,19 @@ export default function PropertyDetailClient({
 
                       {/* Action Buttons */}
                       <div className="p-4 pt-0 space-y-2">
-                        <Link href={`/chat/${host?._id || "unknown"}/${property._id}`} className="block">
-                          <Button className="w-full bg-black hover:bg-gray-800 h-11">
+                        {isOwnProperty ? (
+                          <Button variant="outline" className="w-full h-11 border-gray-200 text-gray-400 cursor-not-allowed" disabled>
                             <MessageCircle className="h-4 w-4 mr-2" />
-                            Chat with Agent
+                            This is your property
                           </Button>
-                        </Link>
+                        ) : hostId ? (
+                          <Link href={`/chat/${hostId}/${property._id}`} className="block">
+                            <Button className="w-full bg-black hover:bg-gray-800 h-11">
+                              <MessageCircle className="h-4 w-4 mr-2" />
+                              Chat with Agent
+                            </Button>
+                          </Link>
+                        ) : null}
                         {host.adminVerified && (
                           <Link href={`/payments/pay/${property._id}`} className="block">
                             <Button variant="outline" className="w-full h-11 border-gray-300">

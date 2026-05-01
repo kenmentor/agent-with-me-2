@@ -96,23 +96,23 @@ export default function AllUsers() {
 
   return (
     <motion.div
-      className="p-6 min-h-screen bg-gray-50 text-gray-800"
+      className="p-4 md:p-6 min-h-screen bg-gray-50 text-gray-800"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
     >
       {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between items-center mb-8">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Agents & Hosts</h1>
-          <p className="text-gray-500 mt-1">Browse property owners and their listings</p>
+          <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Agents & Hosts</h1>
+          <p className="text-gray-500 mt-1 text-sm">Browse property owners and their listings</p>
         </div>
 
-        <div className="mt-4 md:mt-0">
+        <div className="w-full md:w-auto">
           <Input
             type="text"
             placeholder="Search by name or email..."
-            className="w-64 pl-10 bg-white border-gray-200 shadow-sm"
+            className="w-full md:w-64 pl-10 bg-white border-gray-200 shadow-sm"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
@@ -120,18 +120,18 @@ export default function AllUsers() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-3 gap-4 mb-8">
-        <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
-          <p className="text-sm text-gray-500">Total Agents</p>
-          <p className="text-2xl font-bold text-gray-900">{users.filter(u => u.role === "agent").length}</p>
+      <div className="grid grid-cols-3 gap-3 mb-8">
+        <div className="bg-white p-3 md:p-4 rounded-xl shadow-sm border border-gray-100">
+          <p className="text-xs md:text-sm text-gray-500">Total Agents</p>
+          <p className="text-xl md:text-2xl font-bold text-gray-900">{users.filter(u => u.role === "agent").length}</p>
         </div>
-        <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
-          <p className="text-sm text-gray-500">Hosts</p>
-          <p className="text-2xl font-bold text-gray-900">{users.filter(u => u.role === "host").length}</p>
+        <div className="bg-white p-3 md:p-4 rounded-xl shadow-sm border border-gray-100">
+          <p className="text-xs md:text-sm text-gray-500">Hosts</p>
+          <p className="text-xl md:text-2xl font-bold text-gray-900">{users.filter(u => u.role === "host").length}</p>
         </div>
-        <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
-          <p className="text-sm text-gray-500">Showing</p>
-          <p className="text-2xl font-bold text-gray-900">{filtered.length}</p>
+        <div className="bg-white p-3 md:p-4 rounded-xl shadow-sm border border-gray-100">
+          <p className="text-xs md:text-sm text-gray-500">Showing</p>
+          <p className="text-xl md:text-2xl font-bold text-gray-900">{filtered.length}</p>
         </div>
       </div>
 
@@ -148,7 +148,7 @@ export default function AllUsers() {
           <p className="text-gray-500">No agents or Hosts found</p>
         </div>
       ) : (
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
           {filtered.map((user) => (
             <motion.div
               key={user._id}

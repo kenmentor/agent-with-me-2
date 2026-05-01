@@ -35,6 +35,7 @@ import { useAuthStore } from "@/store/authStore";
 import Req from "@/app/utility/axios";
 import { toast } from "sonner";
 import { propertyType, statesAndLGAs, amenitiesList } from "@/app/data";
+import { Combobox } from "@/components/ui/combobox";
 import { isRole, getDashboardRoute } from "@/lib/roles";
 
 const { base, app } = Req;
@@ -401,20 +402,14 @@ export default function EditPropertyPage() {
 
                   <div className="space-y-2">
                     <Label>Property Type *</Label>
-                    <Select
+                    <Combobox
+                      label=""
                       value={formData.category}
                       onValueChange={(v) => setFormData((p) => ({ ...p, category: v }))}
-                    >
-                      <SelectTrigger className={errors.category ? "border-red-500" : ""}>
-                        <SelectValue placeholder="Select property type" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {propertyType.map((type) => (
-                          <SelectItem key={type} value={type}>{type}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    {errors.category && <p className="text-sm text-red-500">{errors.category}</p>}
+                      options={propertyType}
+                      placeholder="Select or type a property type"
+                      error={errors.category}
+                    />
                   </div>
                 </div>
 

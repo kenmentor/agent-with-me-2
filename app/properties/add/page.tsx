@@ -110,6 +110,7 @@ import {
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { amenitiesList, propertyType, statesAndLGAs } from "@/app/data";
+import { Combobox } from "@/components/ui/combobox";
 import { useAuthStore } from "@/store/authStore";
 import Req from "@/app/utility/axios";
 import { set } from "date-fns";
@@ -484,8 +485,53 @@ const LOGO_SVG = (
     <div className="min-h-screen bg-grablacy-50 pb-[100px] md:pb-[0px]">
       {/* Header */}
       {isLoading && (
-        <div className="fixed  left-0 bg-black/50 backdrop:blur-sm right-0 flex justify-center top-0 bottom-0 pt-[50px] ">
-          <LoaderIcon className=" animate-spin " color="white" />
+        <div className="fixed inset-0 z-[999] bg-black/60 backdrop-blur-sm flex items-center justify-center px-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-8 text-center animate-slide-up">
+            <div className="w-16 h-16 bg-blue-50 rounded-2xl flex items-center justify-center mx-auto mb-6">
+              <svg
+                className="h-8 w-8 text-blue-600"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={1.5}
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
+              </svg>
+            </div>
+
+            <h2 className="text-xl font-semibold text-gray-900 mb-1">
+              {uploadProgress >= 100 ? "Almost done..." : "Uploading your property"}
+            </h2>
+            <p className="text-sm text-gray-500 mb-6">
+              {uploadProgress < 30
+                ? "Preparing your photos..."
+                : uploadProgress < 60
+                ? "Uploading details..."
+                : uploadProgress < 90
+                ? "Finalizing..."
+                : "Saving your listing..."}
+            </p>
+
+            <div className="w-full bg-gray-100 rounded-full h-2.5 mb-3 overflow-hidden">
+              <div
+                className="h-full bg-blue-600 rounded-full transition-all duration-500 ease-out"
+                style={{ width: `${Math.min(uploadProgress, 100)}%` }}
+              />
+            </div>
+
+            <p className="text-sm font-medium text-gray-700">
+              {Math.min(uploadProgress, 100)}%
+            </p>
+
+            {uploadProgress >= 100 && (
+              <div className="mt-4 flex items-center justify-center gap-2 text-green-600">
+                <svg className="h-5 w-5 animate-bounce" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                </svg>
+                <span className="text-sm font-medium">Complete!</span>
+              </div>
+            )}
+          </div>
         </div>
       )}
         <header className="sticky top-0 z-10 bg-white border-b border-gray-200 px-4 shrink-0">
@@ -621,24 +667,15 @@ const LOGO_SVG = (
 
                   <div className="space-y-2">
                     <Label htmlFor="category">Property Type *</Label>
-                    <Select
+                    <Combobox
+                      label=""
                       value={formData.category}
-                      onValueChange={(value) =>
-                        setFormData({ ...formData, category: value })
-                      }
-                    >
-                      <SelectTrigger className={errors.category ? "border-red-500" : ""}>
-                        <SelectValue placeholder="Select property type" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {propertyType.map((type) => (
-                          <SelectItem key={type} value={type}>
-                            {type}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    {errors.category && <p className="text-sm text-red-500">{errors.category}</p>}
+                      onValueChange={(v) => setFormData((prev) => ({ ...prev, category: v }))}
+                      options={propertyType}
+                      placeholder="Select or type a property type"
+                      error={errors.category}
+                      required
+                    />
                   </div>
                 </div>
 

@@ -135,11 +135,10 @@ export const useAuthStore = create(
             `${base}/v1/verification/verify_email`,
             { code }
           );
-          // Backend now returns user data directly after verification
-          const userData = response.data?.data?.user;
+          const responseData = response.data?.data;
+          let userData = responseData?.user?._doc || responseData?.user || responseData?._doc || responseData;
           
-          // Save token if returned
-          const token = response.data?.token || response.data?.data?.token;
+          const token = responseData?.token;
           if (token) {
             localStorage.setItem("token", token);
           }
@@ -152,6 +151,12 @@ export const useAuthStore = create(
               isLoading: false,
               isCheckingAuth: false,
             });
+            
+            // Initialize socket immediately after verification if token exists
+            if (token) {
+              const { initializeSocket } = await import("@/app/utility/socket");
+              initializeSocket(token);
+            }
           }
           return response.data;
         } catch (error) {
