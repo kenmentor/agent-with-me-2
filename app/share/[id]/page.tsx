@@ -18,7 +18,7 @@ export default function SharePage() {
   const { base, app } = Req;
   const [property, setProperty] = useState<data>();
 
-  const shareUrl = `https://agent-with-me-v2.vercel.app/properties/${id}`;
+  const shareUrl = typeof window !== "undefined" ? `${window.location.origin}/properties/${id}` : `https://agentwithme.davidnwachukwu.workers.dev/properties/${id}`;
 
   const shareWhatsApp = () => {
     window.open(

@@ -435,7 +435,7 @@ const LOGO_SVG = (
     </g>
   </svg>
 );
-  const propertyLink = `https://agent-with-me-v2.vercel.app/properties/${property?._id}`;
+  const propertyLink = typeof window !== "undefined" ? `${window.location.origin}/properties/${property?._id}` : `https://agentwithme.davidnwachukwu.workers.dev/properties/${property?._id}`;
   const shareText = `🏠 ${
     formData.title
   }\n💰 ₦${formData.price.toLocaleString()} • 📍 ${property?.address}, ${

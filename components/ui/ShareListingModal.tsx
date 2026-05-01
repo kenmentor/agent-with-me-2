@@ -32,19 +32,19 @@ interface ShareListingModalProps {
 }
 
 function generateShareMessage(prop: PropertyData): string {
-  const propertyLink = `https://agent-with-me-v2.vercel.app/properties/${prop._id}`;
+  const propertyLink = typeof window !== "undefined" ? `${window.location.origin}/properties/${prop._id}` : `https://agentwithme.davidnwachukwu.workers.dev/properties/${prop._id}`;
   const priceText = prop.price ? `₦${Number(prop.price).toLocaleString()}` : "Contact for price";
   const addressText = prop.address && prop.state ? `${prop.address}, ${prop.state}` : (prop.address || prop.state || "View listing");
   const descText = prop.description ? prop.description.substring(0, 150) + (prop.description.length > 150 ? "..." : "") : "";
   
   return `🏠 ${prop.title || "New Property Listing"}
-
+  
 💰 ${priceText} • 📍 ${addressText}
-
+  
 ${descText}
-
+  
 📱 View details: ${propertyLink}
-
+  
 Find your perfect property on AgentWithMe!`;
 }
 
@@ -70,7 +70,7 @@ export function ShareListingModal({ open, onClose, property }: ShareListingModal
   };
 
   const handleFacebook = () => {
-    const propertyLink = `https://agent-with-me-v2.vercel.app/properties/${property._id}`;
+    const propertyLink = typeof window !== "undefined" ? `${window.location.origin}/properties/${property._id}` : `https://agentwithme.davidnwachukwu.workers.dev/properties/${property._id}`;
     const encodedURL = encodeURIComponent(propertyLink);
     window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodedURL}`, "_blank", "noopener,noreferrer");
   };
@@ -91,7 +91,7 @@ export function ShareListingModal({ open, onClose, property }: ShareListingModal
         await navigator.share({
           title: property.title,
           text: message,
-          url: `https://agent-with-me-v2.vercel.app/properties/${property._id}`,
+          url: typeof window !== "undefined" ? `${window.location.origin}/properties/${property._id}` : `https://agentwithme.davidnwachukwu.workers.dev/properties/${property._id}`,
         });
       } catch (err) {
         if ((err as Error).name !== "AbortError") {

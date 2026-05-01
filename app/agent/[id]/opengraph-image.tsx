@@ -4,8 +4,6 @@ import { getDisplayName } from "@/lib/utils";
 
 const { app, base } = Req;
 
-export const runtime = "edge";
-
 export const alt = "Agent Profile";
 export const size = {
   width: 1200,

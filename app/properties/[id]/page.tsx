@@ -13,9 +13,11 @@ export async function generateMetadata({
   params,
 }: PageProps): Promise<Metadata> {
   const { id } = await params;
-  const baseUrl = process.env.NEXT_PUBLIC_ENV === "production" 
-    ? "https://agent-with-me-v2.vercel.app"
-    : "http://localhost:3000";
+  const baseUrl = typeof window !== "undefined" 
+    ? window.location.origin 
+    : process.env.NEXT_PUBLIC_ENV === "production" 
+      ? "https://agentwithme.davidnwachukwu.workers.dev"
+      : "http://localhost:3000";
   try {
     const res = await api.get(`/v1/house/detail/${id}`);
     const property = res.data.data;

@@ -113,7 +113,7 @@ export default function AgentProfileContent({ id, agent, properties }: AgentProf
                 </a>
               )}
               <a
-                href={`/chat/${agent._id}`}
+                  href={`/chat/${agent._id}`}
                 className="border border-white/30 text-white px-6 py-2 rounded-lg font-semibold hover:bg-white/10 transition-colors text-center"
               >
                 Message
