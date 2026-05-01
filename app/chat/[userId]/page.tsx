@@ -32,6 +32,7 @@ import { getDisplayName, getFirstName } from "@/lib/utils";
 import api, { baseURL } from "@/lib/api";
 import { toast } from "sonner";
 import { MessageRenderer, parseMessageTag } from "@/components/MessageRenderer";
+import { useLongPress } from "@/hooks/useLongPress";
 
 const base = baseURL;
 const app = api;
@@ -71,6 +72,7 @@ export default function ChatConversationPage() {
   const [recordingTime, setRecordingTime] = useState(0);
   const [audioLevels, setAudioLevels] = useState<number[]>(new Array(40).fill(4));
   const [recordingPreview, setRecordingPreview] = useState<{ url: string; blob: Blob; duration: number } | null>(null);
+  const [deleteMenu, setDeleteMenu] = useState<{ messageId: string; x: number; y: number } | null>(null);
   const hasMarkedRead = useRef(false);
 
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -614,6 +616,29 @@ export default function ChatConversationPage() {
     setRecordingPreview(null);
   };
 
+  const handleDeleteMessage = async (messageId: string) => {
+    const currentUserId = getUserId();
+    if (!currentUserId) return;
+    
+    try {
+      await app.delete(`${base}/v1/chat/message`, {
+        data: { messageId, userId: currentUserId },
+      });
+      
+      setMessages((prev) => prev.filter((m) => m._id !== messageId));
+      setDeleteMenu(null);
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || "Failed to delete message");
+      setDeleteMenu(null);
+    }
+  };
+
+  const handleLongPress = (messageId: string, e: React.MouseEvent | React.TouchEvent) => {
+    const clientX = "touches" in e ? e.touches[0].clientX : e.clientX;
+    const clientY = "touches" in e ? e.touches[0].clientY : e.clientY;
+    setDeleteMenu({ messageId, x: clientX, y: clientY });
+  };
+
   const formatRecordingTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
@@ -679,17 +704,32 @@ export default function ChatConversationPage() {
             {messages.map((msg) => {
               const isOwn = msg.senderId === userId;
               const tag = parseMessageTag(msg.content);
+              const isWithinHour = new Date(msg.timestamp || msg.createdAt) > new Date(Date.now() - 3600000);
+
+              const longPress = useLongPress({
+                onLongPress: () => {
+                  if (isOwn && isWithinHour) {
+                    handleLongPress(msg._id, null as any);
+                  }
+                },
+              });
 
               if (tag) {
-                return <MessageRenderer key={msg._id} content={msg.content} isOwn={isOwn} />;
+                return (
+                  <div key={msg._id} {...(isOwn && isWithinHour ? longPress.handlers : {})} className={isOwn && isWithinHour ? "cursor-pointer select-none" : ""}>
+                    <MessageRenderer content={msg.content} isOwn={isOwn} />
+                  </div>
+                );
               }
 
               return (
-                <div key={msg._id} className={`flex ${isOwn ? "justify-end" : "justify-start"}`}>
+                <div key={msg._id} className={`flex ${isOwn ? "justify-end" : "justify-start"}`} {...(isOwn && isWithinHour ? longPress.handlers : {})}>
                   <div className={`max-w-[75%] px-4 py-2 rounded-2xl ${
-                    isOwn
-                      ? "bg-black text-white rounded-br-md"
-                      : "bg-white border border-gray-200 text-gray-900 rounded-bl-md shadow-sm"
+                    isOwn && isWithinHour
+                      ? "bg-black text-white rounded-br-md cursor-pointer select-none"
+                      : isOwn
+                        ? "bg-black text-white rounded-br-md"
+                        : "bg-white border border-gray-200 text-gray-900 rounded-bl-md shadow-sm"
                   }`}>
                     <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
                     <p className={`text-xs mt-1 flex items-center gap-1 ${isOwn ? "text-gray-400" : "text-gray-500"}`}>
