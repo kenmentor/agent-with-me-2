@@ -475,15 +475,15 @@ export default function Header({ color }: { color?: string }) {
               )}
 
               {!isAuthenticated && (
-                <div className="pt-4 border-t border-white/10 space-y-2">
+                <div className="pt-4 border-t border-white/10 space-y-2 ">
                   <Link href="/auth/login" onClick={() => setMobileMenuOpen(false)}>
-                    <Button variant="outline" className="w-full border-white/20 text-white hover:bg-white/10">
+                    <Button variant="ghost" className="w-full border border-white/20 text-white hover:bg-white/10 mb-[10px]">
                       Login
                     </Button>
                   </Link>
                   <Link href="/auth/register" onClick={() => setMobileMenuOpen(false)}>
                     <Button className="w-full bg-white text-black hover:bg-gray-100">
-                      Sign Up
+                      Sign Up 
                     </Button>
                   </Link>
                 </div>
