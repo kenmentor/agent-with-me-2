@@ -3,23 +3,31 @@ import type { MetadataRoute } from "next";
 export default function manifest(): MetadataRoute.Manifest {
   return {
     name: "AgentWithMe",
-    short_name: "agentwithme",
+    short_name: "AgentWithMe",
     description:
-      "ths is the best app to rent house in nigeria with verified agent",
-    start_url: "/properties",
+      "The best app to rent a house in Nigeria with verified agents",
+    start_url: "/",
     display: "standalone",
-    background_color: "#ffffff",
+    background_color: "#000000",
     theme_color: "#000000",
     icons: [
       {
-        src: "/placeholder-logo.svg",
+        src: "/icon-192.png",
         sizes: "192x192",
         type: "image/png",
+        purpose: "any",
       },
       {
-        src: "/placeholder-logo.svg",
+        src: "/icon-512.png",
         sizes: "512x512",
         type: "image/png",
+        purpose: "any",
+      },
+      {
+        src: "/icon-512.png",
+        sizes: "512x512",
+        type: "image/png",
+        purpose: "maskable",
       },
     ],
   };

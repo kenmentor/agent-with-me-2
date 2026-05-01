@@ -1,0 +1,33 @@
+const sharp = require("sharp");
+
+async function generateIcons() {
+  const svg = `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <rect width="512" height="512" fill="#000000"/>
+  <g transform="translate(228, 226) scale(1.23)">
+    <path d="M0 0L17.9781 5.93773L18.3963 60L0 53.9894L0 0Z" fill="#3b82f6" fill-rule="evenodd" transform="translate(27 0)" />
+    <path d="M0 5.80534L12.975 0L12.975 53.9767L0 59L0 5.80534Z" fill="#3b82f6" fill-opacity="0.7" fill-rule="evenodd" transform="translate(14.35 0)" />
+    <path d="M0 0L14.7218 4.49413L15.0642 45.4126L0 40.8633L0 0Z" fill="#3b82f6" fill-rule="evenodd" transform="translate(9.181 7.587)" />
+    <path d="M0 4.32941L9.23646 0L9.23645 40.6186L0 44L0 4.32941Z" fill="#3b82f6" fill-opacity="0.7" fill-rule="evenodd" transform="translate(0 7.587)" />
+  </g>
+</svg>`;
+
+  await sharp(Buffer.from(svg))
+    .resize(192, 192, { fit: "fill" })
+    .png()
+    .toFile("./public/icon-192.png");
+
+  await sharp(Buffer.from(svg))
+    .resize(512, 512, { fit: "fill" })
+    .png()
+    .toFile("./public/icon-512.png");
+
+  await sharp(Buffer.from(svg))
+    .resize(192, 192, { fit: "fill" })
+    .png()
+    .toFile("./public/apple-touch-icon.png");
+
+  console.log("Icons generated successfully");
+}
+
+generateIcons();

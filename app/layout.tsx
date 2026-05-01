@@ -39,6 +39,8 @@ html {
 }
         `}</style>
         <link rel="icon" href="/main.png" type="image/png" />
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+        <meta name="theme-color" content="#000000" />
       </head>
       <body>
         {children}
