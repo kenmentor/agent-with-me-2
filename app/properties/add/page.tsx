@@ -104,6 +104,8 @@ import {
   MessageCircle,
   Twitter,
   LoaderIcon,
+  ArrowBigLeftIcon,
+  ArrowLeft,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -120,6 +122,7 @@ import { ShareListingModal } from "@/components/ui/ShareListingModal";
 import { savePropertyDraft, getPropertyDraft, clearPropertyDraft, hasPropertyDraft } from "@/lib/utils";
 import { useEffect } from "react";
 import { AuthPromptDialog, useAuthPrompt } from "@/components/AuthPromptDialog";
+import Image from "next/image";
 
 export default function AddPropertyPage() {
   const { base, app } = Req;
@@ -393,7 +396,45 @@ export default function AddPropertyPage() {
   const prevStep = () => {
     if (currentStep > 1) setCurrentStep(currentStep - 1);
   };
-
+const LOGO_SVG = (
+  <svg
+    width="24"
+    height="32"
+    viewBox="0 0 45.396 60"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+    className="flex-shrink-0"
+  >
+    <g>
+      <path
+        d="M0 0L17.9781 5.93773L18.3963 60L0 53.9894L0 0Z"
+        fill="currentColor"
+        fillRule="evenodd"
+        transform="translate(27 0)"
+      />
+      <path
+        d="M0 5.80534L12.975 0L12.975 53.9767L0 59L0 5.80534Z"
+        fill="currentColor"
+        fillOpacity="0.7"
+        fillRule="evenodd"
+        transform="translate(14.35 0)"
+      />
+      <path
+        d="M0 0L14.7218 4.49413L15.0642 45.4126L0 40.8633L0 0Z"
+        fill="currentColor"
+        fillRule="evenodd"
+        transform="translate(9.181 7.587)"
+      />
+      <path
+        d="M0 4.32941L9.23646 0L9.23645 40.6186L0 44L0 4.32941Z"
+        fill="currentColor"
+        fillOpacity="0.7"
+        fillRule="evenodd"
+        transform="translate(0 7.587)"
+      />
+    </g>
+  </svg>
+);
   const propertyLink = `https://agent-with-me-v2.vercel.app/properties/${property?._id}`;
   const shareText = `🏠 ${
     formData.title
@@ -437,29 +478,24 @@ export default function AddPropertyPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-[100px] md:pb-[0px]">
+    <div className="min-h-screen bg-grablacy-50 pb-[100px] md:pb-[0px]">
       {/* Header */}
       {isLoading && (
         <div className="fixed  left-0 bg-black/50 backdrop:blur-sm right-0 flex justify-center top-0 bottom-0 pt-[50px] ">
           <LoaderIcon className=" animate-spin " color="white" />
         </div>
       )}
-      <header className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <Link href="/" className="flex items-center space-x-2">
-             
-              <span className="text-2xl font-bold text-gray-900">
-                AgentWithMe
-                {currentStep}
-              </span>
+        <header className="sticky top-0 z-10 bg-white border-b border-gray-200 px-4 shrink-0">
+         
+            <Link href="/properties">
+              <Button variant="ghost" size="icon" className="rounded-full hover:bg-gray-200">
+                <ArrowLeft className="h-6 w-9" />
+              </Button>
             </Link>
-            <Link href="/dashboard">
-              <Button variant="outline">Back to Dashboard</Button>
-            </Link>
-          </div>
-        </div>
-      </header>
+           
+          
+          
+        </header>
 
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Draft Banner - shows if user has saved draft */}
