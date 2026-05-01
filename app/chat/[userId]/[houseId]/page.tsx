@@ -44,11 +44,16 @@ export default function ChatConversationPage() {
   const [uploading, setUploading] = useState(false);
   const [recording, setRecording] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
+  const [audioLevels, setAudioLevels] = useState<number[]>(new Array(40).fill(4));
+  const [animFrame, setAnimFrame] = useState(0);
   const [property, setProperty] = useState<{_id: string; title: string; price: number; thumbnail?: string; images?: {url: string}[]; type?: string; state?: string; lga?: string; bedrooms?: number; bathrooms?: number} | null>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const recordingTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const analyserRef = useRef<AnalyserNode | null>(null);
+  const animationFrameRef = useRef<number | null>(null);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -368,6 +373,36 @@ export default function ChatConversationPage() {
       mediaRecorderRef.current = mediaRecorder;
       chunksRef.current = [];
 
+      const audioContext = new AudioContext();
+      audioContextRef.current = audioContext;
+      const source = audioContext.createMediaStreamSource(stream);
+      const analyser = audioContext.createAnalyser();
+      analyser.fftSize = 64;
+      analyser.smoothingTimeConstant = 0.8;
+      source.connect(analyser);
+      analyserRef.current = analyser;
+
+      const bufferLength = analyser.frequencyBinCount;
+      const dataArray = new Uint8Array(bufferLength);
+
+      const updateLevels = () => {
+        analyser.getByteFrequencyData(dataArray);
+        const windowPos = (Date.now() * 0.002) % 40;
+        const levels = Array.from({ length: 40 }, (_, i) => {
+          const index = Math.floor((i / 40) * bufferLength);
+          const raw = dataArray[index] / 255;
+          const distanceFromWindow = Math.abs(i - windowPos);
+          const windowIntensity = Math.max(0, 1 - distanceFromWindow / 14);
+          const base = Math.max(4, raw * 100);
+          const wave = Math.sin(i * 0.4 + Date.now() * 0.006) * 15 * windowIntensity;
+          return base + wave;
+        });
+        setAudioLevels(levels);
+        setAnimFrame((f) => f + 1);
+        animationFrameRef.current = requestAnimationFrame(updateLevels);
+      };
+      updateLevels();
+
       mediaRecorder.ondataavailable = (e) => {
         if (e.data.size > 0) chunksRef.current.push(e.data);
       };
@@ -399,8 +434,15 @@ export default function ChatConversationPage() {
     if (recordingTimerRef.current) {
       clearInterval(recordingTimerRef.current);
     }
+    if (animationFrameRef.current) {
+      cancelAnimationFrame(animationFrameRef.current);
+    }
+    if (audioContextRef.current) {
+      audioContextRef.current.close();
+    }
     setRecording(false);
     setRecordingTime(0);
+    setAudioLevels(new Array(40).fill(4));
   };
 
   const formatRecordingTime = (seconds: number) => {
@@ -463,34 +505,30 @@ export default function ChatConversationPage() {
       </header>
 
       {property && (
-        <div className="bg-white border-b border-gray-100 px-4 py-3 flex-shrink-0">
-          <div className="flex items-start gap-3">
-            <Link href={`/properties/${property._id}`} className="flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden bg-gray-100 relative">
-              {property.thumbnail || property.images?.[0]?.url ? (
-                <Image
-                  src={property.thumbnail || property.images![0].url}
-                  alt={property.title}
-                  fill
-                  className="object-cover"
-                />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center">
-                  <Bed className="h-6 w-6 text-gray-300" />
-                </div>
-              )}
-            </Link>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-gray-900 truncate">{property.title}</p>
-              <p className="text-xs text-blue-600 font-medium">₦{property.price?.toLocaleString()}{property.type ? ` · ${property.type}` : ""}</p>
-              {(property.state || property.lga) && (
-                <p className="text-xs text-gray-400 truncate">
-                  <MapPin className="h-3 w-3 inline mr-0.5" />
-                  {property.lga}{property.state ? `, ${property.state}` : ""}
-                </p>
-              )}
+        <Link href={`/properties/${property._id}`}>
+          <div className="bg-gray-50 border-b border-gray-100 px-3 py-2 flex-shrink-0 hover:bg-gray-100 transition-colors">
+            <div className="flex items-center gap-2.5">
+              <div className="flex-shrink-0 w-12 h-12 rounded-lg overflow-hidden bg-gray-200 relative">
+                {property.thumbnail || property.images?.[0]?.url ? (
+                  <Image
+                    src={property.thumbnail || property.images![0].url}
+                    alt={property.title}
+                    fill
+                    className="object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center">
+                    <Bed className="h-5 w-5 text-gray-400" />
+                  </div>
+                )}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-semibold text-gray-900 truncate">{property.title}</p>
+                <p className="text-xs text-blue-600 font-medium">₦{property.price?.toLocaleString()}</p>
+              </div>
             </div>
           </div>
-        </div>
+        </Link>
       )}
 
       <ScrollArea className="flex-1 p-4 bg-gray-50">
@@ -578,20 +616,34 @@ export default function ChatConversationPage() {
         />
 
         {recording && (
-          <div className="flex items-center justify-between mb-2 px-2">
-            <div className="flex items-center gap-2">
-              <div className="w-2.5 h-2.5 bg-red-500 rounded-full animate-pulse" />
-              <span className="text-sm font-medium text-red-500">{formatRecordingTime(recordingTime)}</span>
+          <div className="mb-3 px-2">
+            <div className="flex items-center gap-3 bg-gray-50 rounded-2xl px-4 py-3">
+              <div className="w-2.5 h-2.5 bg-red-500 rounded-full animate-pulse flex-shrink-0" />
+              <div className="flex items-center gap-[2px] flex-1 h-8 overflow-hidden">
+                {audioLevels.map((level, i) => (
+                  <div
+                    key={i}
+                    className="w-[3px] rounded-full bg-red-500"
+                    style={{
+                      height: `${Math.max(4, Math.min(100, level))}%`,
+                      minHeight: "4px",
+                      opacity: 0.3 + Math.min(0.7, level / 80),
+                      transition: "height 60ms ease-out, opacity 60ms ease-out",
+                    }}
+                  />
+                ))}
+              </div>
+              <span className="text-sm font-mono font-medium text-red-500 flex-shrink-0">{formatRecordingTime(recordingTime)}</span>
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                onClick={stopRecording}
+                className="h-8 px-2 text-xs text-gray-500 hover:text-red-500 flex-shrink-0"
+              >
+                Cancel
+              </Button>
             </div>
-            <Button
-              type="button"
-              size="sm"
-              variant="ghost"
-              onClick={stopRecording}
-              className="h-8 px-3 text-xs text-gray-500 hover:text-red-500"
-            >
-              Cancel
-            </Button>
           </div>
         )}
 

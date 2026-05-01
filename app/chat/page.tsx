@@ -6,7 +6,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, MessageCircle, Search, Check, CheckCheck, ArrowDown } from "lucide-react";
+import { ArrowLeft, MessageCircle, Search, Check, CheckCheck, ArrowDown, Music, Image as ImageIcon } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
 import Req from "@/app/utility/axios";
 import { 
@@ -313,12 +313,20 @@ offEvent("new_message", handleNewMessage);
     getDisplayName(user).toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const formatLastMessage = (content: string) => {
+  const getLastMessageInfo = (content: string): { text: string; icon?: "music" | "image" } => {
     const propertyId = content.match(/\{\{property:(\w+)\}\}/)?.[1];
     if (propertyId) {
-      return `🏠 Property details`;
+      return { text: "Property details", icon: "image" };
     }
-    return content;
+    const audioUrl = content.match(/\{\{audio:(.+?)\}\}/);
+    if (audioUrl) {
+      return { text: "Voice message", icon: "music" };
+    }
+    const imageUrl = content.match(/\{\{image:(.+?)\}\}/);
+    if (imageUrl) {
+      return { text: "Photo", icon: "image" };
+    }
+    return { text: content };
   };
 
   const scrollToBottom = () => {
@@ -472,9 +480,18 @@ offEvent("new_message", handleNewMessage);
                           ) : chatUser.lastMessageStatus === "sent" ? (
                             <Check className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
                           ) : null}
-                          <p className={`text-sm truncate overflow-hidden text-ellipsis ${chatUser.isUnread ? "text-gray-900 font-medium" : "text-gray-500"}`}>
-                            {formatLastMessage(chatUser.lastMessage)}
-                          </p>
+                          {(() => {
+                            const info = getLastMessageInfo(chatUser.lastMessage);
+                            return (
+                              <>
+                                {info.icon === "music" && <Music className="w-3.5 h-3.5 flex-shrink-0" />}
+                                {info.icon === "image" && <ImageIcon className="w-3.5 h-3.5 flex-shrink-0" />}
+                                <p className={`text-sm truncate overflow-hidden text-ellipsis ${chatUser.isUnread ? "text-gray-900 font-medium" : "text-gray-500"}`}>
+                                  {info.text}
+                                </p>
+                              </>
+                            );
+                          })()}
                         </div>
                         {chatUser.isUnread && chatUser.unreadCount > 0 && (
                           <span className="bg-blue-500 text-white text-xs font-medium min-w-[20px] h-5 px-1.5 rounded-full flex items-center justify-center flex-shrink-0">

@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { ArrowLeft, Send, Loader2, Check, CheckCheck } from "lucide-react";
+import { ArrowLeft, Send, Loader2, Check, CheckCheck, Mic, Image as ImageIcon, Square } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
 import Req from "@/app/utility/axois";
 import { format, isToday, isYesterday } from "date-fns";
@@ -31,6 +31,7 @@ import { ChatConversationSkeleton } from "@/components/ui/skeleton";
 import { getDisplayName, getFirstName } from "@/lib/utils";
 import api, { baseURL } from "@/lib/api";
 import { toast } from "sonner";
+import { MessageRenderer, parseMessageTag } from "@/components/MessageRenderer";
 
 const base = baseURL;
 const app = api;
@@ -64,11 +65,22 @@ export default function ChatConversationPage() {
   const [isTyping, setIsTyping] = useState(false);
   const [socketConnected, setSocketConnected] = useState(false);
   const [conversationId, setConversationId] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [recording, setRecording] = useState(false);
+  const [recordingTime, setRecordingTime] = useState(0);
+  const [audioLevels, setAudioLevels] = useState<number[]>(new Array(40).fill(4));
   const hasMarkedRead = useRef(false);
 
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const processedMsgIds = useRef<Set<string>>(new Set());
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const chunksRef = useRef<Blob[]>([]);
+  const recordingTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const analyserRef = useRef<AnalyserNode | null>(null);
+  const animationFrameRef = useRef<number | null>(null);
+  const imageInputRef = useRef<HTMLInputElement>(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -348,6 +360,10 @@ export default function ChatConversationPage() {
     const userId = getUserId();
     if (!newMessage.trim() || !userId || sending) return;
 
+    if (/\{\{property:\w+\}\}/.test(newMessage.trim())) {
+      return;
+    }
+
     const tempMsg = {
       _id: `temp-${Date.now()}`,
       senderId: userId,
@@ -379,6 +395,174 @@ export default function ChatConversationPage() {
       ));
       setSending(false);
     }
+  };
+
+  const sendTagMessage = async (tag: string) => {
+    const userId = getUserId();
+    if (!userId || sending) return;
+
+    const tempMsg = {
+      _id: `temp-${Date.now()}`,
+      senderId: userId,
+      receiverId,
+      content: tag,
+      createdAt: new Date().toISOString(),
+      read: false,
+      status: "sending" as const,
+    };
+
+    setMessages((prev) => [...prev, tempMsg]);
+    setSending(true);
+    scrollToBottom();
+
+    if (isSocketConnected()) {
+      socketSendMessage(
+        receiverId,
+        tag,
+        conversationId || undefined,
+        () => {
+          setSending(false);
+        }
+      );
+    } else {
+      queueMessage(receiverId, tag, conversationId || undefined);
+      setMessages((prev) => prev.map((m) =>
+        m._id === tempMsg._id ? { ...m, status: "queued" as const } : m
+      ));
+      setSending(false);
+    }
+  };
+
+  const handleMediaUpload = async (file: File, mediaType: "audio" | "image") => {
+    if (!file || uploading) return;
+
+    setUploading(true);
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("mediaType", mediaType);
+
+    try {
+      const res = await app.post(`${base}/v1/chat/upload-media`, formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+
+      const { url, type } = res.data?.data || {};
+      if (url) {
+        const tag = type === "audio" ? `{{audio:${url}}}` : `{{image:${url}}}`;
+        await sendTagMessage(tag);
+      }
+    } catch (err) {
+      console.error("Error uploading media:", err);
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file && file.type.startsWith("image/")) {
+      handleMediaUpload(file, "image");
+    }
+    e.target.value = "";
+  };
+
+  const toggleRecording = async () => {
+    if (recording) {
+      stopRecording();
+    } else {
+      await startRecording();
+    }
+  };
+
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+
+      const mimeType = MediaRecorder.isTypeSupported("audio/webm")
+        ? "audio/webm"
+        : MediaRecorder.isTypeSupported("audio/ogg")
+          ? "audio/ogg"
+          : "";
+
+      const mediaRecorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
+      mediaRecorderRef.current = mediaRecorder;
+      chunksRef.current = [];
+
+      const audioContext = new AudioContext();
+      audioContextRef.current = audioContext;
+      const source = audioContext.createMediaStreamSource(stream);
+      const analyser = audioContext.createAnalyser();
+      analyser.fftSize = 64;
+      analyser.smoothingTimeConstant = 0.8;
+      source.connect(analyser);
+      analyserRef.current = analyser;
+
+      const bufferLength = analyser.frequencyBinCount;
+      const dataArray = new Uint8Array(bufferLength);
+
+      const updateLevels = () => {
+        analyser.getByteFrequencyData(dataArray);
+        const windowPos = (Date.now() * 0.002) % 40;
+        const levels = Array.from({ length: 40 }, (_, i) => {
+          const index = Math.floor((i / 40) * bufferLength);
+          const raw = dataArray[index] / 255;
+          const distanceFromWindow = Math.abs(i - windowPos);
+          const windowIntensity = Math.max(0, 1 - distanceFromWindow / 14);
+          const base = Math.max(4, raw * 100);
+          const wave = Math.sin(i * 0.4 + Date.now() * 0.006) * 15 * windowIntensity;
+          return base + wave;
+        });
+        setAudioLevels(levels);
+        animationFrameRef.current = requestAnimationFrame(updateLevels);
+      };
+      updateLevels();
+
+      mediaRecorder.ondataavailable = (e) => {
+        if (e.data.size > 0) chunksRef.current.push(e.data);
+      };
+
+      mediaRecorder.onstop = async () => {
+        const blob = new Blob(chunksRef.current, { type: mimeType || "audio/mp3" });
+        const ext = mimeType.includes("webm") ? "webm" : mimeType.includes("ogg") ? "ogg" : "mp3";
+        const file = new File([blob], `voice-${Date.now()}.${ext}`, { type: blob.type });
+        await handleMediaUpload(file, "audio");
+        stream.getTracks().forEach((track) => track.stop());
+      };
+
+      mediaRecorder.start();
+      setRecording(true);
+      setRecordingTime(0);
+
+      recordingTimerRef.current = setInterval(() => {
+        setRecordingTime((prev) => prev + 1);
+      }, 1000);
+    } catch (err) {
+      console.error("Failed to start recording:", err);
+    }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
+      mediaRecorderRef.current.stop();
+    }
+    if (recordingTimerRef.current) {
+      clearInterval(recordingTimerRef.current);
+    }
+    if (animationFrameRef.current) {
+      cancelAnimationFrame(animationFrameRef.current);
+    }
+    if (audioContextRef.current) {
+      audioContextRef.current.close();
+    }
+    setRecording(false);
+    setRecordingTime(0);
+    setAudioLevels(new Array(40).fill(4));
+  };
+
+  const formatRecordingTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, "0")}`;
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -439,6 +623,12 @@ export default function ChatConversationPage() {
           <div className="space-y-4">
             {messages.map((msg) => {
               const isOwn = msg.senderId === userId;
+              const tag = parseMessageTag(msg.content);
+
+              if (tag) {
+                return <MessageRenderer key={msg._id} content={msg.content} isOwn={isOwn} />;
+              }
+
               return (
                 <div key={msg._id} className={`flex ${isOwn ? "justify-end" : "justify-start"}`}>
                   <div className={`max-w-[75%] px-4 py-2 rounded-2xl ${
@@ -488,9 +678,75 @@ export default function ChatConversationPage() {
       </ScrollArea>
 
       <div className="p-3 pb-[40px] sm:p-4 bg-white border-t border-gray-200">
+        <input
+          type="file"
+          ref={imageInputRef}
+          accept="image/*"
+          onChange={handleImageSelect}
+          className="hidden"
+        />
+
+        {recording && (
+          <div className="mb-3 px-2">
+            <div className="flex items-center gap-3 bg-gray-50 rounded-2xl px-4 py-3">
+              <div className="w-2.5 h-2.5 bg-red-500 rounded-full animate-pulse flex-shrink-0" />
+              <div className="flex items-center gap-[2px] flex-1 h-8 overflow-hidden">
+                {audioLevels.map((level, i) => (
+                  <div
+                    key={i}
+                    className="w-[3px] rounded-full bg-red-500"
+                    style={{
+                      height: `${Math.max(4, Math.min(100, level))}%`,
+                      minHeight: "4px",
+                      opacity: 0.3 + Math.min(0.7, level / 80),
+                      transition: "height 60ms ease-out, opacity 60ms ease-out",
+                    }}
+                  />
+                ))}
+              </div>
+              <span className="text-sm font-mono font-medium text-red-500 flex-shrink-0">{formatRecordingTime(recordingTime)}</span>
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                onClick={stopRecording}
+                className="h-8 px-2 text-xs text-gray-500 hover:text-red-500 flex-shrink-0"
+              >
+                Cancel
+              </Button>
+            </div>
+          </div>
+        )}
+
         <div className="flex items-end gap-2">
+          <div className="flex gap-1 pb-1">
+            <Button
+              type="button"
+              size="icon"
+              variant="ghost"
+              onClick={() => imageInputRef.current?.click()}
+              disabled={uploading || sending || recording}
+              className="h-10 w-10 rounded-full text-gray-500 hover:text-black hover:bg-gray-100"
+            >
+              {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ImageIcon className="h-5 w-5" />}
+            </Button>
+            <Button
+              type="button"
+              size="icon"
+              variant="ghost"
+              onClick={toggleRecording}
+              disabled={uploading || sending}
+              className={`h-10 w-10 rounded-full transition-colors ${
+                recording
+                  ? "bg-red-500 text-white hover:bg-red-600"
+                  : "text-gray-500 hover:text-black hover:bg-gray-100"
+              }`}
+            >
+              {recording ? <Square className="h-4 w-4" /> : <Mic className="h-5 w-5" />}
+            </Button>
+          </div>
           <textarea
-            placeholder="Type a message..."
+            placeholder={recording ? "Recording..." : "Type a message..."}
             value={newMessage}
             onChange={(e) => {
               setNewMessage(e.target.value);
@@ -501,15 +757,15 @@ export default function ChatConversationPage() {
               }, 2000);
             }}
             onKeyDown={handleKeyPress}
-            disabled={sending}
+            disabled={sending || recording}
             rows={1}
-            className="w-full px-4 py-3 bg-gray-100 border border-gray-200 rounded-2xl resize-none focus:outline-none focus:ring-2 focus:ring-black/10 disabled:opacity-50"
+            className="flex-1 px-4 py-3 bg-gray-100 border border-gray-200 rounded-2xl resize-none focus:outline-none focus:ring-2 focus:ring-black/10 disabled:opacity-50"
             style={{ minHeight: "48px", maxHeight: "120px" }}
           />
           <Button
             size="icon"
             onClick={handleSendMessage}
-            disabled={!newMessage.trim() || sending}
+            disabled={!newMessage.trim() || sending || recording}
             className="h-12 w-12 bg-black hover:bg-gray-800 rounded-full"
           >
             {sending ? <Loader2 className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5" />}
