@@ -158,7 +158,7 @@ export default function SessionsPage() {
               try {
                 await app.post(`${base}/v1/auth/logout-all`);
                 toast.success("Logged out of all devices");
-                window.location.href = "/auth/login";
+                router.push("/auth/login");
               } catch (err) {
                 toast.error("Failed to logout");
               }

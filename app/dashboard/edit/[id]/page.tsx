@@ -277,10 +277,12 @@ export default function EditPropertyPage() {
       data.append("bedroom", formData.bedrooms.toString());
       data.append("bathroom", formData.bathrooms.toString());
       data.append("furnishing", formData.furnishing);
-      data.append("terms", formData.terms);
-      data.append("location", `${formData.address}, ${formData.lga}, ${formData.state}`);
-      data.append("maxgeust", "1");
-      
+
+      // Set agent field to current user (for agents editing properties)
+      if (user?._id) {
+        data.append("agent", user._id);
+      }
+
       formData.amenities.forEach((amenity) => {
         data.append("amenities[]", amenity);
       });

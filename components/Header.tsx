@@ -358,7 +358,7 @@ export default function Header({ color }: { color?: string }) {
               variant="ghost"
               size="icon"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="md:hidden text-white hover:bg-white/10"
+              className="md:hidden text-white"
             >
               {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </Button>

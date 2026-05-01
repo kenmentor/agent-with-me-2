@@ -25,7 +25,7 @@ export default function ChatError({
         </p>
         <div className="space-x-4">
           <Button onClick={() => reset()}>Try again</Button>
-          <Button variant="outline" onClick={() => window.location.href = "/chat"}>
+          <Button variant="outline" onClick={() => router.push("/chat")}>
             Reload Chat
           </Button>
         </div>

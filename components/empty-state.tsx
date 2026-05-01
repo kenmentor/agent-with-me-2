@@ -2,6 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { LucideIcon } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 interface EmptyStateProps {
   icon: LucideIcon;
@@ -45,7 +46,7 @@ export function NoPropertiesState() {
       description="We couldn't find any properties matching your search. Try adjusting your filters or search for something else."
       action={{
         label: "Browse All Properties",
-        onClick: () => window.location.href = "/properties",
+        onClick: () => router.push("/properties"),
       }}
     />
   );
@@ -59,7 +60,7 @@ export function NoMessagesState() {
       description="Start a conversation with an agent about a property you're interested in."
       action={{
         label: "Browse Properties",
-        onClick: () => window.location.href = "/properties",
+        onClick: () => router.push("/properties"),
       }}
     />
   );
@@ -73,7 +74,7 @@ export function NoBookingsState() {
       description="You haven't made any property bookings yet. Browse available properties to get started."
       action={{
         label: "Find Properties",
-        onClick: () => window.location.href = "/properties",
+        onClick: () => router.push("/properties"),
       }}
     />
   );
@@ -87,7 +88,7 @@ export function NoFavoritesState() {
       description="Save properties you're interested in to view them later."
       action={{
         label: "Explore Properties",
-        onClick: () => window.location.href = "/properties",
+        onClick: () => router.push("/properties"),
       }}
     />
   );

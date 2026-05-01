@@ -284,8 +284,11 @@ export default function AddPropertyPage() {
       data.append("furnishing", formData.furnishing);
       data.append("lga", formData.lga);
       data.append("location", `${formData.address}, ${formData.lga}, ${formData.state}`);
-
-      // Note: host is now set from authentication token on backend
+      
+      // Set agent field to current user (for agents posting properties)
+      if (user?._id) {
+        data.append("agent", user._id);
+      }
       formData.amenities.forEach((amenity) => {
         data.append("amenities[]", amenity);
       });

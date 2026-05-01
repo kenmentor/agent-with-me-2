@@ -25,7 +25,7 @@ export default function DashboardError({
         </p>
         <div className="space-x-4">
           <Button onClick={() => reset()}>Try again</Button>
-          <Button variant="outline" onClick={() => window.location.href = "/dashboard"}>
+          <Button variant="outline" onClick={() => router.push("/dashboard")}>
             Reload Dashboard
           </Button>
         </div>
