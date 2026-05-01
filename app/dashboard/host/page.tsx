@@ -118,7 +118,7 @@ function HostDashboardContent() {
     try {
       setLoading(true);
       const [propertiesRes, paymentsRes, toursRes] = await Promise.all([
-        app.get(`${base}/v1/house?hostId=${currentUserId}`).catch(() => ({ data: { data: [] } })),
+        app.get(`${base}/v1/panel/properties`).catch(() => ({ data: { data: [] } })),
         app.get(`${base}/v1/payment/${currentUserId}`).catch(() => ({ data: { data: [] } })),
         app.get(`${base}/v1/tour/Host/${currentUserId}`).catch(() => ({ data: { data: [] } })),
       ]);

@@ -13,7 +13,7 @@ import {
   Wallet,
   Bell,
   LogOut,
-  Settings,
+
 } from "lucide-react";
 
 import { toast } from "sonner";
@@ -317,12 +317,7 @@ export default function Header({ color }: { color?: string }) {
                             Profile
                           </Button>
                         </Link>
-                        <Link href="/settings" onClick={() => setProfileOpen(false)}>
-                          <Button variant="ghost" className="w-full justify-start text-gray-700">
-                            <Settings className="w-4 h-4 mr-3" />
-                            Settings
-                          </Button>
-                        </Link>
+                        
                       </div>
                       <div className="border-t py-2">
                         <Button
@@ -453,12 +448,7 @@ export default function Header({ color }: { color?: string }) {
                         <span className="text-white">Profile</span>
                       </div>
                     </Link>
-                    <Link href="/settings" onClick={() => setMobileMenuOpen(false)}>
-                      <div className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-white/5 transition-colors">
-                        <Settings className="w-5 h-5 text-white/70" />
-                        <span className="text-white">Settings</span>
-                      </div>
-                    </Link>
+                    
                 </>
                 )}
               </div>

@@ -110,7 +110,7 @@ export default function AgentDashboard() {
     try {
       setLoading(true);
       const [propertiesRes, toursRes, payoutsRes] = await Promise.all([
-        app.get(`${base}/v1/house?agentId=${currentUserId}`).catch(() => ({ data: { data: [] } })),
+        app.get(`${base}/v1/panel/properties`).catch(() => ({ data: { data: [] } })),
         app.get(`${base}/v1/tour/agent/${currentUserId}`).catch(() => ({ data: { data: [] } })),
         app.get(`${base}/v1/payout/agent/${currentUserId}`).catch(() => ({ data: { data: [] } })),
       ]);

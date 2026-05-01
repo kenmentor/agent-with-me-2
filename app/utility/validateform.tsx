@@ -60,7 +60,7 @@ export function validateProperty(property: Property): boolean {
   // ✅ Special field checks
   if (!property.images || property.images.length === 0)
     missingFields.push("images");
-  if (!property.thumbnail) missingFields.push("thumbnail");
+  // if (!property.thumbnail) missingFields.push("thumbnail");
   // if (!property.video) missingFields.push("video");
   if (!property.amenities || property.amenities.length === 0)
     missingFields.push("amenities");

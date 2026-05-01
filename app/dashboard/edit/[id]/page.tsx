@@ -9,7 +9,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Progress } from "@/components/ui/progress";
 import {
   Select,
   SelectContent,
@@ -17,6 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
 import {
   ArrowLeft,
   Save,
@@ -25,7 +25,10 @@ import {
   Trash2,
   Upload,
   X,
-  MapPin,
+  Camera,
+  Video,
+  Bed,
+  Bath,
 } from "lucide-react";
 import Header from "@/components/Header";
 import { useAuthStore } from "@/store/authStore";
@@ -36,36 +39,11 @@ import { isRole, getDashboardRoute } from "@/lib/roles";
 
 const { base, app } = Req;
 
-interface Property {
-  _id: string;
-  title: string;
-  description: string;
-  type: string;
-  category: string;
-  price: string;
-  address: string;
-  state: string;
-  lga: string;
-  bedrooms: string;
-  bathrooms: string;
-  area: string;
-  furnishing: string;
-  amenities: string[];
-  terms?: string;
-  verified: boolean;
-  status?: string;
-  thumbnail?: string;
-  images?: string[];
-  video?: string;
-  host?: { _id: string; userName: string };
-}
-
 const STEPS = [
-  { id: 1, name: "Basic Info", fields: ["title", "type", "category", "price"] },
-  { id: 2, name: "Location", fields: ["state", "lga", "address"] },
-  { id: 3, name: "Details", fields: ["bedroom", "bathroom", "area", "furnishing"] },
-  { id: 4, name: "Media", fields: ["images"] },
-  { id: 5, name: "Review", fields: [] },
+  { id: 1, name: "Basic Info" },
+  { id: 2, name: "Location" },
+  { id: 3, name: "Details" },
+  { id: 4, name: "Photos & Publish" },
 ];
 
 export default function EditPropertyPage() {
@@ -78,7 +56,6 @@ export default function EditPropertyPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
-  const [property, setProperty] = useState<Property | null>(null);
   const [authorized, setAuthorized] = useState(false);
 
   const [formData, setFormData] = useState({
@@ -92,17 +69,17 @@ export default function EditPropertyPage() {
     lga: "",
     bedrooms: "",
     bathrooms: "",
-    area: "",
-    furnishing: "unfurnished",
+    furnishing: "",
     amenities: [] as string[],
-    terms: "",
     images: [] as string[],
     newImages: [] as File[],
     video: "",
+    newVideo: null as File | null,
     thumbnail: "",
   });
 
-  const totalSteps = STEPS.length;
+  const [selectedState, setSelectedState] = useState<string>("all");
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
     if (!_hasHydrated) return;
@@ -123,12 +100,10 @@ export default function EditPropertyPage() {
       
       try {
         setLoading(true);
-        const res = await app.get(`${base}/v1/house/${propertyId}`);
+        const res = await app.get(`${base}/v1/house/detail/${propertyId}`);
         const data = res.data?.data;
         
         if (data) {
-          setProperty(data);
-          
           const isOwner = data.host?._id === user?._id;
           const isAgent = user?.role === "agent";
           
@@ -148,17 +123,17 @@ export default function EditPropertyPage() {
             address: data.address || "",
             state: data.state || "",
             lga: data.lga || "",
-            bedrooms: data.bedroom?.toString() || "",
-            bathrooms: data.bathroom?.toString() || "",
-            area: data.area || "",
-            furnishing: data.furnishing || "unfurnished",
+            bedrooms: data.bedrooms?.toString() || "",
+            bathrooms: data.bathrooms?.toString() || "",
+            furnishing: data.furnishing || "",
             amenities: data.amenities || [],
-            terms: data.terms || "",
-            images: data.images || [],
+            images: data.images?.map((img: { url: string }) => img.url) || [],
             newImages: [],
             video: data.video || "",
+            newVideo: null,
             thumbnail: data.thumbnail || "",
           });
+          setSelectedState(data.state || "all");
         }
       } catch (err) {
         console.error("Error fetching property:", err);
@@ -172,36 +147,65 @@ export default function EditPropertyPage() {
     fetchProperty();
   }, [_hasHydrated, propertyId, app, base, user, router, isAuthenticated]);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+  const validateStep = (step: number): boolean => {
+    const newErrors: Record<string, string> = {};
+
+    if (step === 1) {
+      if (!formData.title.trim()) newErrors.title = "Title is required";
+      if (!formData.description.trim()) newErrors.description = "Description is required";
+      if (!formData.type) newErrors.type = "Property type is required";
+      if (!formData.category) newErrors.category = "Category is required";
+      if (!formData.price) newErrors.price = "Price is required";
+    } else if (step === 2) {
+      if (!formData.state) newErrors.state = "State is required";
+      if (!formData.lga) newErrors.lga = "LGA is required";
+      if (!formData.address.trim()) newErrors.address = "Address is required";
+    } else if (step === 3) {
+      if (!formData.bedrooms) newErrors.bedrooms = "Bedrooms is required";
+      if (!formData.bathrooms) newErrors.bathrooms = "Bathrooms is required";
+      if (!formData.furnishing) newErrors.furnishing = "Furnishing status is required";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
-  const handleAmenityToggle = (amenity: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      amenities: prev.amenities.includes(amenity)
-        ? prev.amenities.filter((a) => a !== amenity)
-        : [...prev.amenities, amenity],
-    }));
+  const handleAmenityChange = (amenityId: string, checked: boolean) => {
+    if (checked) {
+      setFormData((prev) => ({
+        ...prev,
+        amenities: [...prev.amenities, amenityId],
+      }));
+    } else {
+      setFormData((prev) => ({
+        ...prev,
+        amenities: prev.amenities.filter((id) => id !== amenityId),
+      }));
+    }
   };
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files) return;
-    
-    const newImages: File[] = [];
-    for (let i = 0; i < files.length; i++) {
-      if (files[i].size > 5 * 1024 * 1024) {
-        toast.error("Image size must be less than 5MB");
-        continue;
-      }
-      newImages.push(files[i]);
+    if (e.target.files) {
+      const newImages = Array.from(e.target.files);
+      setFormData((prev) => ({
+        ...prev,
+        newImages: [...prev.newImages, ...newImages].slice(0, 10),
+      }));
     }
-    
-    if (newImages.length > 0) {
-      setFormData((prev) => ({ ...prev, newImages: [...prev.newImages, ...newImages] }));
+  };
+
+  const handleVideoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith("video/")) {
+      toast.error("Please upload a valid video file");
+      return;
     }
+    if (file.size > 50 * 1024 * 1024) {
+      toast.error("Video size must be less than 50MB");
+      return;
+    }
+    setFormData((prev) => ({ ...prev, newVideo: file }));
   };
 
   const removeNewImage = (index: number) => {
@@ -218,50 +222,22 @@ export default function EditPropertyPage() {
     }));
   };
 
-  const setThumbnail = (url: string) => {
+  const handleThumbnailSelect = (url: string) => {
     setFormData((prev) => ({ ...prev, thumbnail: url }));
     toast.success("Thumbnail updated!");
   };
 
-  const validateStep = (step: number): boolean => {
-    switch (step) {
-      case 1:
-        return !!(formData.title && formData.type && formData.price);
-      case 2:
-        return !!(formData.state && formData.lga);
-      case 3:
-        return true;
-      case 4:
-        return true;
-      case 5:
-        return true;
-      default:
-        return true;
-    }
-  };
-
   const nextStep = () => {
-    if (!validateStep(currentStep)) {
-      toast.error("Please fill in required fields");
-      return;
-    }
-    if (currentStep < totalSteps) {
-      setCurrentStep(currentStep + 1);
+    if (validateStep(currentStep)) {
+      if (currentStep < 4) setCurrentStep(currentStep + 1);
     }
   };
 
   const prevStep = () => {
-    if (currentStep > 1) {
-      setCurrentStep(currentStep - 1);
-    }
+    if (currentStep > 1) setCurrentStep(currentStep - 1);
   };
 
   const handleSubmit = async () => {
-    if (!validateStep(5)) {
-      toast.error("Please complete all required fields");
-      return;
-    }
-
     setSaving(true);
 
     try {
@@ -274,11 +250,11 @@ export default function EditPropertyPage() {
       data.append("address", formData.address);
       data.append("state", formData.state);
       data.append("lga", formData.lga);
-      data.append("bedroom", formData.bedrooms.toString());
-      data.append("bathroom", formData.bathrooms.toString());
+      data.append("bedroom", formData.bedrooms);
+      data.append("bathroom", formData.bathrooms);
       data.append("furnishing", formData.furnishing);
+      data.append("location", `${formData.address}, ${formData.lga}, ${formData.state}`);
 
-      // Set agent field to current user (for agents editing properties)
       if (user?._id) {
         data.append("agent", user._id);
       }
@@ -290,7 +266,7 @@ export default function EditPropertyPage() {
       if (formData.thumbnail) {
         data.append("thumbnail", formData.thumbnail);
       }
-      
+
       formData.images.forEach((url) => {
         data.append("existingImages[]", url);
       });
@@ -298,6 +274,10 @@ export default function EditPropertyPage() {
       formData.newImages.forEach((file) => {
         data.append("files", file);
       });
+
+      if (formData.newVideo) {
+        data.append("video", formData.newVideo);
+      }
 
       setUploadProgress(0);
       
@@ -359,49 +339,74 @@ export default function EditPropertyPage() {
 
         <div className="mb-6">
           <h1 className="text-2xl font-bold text-gray-900">Edit Property</h1>
-          <p className="text-gray-600">Step {currentStep} of {totalSteps}: {STEPS[currentStep - 1].name}</p>
+          <p className="text-gray-600">Step {currentStep} of {STEPS.length}: {STEPS[currentStep - 1].name}</p>
         </div>
 
-        <Progress value={(currentStep / totalSteps) * 100} className="mb-8" />
+        <div className="mb-8">
+          <div className="flex items-center justify-between">
+            {[1, 2, 3, 4].map((step) => (
+              <div key={step} className="flex items-center">
+                <div
+                  className={`p-3 rounded-full flex items-center justify-center font-medium ${
+                    step <= currentStep
+                      ? "bg-blue-600 text-white"
+                      : "bg-gray-200 text-gray-600"
+                  }`}
+                >
+                  {step < currentStep ? (
+                    <CheckCircle2 className="h-4 w-4" />
+                  ) : (
+                    step
+                  )}
+                </div>
+                {step < 4 && (
+                  <div
+                    className={`w-full h-1 mx-4 ${
+                      step < currentStep ? "bg-blue-600" : "bg-gray-200"
+                    }`}
+                  />
+                )}
+              </div>
+            ))}
+          </div>
+          <div className="flex justify-between mt-2 text-sm text-gray-600">
+            <span>Basic Info</span>
+            <span>Location</span>
+            <span>Details</span>
+            <span>Photos & Publish</span>
+          </div>
+        </div>
 
         <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle>{STEPS[currentStep - 1].name}</CardTitle>
-                <CardDescription>
-                  {currentStep === 5 ? "Review and save your changes" : "Fill in the property details"}
-                </CardDescription>
-              </div>
-              {property?.verified && (
-                <div className="flex items-center text-green-600 bg-green-50 px-3 py-1 rounded-full">
-                  <CheckCircle2 className="h-4 w-4 mr-1" />
-                  <span className="text-sm">Verified</span>
-                </div>
-              )}
-            </div>
-          </CardHeader>
-          <CardContent>
+          <CardContent className="pt-6">
             {currentStep === 1 && (
               <div className="space-y-6">
-                <div className="space-y-2">
-                  <Label htmlFor="title">Property Title *</Label>
-                  <Input
-                    id="title"
-                    name="title"
-                    value={formData.title}
-                    onChange={handleInputChange}
-                    placeholder="e.g., Luxury 3 Bedroom Flat in Lekki"
-                    required
-                  />
-                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Listing Type *</Label>
+                    <Select
+                      value={formData.type}
+                      onValueChange={(v) => setFormData((p) => ({ ...p, type: v }))}
+                    >
+                      <SelectTrigger className={errors.type ? "border-red-500" : ""}>
+                        <SelectValue placeholder="What do you want to do?" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="rent">Rent Out</SelectItem>
+                        <SelectItem value="sale">Sell</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    {errors.type && <p className="text-sm text-red-500">{errors.type}</p>}
+                  </div>
 
-                <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label>Property Type *</Label>
-                    <Select value={formData.type} onValueChange={(v) => setFormData((p) => ({ ...p, type: v }))}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select type" />
+                    <Select
+                      value={formData.category}
+                      onValueChange={(v) => setFormData((p) => ({ ...p, category: v }))}
+                    >
+                      <SelectTrigger className={errors.category ? "border-red-500" : ""}>
+                        <SelectValue placeholder="Select property type" />
                       </SelectTrigger>
                       <SelectContent>
                         {propertyType.map((type) => (
@@ -409,46 +414,61 @@ export default function EditPropertyPage() {
                         ))}
                       </SelectContent>
                     </Select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>Category *</Label>
-                    <Select value={formData.category} onValueChange={(v) => setFormData((p) => ({ ...p, category: v }))}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select category" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="rent">For Rent</SelectItem>
-                        <SelectItem value="sale">For Sale</SelectItem>
-                        <SelectItem value="shortlet">Shortlet</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    {errors.category && <p className="text-sm text-red-500">{errors.category}</p>}
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="price">Price (₦) *</Label>
+                  <Label>Property Title *</Label>
                   <Input
-                    id="price"
-                    name="price"
-                    type="number"
-                    value={formData.price}
-                    onChange={handleInputChange}
-                    placeholder="Enter price"
-                    required
+                    value={formData.title}
+                    onChange={(e) => setFormData((p) => ({ ...p, title: e.target.value }))}
+                    placeholder="e.g., 2BHK Apartment in Bandra West with Sea View"
+                    className={errors.title ? "border-red-500" : ""}
                   />
+                  {errors.title && <p className="text-sm text-red-500">{errors.title}</p>}
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Description *</Label>
+                  <Textarea
+                    value={formData.description}
+                    onChange={(e) => setFormData((p) => ({ ...p, description: e.target.value }))}
+                    rows={4}
+                    placeholder="Describe your property, its features, nearby amenities..."
+                    className={errors.description ? "border-red-500" : ""}
+                  />
+                  {errors.description && <p className="text-sm text-red-500">{errors.description}</p>}
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Price *</Label>
+                  <Input
+                    type="text"
+                    value={formData.price}
+                    onChange={(e) => setFormData((p) => ({ ...p, price: e.target.value }))}
+                    placeholder="Enter price"
+                    className={errors.price ? "border-red-500" : ""}
+                  />
+                  {errors.price && <p className="text-sm text-red-500">{errors.price}</p>}
                 </div>
               </div>
             )}
 
             {currentStep === 2 && (
               <div className="space-y-6">
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label>State *</Label>
-                    <Select value={formData.state} onValueChange={(v) => setFormData((p) => ({ ...p, state: v, lga: "" }))}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select state" />
+                    <Select
+                      value={formData.state}
+                      onValueChange={(v) => {
+                        setSelectedState(v);
+                        setFormData((p) => ({ ...p, state: v, lga: "all" }));
+                      }}
+                    >
+                      <SelectTrigger className={errors.state ? "border-red-500" : ""}>
+                        <SelectValue placeholder="State" />
                       </SelectTrigger>
                       <SelectContent>
                         {Object.keys(statesAndLGAs).map((state) => (
@@ -456,145 +476,152 @@ export default function EditPropertyPage() {
                         ))}
                       </SelectContent>
                     </Select>
+                    {errors.state && <p className="text-sm text-red-500">{errors.state}</p>}
                   </div>
 
                   <div className="space-y-2">
                     <Label>LGA *</Label>
-                    <Select value={formData.lga} onValueChange={(v) => setFormData((p) => ({ ...p, lga: v }))} disabled={!formData.state}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select LGA" />
+                    <Select
+                      value={formData.lga}
+                      onValueChange={(v) => setFormData((p) => ({ ...p, lga: v }))}
+                      disabled={selectedState === "all"}
+                    >
+                      <SelectTrigger className={errors.lga ? "border-red-500" : ""}>
+                        <SelectValue placeholder="LGA" />
                       </SelectTrigger>
                       <SelectContent>
-                        {formData.state && statesAndLGAs[formData.state]?.map((lga) => (
-                          <SelectItem key={lga} value={lga}>{lga}</SelectItem>
-                        ))}
+                        <SelectItem value="all">Any LGA</SelectItem>
+                        {selectedState !== "all" &&
+                          statesAndLGAs[selectedState]?.map((lga) => (
+                            <SelectItem key={lga} value={lga}>{lga}</SelectItem>
+                          ))}
                       </SelectContent>
                     </Select>
+                    {errors.lga && <p className="text-sm text-red-500">{errors.lga}</p>}
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="address">Address</Label>
+                  <Label>Complete Address *</Label>
                   <Textarea
-                    id="address"
-                    name="address"
                     value={formData.address}
-                    onChange={handleInputChange}
-                    rows={2}
-                    placeholder="Enter detailed address"
+                    onChange={(e) => setFormData((p) => ({ ...p, address: e.target.value }))}
+                    rows={3}
+                    placeholder="Enter complete address with building name, street, and nearby landmarks"
+                    className={errors.address ? "border-red-500" : ""}
                   />
+                  {errors.address && <p className="text-sm text-red-500">{errors.address}</p>}
                 </div>
               </div>
             )}
 
             {currentStep === 3 && (
               <div className="space-y-6">
-                <div className="grid grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="bedrooms">Bedrooms</Label>
-                    <Input
-                      id="bedrooms"
-                      name="bedrooms"
-                      type="number"
-                      value={formData.bedrooms}
-                      onChange={handleInputChange}
-                      placeholder="e.g., 3"
-                    />
+                    <Label>Bedrooms *</Label>
+                    <div className="relative">
+                      <Bed className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                      <Select
+                        value={formData.bedrooms}
+                        onValueChange={(v) => setFormData((p) => ({ ...p, bedrooms: v }))}
+                      >
+                        <SelectTrigger className={`pl-10 ${errors.bedrooms ? "border-red-500" : ""}`}>
+                          <SelectValue placeholder="Select" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="1">1 room</SelectItem>
+                          <SelectItem value="2">2 room</SelectItem>
+                          <SelectItem value="3">3 room</SelectItem>
+                          <SelectItem value="4">4 room</SelectItem>
+                          <SelectItem value="5">5+ room</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    {errors.bedrooms && <p className="text-sm text-red-500">{errors.bedrooms}</p>}
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="bathrooms">Bathrooms</Label>
-                    <Input
-                      id="bathrooms"
-                      name="bathrooms"
-                      type="number"
-                      value={formData.bathrooms}
-                      onChange={handleInputChange}
-                      placeholder="e.g., 2"
-                    />
+                    <Label>Bathrooms *</Label>
+                    <div className="relative">
+                      <Bath className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                      <Select
+                        value={formData.bathrooms}
+                        onValueChange={(v) => setFormData((p) => ({ ...p, bathrooms: v }))}
+                      >
+                        <SelectTrigger className={`pl-10 ${errors.bathrooms ? "border-red-500" : ""}`}>
+                          <SelectValue placeholder="Select" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="1">1</SelectItem>
+                          <SelectItem value="2">2</SelectItem>
+                          <SelectItem value="3">3</SelectItem>
+                          <SelectItem value="4">4</SelectItem>
+                          <SelectItem value="5+">5+</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    {errors.bathrooms && <p className="text-sm text-red-500">{errors.bathrooms}</p>}
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="area">Area (sq ft)</Label>
-                    <Input
-                      id="area"
-                      name="area"
-                      value={formData.area}
-                      onChange={handleInputChange}
-                      placeholder="e.g., 1200"
-                    />
+                    <Label>Furnishing Status *</Label>
+                    <Select
+                      value={formData.furnishing}
+                      onValueChange={(v) => setFormData((p) => ({ ...p, furnishing: v }))}
+                    >
+                      <SelectTrigger className={errors.furnishing ? "border-red-500" : ""}>
+                        <SelectValue placeholder="Select status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="unfurnished">Unfurnished</SelectItem>
+                        <SelectItem value="semi-furnished">Semi-Furnished</SelectItem>
+                        <SelectItem value="fully-furnished">Fully Furnished</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    {errors.furnishing && <p className="text-sm text-red-500">{errors.furnishing}</p>}
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <Label>Furnishing</Label>
-                  <Select value={formData.furnishing} onValueChange={(v) => setFormData((p) => ({ ...p, furnishing: v }))}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="unfurnished">Unfurnished</SelectItem>
-                      <SelectItem value="furnished">Furnished</SelectItem>
-                      <SelectItem value="semi-furnished">Semi-Furnished</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="description">Description</Label>
-                  <Textarea
-                    id="description"
-                    name="description"
-                    value={formData.description}
-                    onChange={handleInputChange}
-                    rows={4}
-                    placeholder="Describe your property..."
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Property Amenities</Label>
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                <div className="space-y-4">
+                  <Label>Amenities & Features</Label>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                     {amenitiesList.map((amenity) => (
                       <div key={amenity.id} className="flex items-center space-x-2">
                         <Checkbox
                           id={`amenity-${amenity.id}`}
                           checked={formData.amenities.includes(amenity.id)}
-                          onCheckedChange={() => handleAmenityToggle(amenity.id)}
+                          onCheckedChange={(checked) => handleAmenityChange(amenity.id, checked as boolean)}
                         />
-                        <Label htmlFor={`amenity-${amenity.id}`} className="text-sm cursor-pointer">
-                          {amenity.label}
+                        <Label htmlFor={`amenity-${amenity.id}`} className="flex items-center space-x-2 cursor-pointer">
+                          <amenity.icon className="h-4 w-4" />
+                          <span>{amenity.label}</span>
                         </Label>
                       </div>
                     ))}
                   </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="terms">Terms & Conditions</Label>
-                  <Textarea
-                    id="terms"
-                    name="terms"
-                    value={formData.terms}
-                    onChange={handleInputChange}
-                    rows={3}
-                    placeholder="Enter rental terms..."
-                  />
                 </div>
               </div>
             )}
 
             {currentStep === 4 && (
               <div className="space-y-6">
-                <div className="space-y-2">
+                <div className="space-y-4">
                   <Label>Property Images</Label>
                   
                   {formData.images.length > 0 && (
                     <div className="mb-4">
-                      <p className="text-sm text-gray-600 mb-2">Current Images ({formData.images.length})</p>
-                      <div className="grid grid-cols-3 md:grid-cols-4 gap-2">
+                      <p className="text-sm font-medium mb-2 text-gray-700">
+                        Current Images ({formData.images.length}/10):
+                      </p>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                         {formData.images.map((url, index) => (
-                          <div key={index} className="relative group">
+                          <div
+                            key={index}
+                            className={`relative group ${
+                              formData.thumbnail === url ? "border-4 border-blue-500" : ""
+                            }`}
+                          >
                             <div className="aspect-square rounded-lg overflow-hidden bg-gray-100">
                               <Image
                                 src={url}
@@ -610,14 +637,12 @@ export default function EditPropertyPage() {
                               <Trash2 className="h-4 w-4" />
                             </button>
                             {formData.thumbnail === url && (
-                              <span className="absolute bottom-1 left-1 px-2 py-0.5 bg-blue-500 text-white text-xs rounded">
-                                Thumbnail
-                              </span>
+                              <Badge className="absolute bottom-1 left-1 text-xs">Thumbnail</Badge>
                             )}
                             {formData.thumbnail !== url && (
                               <button
-                                onClick={() => setThumbnail(url)}
-                                className="absolute bottom-1 left-1 px-2 py-0.5 bg-gray-500 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity"
+                                onClick={() => handleThumbnailSelect(url)}
+                                className="absolute bottom-1 right-1 p-1 bg-blue-500 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity"
                               >
                                 Set Thumbnail
                               </button>
@@ -628,26 +653,33 @@ export default function EditPropertyPage() {
                     </div>
                   )}
 
-                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
-                    <input
+                  <Label
+                    htmlFor="image-upload"
+                    className="block cursor-pointer border-2 border-dashed rounded-lg p-6 text-center transition-all border-gray-300 hover:border-gray-400 hover:bg-gray-50"
+                  >
+                    <Camera className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                    <p className="text-gray-700 mb-2 font-medium">Upload additional photos (Max 10)</p>
+                    <p className="text-sm text-gray-500 mb-4">JPG, PNG files up to 5MB each</p>
+                    <Button type="button" variant="outline">
+                      <Upload className="h-4 w-4 mr-2" />
+                      Choose Photos
+                    </Button>
+                    <Input
                       type="file"
-                      accept="image/*"
                       multiple
+                      accept="image/*"
                       onChange={handleImageUpload}
-                      className="hidden"
                       id="image-upload"
+                      className="hidden"
                     />
-                    <label htmlFor="image-upload" className="cursor-pointer">
-                      <Upload className="h-8 w-8 mx-auto text-gray-400 mb-2" />
-                      <p className="text-sm text-gray-600">Click to upload new images</p>
-                      <p className="text-xs text-gray-400">PNG, JPG up to 5MB each</p>
-                    </label>
-                  </div>
+                  </Label>
 
                   {formData.newImages.length > 0 && (
                     <div>
-                      <p className="text-sm text-gray-600 mb-2">New Images ({formData.newImages.length})</p>
-                      <div className="grid grid-cols-3 md:grid-cols-4 gap-2">
+                      <p className="text-sm font-medium mb-2 text-gray-700">
+                        New Images ({formData.newImages.length})
+                      </p>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                         {formData.newImages.map((file, index) => (
                           <div key={index} className="relative group">
                             <div className="aspect-square rounded-lg overflow-hidden bg-gray-100">
@@ -670,81 +702,53 @@ export default function EditPropertyPage() {
                   )}
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="video">Video URL (YouTube or Vimeo)</Label>
+                <div
+                  className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center cursor-pointer hover:bg-gray-50 transition"
+                  onClick={() => document.getElementById("video-upload")?.click()}
+                >
+                  <Video className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                  <p className="text-gray-600 mb-2">Upload property video</p>
+                  <p className="text-sm text-gray-500 mb-4">MP4 files up to 50MB</p>
+                  <Button type="button" variant="outline" className="cursor-pointer bg-transparent">
+                    <Upload className="h-4 w-4 mr-2" />
+                    Choose Video
+                  </Button>
                   <Input
-                    id="video"
-                    name="video"
-                    value={formData.video}
-                    onChange={handleInputChange}
-                    placeholder="https://youtube.com/..."
+                    id="video-upload"
+                    type="file"
+                    accept="video/*"
+                    onChange={handleVideoUpload}
+                    className="hidden"
                   />
                 </div>
-              </div>
-            )}
 
-            {currentStep === 5 && (
-              <div className="space-y-6">
-                <div className="bg-gray-50 rounded-lg p-4 space-y-4">
-                  <div className="flex items-start gap-4">
-                    {formData.thumbnail && (
-                      <div className="w-24 h-24 relative rounded-lg overflow-hidden flex-shrink-0">
-                        <Image
-                          src={formData.thumbnail}
-                          alt="Thumbnail"
-                          fill
-                          className="object-cover"
-                        />
-                      </div>
-                    )}
+                {formData.newVideo && (
+                  <div className="border rounded-lg overflow-hidden p-2">
+                    <video src={URL.createObjectURL(formData.newVideo)} controls className="w-full rounded-lg max-h-64 object-cover" />
+                    <div className="flex items-center justify-between mt-2 px-1">
+                      <p className="text-sm text-gray-500 truncate">{formData.newVideo.name}</p>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setFormData((p) => ({ ...p, newVideo: null }))}
+                        className="text-red-500"
+                      >
+                        Remove
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
+                {formData.thumbnail && (
+                  <div className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg">
+                    <div className="w-16 h-16 relative rounded overflow-hidden">
+                      <Image src={formData.thumbnail} alt="Thumbnail" fill className="object-cover" />
+                    </div>
                     <div>
-                      <h3 className="text-lg font-semibold">{formData.title || "Untitled Property"}</h3>
-                      <p className="text-gray-600">
-                        {formData.type} - {formData.category}
-                      </p>
-                      <p className="text-xl font-bold text-blue-600">
-                        ₦{Number(formData.price).toLocaleString()}
-                        {formData.category === "rent" && "/year"}
-                      </p>
+                      <p className="text-sm font-medium">Current Thumbnail</p>
+                      <p className="text-xs text-gray-500">Click any image above to change</p>
                     </div>
                   </div>
-
-                  <div className="border-t pt-4 space-y-2">
-                    <div className="flex items-center gap-2 text-gray-600">
-                      <MapPin className="h-4 w-4" />
-                      <span>{formData.address}, {formData.lga}, {formData.state}</span>
-                    </div>
-                    <div className="flex gap-4 text-gray-600">
-                      {formData.bedrooms && <span>{formData.bedrooms} beds</span>}
-                      {formData.bathrooms && <span>{formData.bathrooms} baths</span>}
-                      {formData.area && <span>{formData.area} sqft</span>}
-                    </div>
-                  </div>
-
-                  {formData.amenities.length > 0 && (
-                    <div className="flex flex-wrap gap-2">
-                      {formData.amenities.map((amenity) => (
-                        <span key={amenity} className="px-2 py-1 bg-blue-100 text-blue-700 text-sm rounded">
-                          {amenity}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-
-                  <div className="flex gap-2">
-                    <span className="text-sm">
-                      {formData.images.length} existing images
-                    </span>
-                    {formData.newImages.length > 0 && (
-                      <span className="text-sm text-green-600">
-                        + {formData.newImages.length} new images
-                      </span>
-                    )}
-                  </div>
-                </div>
-
-                {uploadProgress > 0 && (
-                  <Progress value={uploadProgress} />
                 )}
               </div>
             )}
@@ -758,16 +762,27 @@ export default function EditPropertyPage() {
                 <div />
               )}
 
-              {currentStep < totalSteps ? (
+              {currentStep < 4 ? (
                 <Button type="button" onClick={nextStep}>
-                  Next
+                  Next Step
                 </Button>
               ) : (
                 <Button onClick={handleSubmit} disabled={saving}>
                   {saving ? (
                     <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Saving...
+                      {uploadProgress > 0 ? (
+                        <span className="flex items-center gap-2">
+                          <div className="w-20 h-2 bg-gray-200 rounded-full overflow-hidden">
+                            <div className="h-full bg-green-500 transition-all duration-300" style={{ width: `${uploadProgress}%` }} />
+                          </div>
+                          <span>{uploadProgress}%</span>
+                        </span>
+                      ) : (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          Saving...
+                        </>
+                      )}
                     </>
                   ) : (
                     <>
