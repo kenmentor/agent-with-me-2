@@ -49,6 +49,73 @@ interface Message {
   status?: "sending" | "sent" | "delivered" | "read" | "failed" | "queued";
 }
 
+interface MessageItemProps {
+  msg: Message;
+  userId: string;
+  onLongPress: (messageId: string, e: React.MouseEvent | React.TouchEvent | null) => void;
+  formatTime: (date: string) => string;
+}
+
+function MessageItem({ msg, userId, onLongPress, formatTime }: MessageItemProps) {
+  const isOwn = msg.senderId === userId;
+  const tag = parseMessageTag(msg.content);
+  const isWithinHour = new Date(msg.timestamp || msg.createdAt) > new Date(Date.now() - 3600000);
+
+  const longPress = useLongPress({
+    onLongPress: () => {
+      if (isOwn && isWithinHour) {
+        onLongPress(msg._id, null);
+      }
+    },
+  });
+
+  const canDelete = isOwn && isWithinHour;
+  const handlers = canDelete ? longPress.handlers : {};
+  const deleteClasses = canDelete ? "cursor-pointer select-none" : "";
+
+  if (tag) {
+    return (
+      <div key={msg._id} {...handlers} className={deleteClasses}>
+        <MessageRenderer content={msg.content} isOwn={isOwn} />
+      </div>
+    );
+  }
+
+  return (
+    <div key={msg._id} className={`flex ${isOwn ? "justify-end" : "justify-start"}`} {...handlers}>
+      <div className={`max-w-[75%] px-4 py-2 rounded-2xl ${
+        isOwn && isWithinHour
+          ? "bg-black text-white rounded-br-md cursor-pointer select-none"
+          : isOwn
+            ? "bg-black text-white rounded-br-md"
+            : "bg-white border border-gray-200 text-gray-900 rounded-bl-md shadow-sm"
+      }`}>
+        <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
+        <p className={`text-xs mt-1 flex items-center gap-1 ${isOwn ? "text-gray-400" : "text-gray-500"}`}>
+          {formatTime(msg.timestamp || msg.createdAt)}
+          {isOwn && (
+            <span className="flex items-center">
+              {msg.status === "sending" ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : msg.status === "failed" ? (
+                <span className="text-red-500 text-xs">Failed</span>
+              ) : msg.status === "queued" ? (
+                <span className="text-yellow-500 text-xs">Queued</span>
+              ) : msg.read ? (
+                <CheckCheck className="w-3.5 h-3.5 text-blue-400" />
+              ) : msg.delivered || msg.status === "delivered" ? (
+                <CheckCheck className="w-3.5 h-3.5 text-gray-400" />
+              ) : (
+                <Check className="w-3.5 h-3.5" />
+              )}
+            </span>
+          )}
+        </p>
+      </div>
+    </div>
+  );
+}
+
 export default function ChatConversationPage() {
   const params = useParams();
   const router = useRouter();
@@ -619,12 +686,12 @@ export default function ChatConversationPage() {
   const handleDeleteMessage = async (messageId: string) => {
     const currentUserId = getUserId();
     if (!currentUserId) return;
-    
+
     try {
       await app.delete(`${base}/v1/chat/message`, {
         data: { messageId, userId: currentUserId },
       });
-      
+
       setMessages((prev) => prev.filter((m) => m._id !== messageId));
       setDeleteMenu(null);
     } catch (err: any) {
@@ -633,16 +700,16 @@ export default function ChatConversationPage() {
     }
   };
 
-  const handleLongPress = (messageId: string, e: React.MouseEvent | React.TouchEvent) => {
-    const clientX = "touches" in e ? e.touches[0].clientX : e.clientX;
-    const clientY = "touches" in e ? e.touches[0].clientY : e.clientY;
-    setDeleteMenu({ messageId, x: clientX, y: clientY });
-  };
-
   const formatRecordingTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins}:${secs.toString().padStart(2, "0")}`;
+  };
+
+  const handleLongPressItem = (messageId: string, e: React.MouseEvent | React.TouchEvent | null) => {
+    const clientX = e ? ("touches" in e ? e.touches[0].clientX : e.clientX) : 0;
+    const clientY = e ? ("touches" in e ? e.touches[0].clientY : e.clientY) : 0;
+    setDeleteMenu({ messageId, x: clientX, y: clientY });
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -701,61 +768,15 @@ export default function ChatConversationPage() {
           </div>
         ) : (
           <div className="space-y-4">
-            {messages.map((msg) => {
-              const isOwn = msg.senderId === userId;
-              const tag = parseMessageTag(msg.content);
-              const isWithinHour = new Date(msg.timestamp || msg.createdAt) > new Date(Date.now() - 3600000);
-
-              const longPress = useLongPress({
-                onLongPress: () => {
-                  if (isOwn && isWithinHour) {
-                    handleLongPress(msg._id, null as any);
-                  }
-                },
-              });
-
-              if (tag) {
-                return (
-                  <div key={msg._id} {...(isOwn && isWithinHour ? longPress.handlers : {})} className={isOwn && isWithinHour ? "cursor-pointer select-none" : ""}>
-                    <MessageRenderer content={msg.content} isOwn={isOwn} />
-                  </div>
-                );
-              }
-
-              return (
-                <div key={msg._id} className={`flex ${isOwn ? "justify-end" : "justify-start"}`} {...(isOwn && isWithinHour ? longPress.handlers : {})}>
-                  <div className={`max-w-[75%] px-4 py-2 rounded-2xl ${
-                    isOwn && isWithinHour
-                      ? "bg-black text-white rounded-br-md cursor-pointer select-none"
-                      : isOwn
-                        ? "bg-black text-white rounded-br-md"
-                        : "bg-white border border-gray-200 text-gray-900 rounded-bl-md shadow-sm"
-                  }`}>
-                    <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
-                    <p className={`text-xs mt-1 flex items-center gap-1 ${isOwn ? "text-gray-400" : "text-gray-500"}`}>
-                      {formatTime(msg.timestamp || msg.createdAt)}
-                      {isOwn && (
-                        <span className="flex items-center">
-                          {msg.status === "sending" ? (
-                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                          ) : msg.status === "failed" ? (
-                            <span className="text-red-500 text-xs">Failed</span>
-                          ) : msg.status === "queued" ? (
-                            <span className="text-yellow-500 text-xs">Queued</span>
-                          ) : msg.read ? (
-                            <CheckCheck className="w-3.5 h-3.5 text-blue-400" />
-                          ) : msg.delivered || msg.status === "delivered" ? (
-                            <CheckCheck className="w-3.5 h-3.5 text-gray-400" />
-                          ) : (
-                            <Check className="w-3.5 h-3.5" />
-                          )}
-                        </span>
-                      )}
-                    </p>
-                  </div>
-                </div>
-              );
-            })}
+            {messages.map((msg) => (
+              <MessageItem
+                key={msg._id}
+                msg={msg}
+                userId={userId}
+                onLongPress={handleLongPressItem}
+                formatTime={formatTime}
+              />
+            ))}
             {isTyping && (
               <div className="flex justify-start">
                 <div className="bg-white border border-gray-200 rounded-2xl px-4 py-2">
@@ -912,6 +933,24 @@ export default function ChatConversationPage() {
           </Button>
         </div>
       </div>
+
+      {deleteMenu && (
+        <>
+          <div className="fixed inset-0 z-40" onClick={() => setDeleteMenu(null)} />
+          <div
+            className="fixed z-50 bg-white rounded-lg shadow-xl border border-gray-200 py-1 min-w-[140px] animate-in fade-in zoom-in-95 duration-150"
+            style={{ top: deleteMenu.y - 10, left: Math.min(deleteMenu.x, typeof window !== "undefined" ? window.innerWidth - 160 : 300) }}
+          >
+            <button
+              onClick={() => handleDeleteMessage(deleteMenu.messageId)}
+              className="w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2 text-left"
+            >
+              <Trash2 className="h-4 w-4" />
+              Delete
+            </button>
+          </div>
+        </>
+      )}
     </div>
   );
 }
